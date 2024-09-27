@@ -20,10 +20,16 @@ In some use cases, such as analysis efficiencies or trying to determine if progr
 To run,
 
 Compile dependencies;
-```mvn compile```
+```bash
+mvn compile
+```
 
 Run the application;
-```mvn exec:java -Dexec.mainClass="org.example.Main"```
+```bash
+mvn exec:java -Dexec.mainClass="org.example.Main"
+```
 
 Run the front-end (spring-boot, wip);
-```mvn spring-boot:run```
+```bash
+mvn spring-boot:run
+```
