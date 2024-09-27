@@ -14,3 +14,16 @@ In some use cases, such as analysis efficiencies or trying to determine if progr
  - Springboot 2.5.x
  - Maven 3.6.x
  - Soot 4.3.0
+
+### Getting Started
+
+To run,
+
+Compile dependencies;
+```mvn compile```
+
+Run the application;
+```mvn exec:java -Dexec.mainClass="org.example.Main"```
+
+Run the front-end (spring-boot, wip);
+```mvn spring-boot:run```
