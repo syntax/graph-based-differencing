@@ -3,7 +3,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.example</groupId>
+    <groupId>com.pdgdiff</groupId>
     <artifactId>soot-pdg</artifactId>
     <version>1.0-SNAPSHOT</version>
 
@@ -51,7 +51,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>2.5.6</version> <!-- Ensure the version matches your Spring Boot version -->
                 <configuration>
-                    <mainClass>org.example.PDGController</mainClass>
+                    <mainClass>org.pdgdiff.client.PDGController</mainClass>
                 </configuration>
             </plugin>
         </plugins>

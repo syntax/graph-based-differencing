@@ -1,4 +1,4 @@
-package org.example;
+package org.pdgdiff.client;
 
 import soot.toolkits.graph.pdg.PDGNode;
 import soot.util.dot.DotGraph;

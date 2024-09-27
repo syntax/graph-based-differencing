@@ -1,5 +1,6 @@
-package org.example;
+package org.pdgdiff.client;
 
+import org.pdgdiff.Main;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -12,6 +13,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 
+// TODO: Implement this controller to generate PDGs for uploaded classes
 @Controller
 public class PDGController {
 
@@ -50,12 +52,14 @@ public class PDGController {
         }
     }
 
+    // TODO: considering soot takes java binaries from target to analysem need to compile the classes first
     private void compileClass(String className) throws IOException {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         String filePath = "src/main/java/uploaded_classes/" + className + ".java";
         compiler.run(null, null, null, filePath);
     }
 
+    // TODO: need
     private String generatePDGForCompiledClass(String className) {
         // Assuming the Main class is used to generate the PDG TODO check this
         try {

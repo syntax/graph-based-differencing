@@ -1,10 +1,11 @@
-package org.example;
+package org.pdgdiff;
 
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Collections;
 
+import org.pdgdiff.util.GraphTraversal;
 import soot.Body;
 import soot.Scene;
 import soot.SootClass;
@@ -14,7 +15,6 @@ import soot.options.Options;
 import soot.toolkits.graph.ExceptionalUnitGraph;
 import soot.toolkits.graph.UnitGraph;
 import soot.toolkits.graph.pdg.HashMutablePDG;
-import soot.toolkits.graph.pdg.PDGNode;
 
 public class Main {
     public static void main(String[] args) {
@@ -36,7 +36,7 @@ public class Main {
         // Iterate over all application classes in the Scene
         for (SootClass sootClass : Scene.v().getApplicationClasses()) {
             System.out.println("Class: " + sootClass.getName());
-            if (sootClass.getName().contains("org.example.testclasses")) {
+            if (sootClass.getName().contains("org.pdgdiff.testclasses")) {
                 // Iterate over all methods in the class
                 for (SootMethod method : sootClass.getMethods()) {
                     if (method.isConcrete()) {
@@ -81,9 +81,15 @@ public class Main {
             // Output or handle the PDG for this method
             System.out.println("PDG for method " + method.getName() + ": " + pdg);
 
+
+            // TODO: implement graph traversal
+            GraphTraversal graphTraversal = new GraphTraversal();
+            graphTraversal.traverseGraphBFS(pdg);
+            graphTraversal.traverseGraphDFS(pdg);
+
             // Write the PDG to a file for the class
             String classFileName = sootClass.getName().replace('.', '_') + "_pdg.txt";
-            exportPDGToFile(pdg, classFileName, method.getName());
+            exportPDGToFile(pdg, "out/" + classFileName, method.getName());
 
             System.out.println("PDG for method " + method.getName() + " exported to " + classFileName);
         } catch (Exception e) {

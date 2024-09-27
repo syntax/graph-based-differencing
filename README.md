@@ -26,7 +26,7 @@ mvn compile
 
 Run the application;
 ```bash
-mvn exec:java -Dexec.mainClass="org.example.Main"
+mvn exec:java -Dexec.mainClass="org.pdgdiff.Main"
 ```
 
 Run the front-end (spring-boot, wip);

@@ -1,0 +1,80 @@
+package org.pdgdiff.util;
+
+import soot.toolkits.graph.pdg.HashMutablePDG;
+import soot.toolkits.graph.pdg.PDGNode;
+
+import java.util.*;
+
+public class GraphTraversal {
+
+    // Method to traverse the graph using a breadth-first search
+    public void traverseGraphBFS(HashMutablePDG pdg) {
+        System.out.println("[BFS] Traversing graph" );
+        // TODO Add logic to actually traverse the graph nodes
+
+        PDGNode start_node = pdg.GetStartNode();
+
+        if (start_node == null) {
+            System.out.println("[BFS] No start node found in the PDG.");
+            return;
+        }
+
+        Queue<PDGNode> queue = new LinkedList<PDGNode>();
+        Set<PDGNode> visited = new HashSet<PDGNode>();
+
+        queue.add(start_node);
+        visited.add(start_node);
+
+        // begin BFS
+        while (!queue.isEmpty()) {
+            PDGNode current_node = queue.poll();
+            System.out.println("[BFS] Visiting node: " + current_node.toShortString());
+
+            // Add dependents to the queue
+            List<PDGNode> dependents = current_node.getDependents();
+            for (PDGNode dependent : dependents) {
+                if (!visited.contains(dependent)) {
+                    queue.add(dependent);
+                    visited.add(dependent);
+                }
+            }
+        }
+
+        System.out.println("[BFS] BFS Graph traversal complete.");
+    }
+
+    // Method to traverse the graph using a depth-first search
+    public void traverseGraphDFS(HashMutablePDG pdg) {
+        System.out.println("[DFS] Traversing graph");
+
+        PDGNode start_node = pdg.GetStartNode();
+
+        if (start_node == null) {
+            System.out.println("[DFS] No start node found in the PDG.");
+            return;
+        }
+
+        Stack<PDGNode> stack = new Stack<PDGNode>();
+        Set<PDGNode> visited = new HashSet<PDGNode>();
+
+        stack.push(start_node);
+        visited.add(start_node);
+
+        // begin DFS
+        while (!stack.isEmpty()) {
+            PDGNode current_node = stack.pop();
+            System.out.println("[DFS] Visiting node: " + current_node.toShortString());
+
+            // Add dependents to the stack
+            List<PDGNode> dependents = current_node.getDependents();
+            for (PDGNode dependent : dependents) {
+                if (!visited.contains(dependent)) {
+                    stack.push(dependent);
+                    visited.add(dependent);
+                }
+            }
+        }
+
+        System.out.println("[DFS] DFS Graph traversal complete.");
+    }
+}

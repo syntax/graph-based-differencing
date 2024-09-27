@@ -1,4 +1,4 @@
-package org.example.testclasses;
+package org.pdgdiff.testclasses;
 
 public class TestAdder {
     public static void main(String[] args) {
