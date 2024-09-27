@@ -26,6 +26,13 @@
             <artifactId>slf4j-simple</artifactId>
             <version>1.7.30</version>
         </dependency>
+
+        <!-- spring boot for webapp -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+            <version>2.5.6</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -37,6 +44,14 @@
                 <configuration>
                     <source>1.8</source>
                     <target>1.8</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>2.5.6</version> <!-- Ensure the version matches your Spring Boot version -->
+                <configuration>
+                    <mainClass>org.example.PDGController</mainClass>
                 </configuration>
             </plugin>
         </plugins>

@@ -1,15 +1,20 @@
 package org.example;
 
-import soot.*;
-import soot.options.Options;
-import soot.toolkits.graph.UnitGraph;
-import soot.toolkits.graph.ExceptionalUnitGraph;
-import soot.toolkits.graph.pdg.HashMutablePDG;
-import soot.toolkits.graph.pdg.PDGNode;
-
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.Collections;
+
+import soot.Body;
+import soot.Scene;
+import soot.SootClass;
+import soot.SootMethod;
+import soot.G;
+import soot.options.Options;
+import soot.toolkits.graph.ExceptionalUnitGraph;
+import soot.toolkits.graph.UnitGraph;
+import soot.toolkits.graph.pdg.HashMutablePDG;
+import soot.toolkits.graph.pdg.PDGNode;
 
 public class Main {
     public static void main(String[] args) {
@@ -31,14 +36,15 @@ public class Main {
         // Iterate over all application classes in the Scene
         for (SootClass sootClass : Scene.v().getApplicationClasses()) {
             System.out.println("Class: " + sootClass.getName());
+            if (sootClass.getName().contains("org.example.testclasses")) {
+                // Iterate over all methods in the class
+                for (SootMethod method : sootClass.getMethods()) {
+                    if (method.isConcrete()) {
+                        System.out.println("  Method: " + method.getName());
 
-            // Iterate over all methods in the class
-            for (SootMethod method : sootClass.getMethods()) {
-                if (method.isConcrete()) {
-                    System.out.println("  Method: " + method.getName());
-
-                    // Generate the PDG for the method
-                    generatePDG(method);
+                        // Generate the PDG for the method
+                        generatePDG(sootClass, method);
+                    }
                 }
             }
         }
@@ -53,22 +59,18 @@ public class Main {
         Options.v().set_prepend_classpath(true);
         Options.v().set_allow_phantom_refs(true);
         Options.v().set_output_format(Options.output_format_jimple);
-//        Options.v().set_process_dir(Collections.singletonList("target/classes"));
 
-        // Set the class path to your program's compiled classes or jarsmvn exec:java -Dexec.mainClass="org.example.Main"
-        String classPath = "target/classes";  // path to the bytecode
+        // Set the class path to your program's compiled classes
+        String classPath = "target/classes";
         Options.v().set_soot_classpath(classPath);
         Options.v().set_process_dir(Collections.singletonList(classPath));
 
         // Whole program analysis
         Options.v().set_whole_program(true);
-
-        // Set entry points (optional: specify if you want Soot to begin analysis from certain methods)
-//        Options.v().set_main_class("target/classes"); // Replace with the main class of your program, if relevant
     }
 
     // Method to generate PDG for a specific method
-    private static void generatePDG(SootMethod method) {
+    private static void generatePDG(SootClass sootClass, SootMethod method) {
         try {
             Body body = method.retrieveActiveBody();
             UnitGraph unitGraph = new ExceptionalUnitGraph(body);
@@ -78,18 +80,33 @@ public class Main {
 
             // Output or handle the PDG for this method
             System.out.println("PDG for method " + method.getName() + ": " + pdg);
-            String dotFileName = method.getName() + "_pdg.dot";
 
-            // Use PDGDotVisualizer to export to DOT format
-            PDGNode startNode = pdg.GetStartNode();
-            PDGDotVisualizer visualizer = new PDGDotVisualizer(dotFileName, pdg);
-//            visualizer.exportToDot();  // Export PDG to DOT
+            // Write the PDG to a file for the class
+            String classFileName = sootClass.getName().replace('.', '_') + "_pdg.txt";
+            exportPDGToFile(pdg, classFileName, method.getName());
 
-            System.out.println("PDG for method " + method.getName() + " exported to " + dotFileName);
+            System.out.println("PDG for method " + method.getName() + " exported to " + classFileName);
         } catch (Exception e) {
             System.err.println("Error generating PDG for method: " + method.getName());
             e.printStackTrace();
         }
     }
 
+    // Method to export PDG to a file for each class
+    private static void exportPDGToFile(HashMutablePDG pdg, String fileName, String methodName) throws IOException {
+        PrintWriter writer = null;
+        try {
+            writer = new PrintWriter(new FileWriter(fileName, true));
+            writer.println("---------> Method: " + methodName);
+
+            // Write the raw .toString() output of each PDGNode to the file
+            writer.println(pdg.toString());  // Output the raw toString() of the PDGNode
+
+            writer.println("---------> End of PDG for method: " + methodName);
+        } finally {
+            if (writer != null) {
+                writer.close();
+            }
+        }
+    }
 }

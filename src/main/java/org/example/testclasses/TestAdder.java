@@ -1,8 +1,8 @@
 package org.example.testclasses;
 
-public class TestClass {
+public class TestAdder {
     public static void main(String[] args) {
-        TestClass test = new TestClass();
+        TestAdder test = new TestAdder();
         int result = test.addNumbers(5, 10);
         System.out.println("Result: " + result);
     }
