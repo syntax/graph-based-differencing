@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Collections;
 
+import org.pdgdiff.matching.GraphMatcher;
+import org.pdgdiff.matching.GraphMapping;
 import org.pdgdiff.util.GraphTraversal;
 import soot.Body;
 import soot.Scene;
@@ -33,6 +35,9 @@ public class Main {
             System.out.println("Found " + classCount + " classes.");
         }
 
+        HashMutablePDG pdg1 = null;
+        HashMutablePDG pdg2 = null;
+
         // Iterate over all application classes in the Scene
         for (SootClass sootClass : Scene.v().getApplicationClasses()) {
             System.out.println("Class: " + sootClass.getName());
@@ -42,11 +47,21 @@ public class Main {
                     if (method.isConcrete()) {
                         System.out.println("  Method: " + method.getName());
 
-                        // Generate the PDG for the method
-                        generatePDG(sootClass, method);
+                        // Generate the PDG for the method and store it for comparison
+                        if (pdg1 == null) {
+                            pdg1 = generatePDG(sootClass, method);
+                        } else if (pdg2 == null) {
+                            pdg2 = generatePDG(sootClass, method);
+                            break; // Assuming you want to compare two PDGs; you can modify this to select different methods.
+                        }
                     }
                 }
             }
+        }
+
+        // If two PDGs are available, perform the graph matching and print the results
+        if (pdg1 != null && pdg2 != null) {
+            compareAndPrintGraphSimilarity(pdg1, pdg2);
         }
 
         // Clean up Soot resources
@@ -70,7 +85,7 @@ public class Main {
     }
 
     // Method to generate PDG for a specific method
-    private static void generatePDG(SootClass sootClass, SootMethod method) {
+    private static HashMutablePDG generatePDG(SootClass sootClass, SootMethod method) {
         try {
             Body body = method.retrieveActiveBody();
             UnitGraph unitGraph = new ExceptionalUnitGraph(body);
@@ -78,35 +93,47 @@ public class Main {
             // Generate a Program Dependency Graph (PDG)
             HashMutablePDG pdg = new HashMutablePDG(unitGraph);
 
-            // Output or handle the PDG for this method
-            System.out.println("PDG for method " + method.getName() + ": " + pdg);
+//            System.out.println("PDG for method " + method.getName() + ": " + pdg);
+            System.out.println("PDG for method " + method.getName() + "generated");
 
-            GraphTraversal graphTraversal = new GraphTraversal();
-            graphTraversal.traverseGraphBFS(pdg);
-            graphTraversal.traverseGraphDFS(pdg);
-
-            // Write the PDG to a file for the class
-            String classFileName = sootClass.getName().replace('.', '_') + "_pdg.txt";
-            exportPDGToFile(pdg, "out/" + classFileName, method.getName());
-
-            System.out.println("PDG for method " + method.getName() + " exported to " + classFileName);
+            // Optionally: traverse or export the PDG if needed
+            return pdg;
         } catch (Exception e) {
             System.err.println("Error generating PDG for method: " + method.getName());
             e.printStackTrace();
+            return null;
         }
     }
 
-    // Method to export PDG to a file for each class
+    // Method to compare two PDGs and print node similarities
+    private static void compareAndPrintGraphSimilarity(HashMutablePDG pdg1, HashMutablePDG pdg2) {
+        // Instantiate the GraphMatcher
+        GraphMatcher matcher = new GraphMatcher(pdg1, pdg2);
+
+        // Perform the graph matching
+        GraphMapping mapping = matcher.match();
+        System.out.println("Graph one has " + GraphTraversal.traverseGraphDFS(pdg1) + " nodes");
+        System.out.println("Graph two has " + GraphTraversal.traverseGraphDFS(pdg2) + " nodes");
+        // Output the similarity results (printing node mappings)
+        System.out.println("Graph matching complete. Node similarities:");
+
+        // You can iterate over the mapped nodes and print their details
+        mapping.getNodeMapping().forEach((node1, node2) -> {
+            System.out.println("Node 1: " + node1 + " is matched with Node 2: " + node2);
+        });
+    }
+
+// Method to export PDG to a file for each class
     private static void exportPDGToFile(HashMutablePDG pdg, String fileName, String methodName) throws IOException {
         PrintWriter writer = null;
         try {
             writer = new PrintWriter(new FileWriter(fileName, true));
-            writer.println("---------> Method: " + methodName);
+            writer.println("\n\n---------> Method: " + methodName);
 
             // Write the raw .toString() output of each PDGNode to the file
             writer.println(pdg.toString());  // Output the raw toString() of the PDGNode
 
-            writer.println("---------> End of PDG for method: " + methodName);
+            writer.println("---------> End of PDG for method: " + methodName + "\n\n");
         } finally {
             if (writer != null) {
                 writer.close();

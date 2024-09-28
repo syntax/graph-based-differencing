@@ -4,8 +4,8 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class PDGApplication {
+public class PDGApp {
     public static void main(String[] args) {
-        SpringApplication.run(PDGApplication.class, args);
+        SpringApplication.run(PDGApp.class, args);
     }
 }

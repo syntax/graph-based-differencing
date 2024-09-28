@@ -16,6 +16,7 @@ public class GraphMatcher {
         this.mapping = new GraphMapping();
     }
 
+    // This method is the entry point for the matching process
     public GraphMapping match() {
         PDGNode startNode1 = graph1.GetStartNode();
         PDGNode startNode2 = graph2.GetStartNode();
@@ -30,6 +31,8 @@ public class GraphMatcher {
 
     // This is a recursive method to match nodes in the PDG
     // This is a beginning of a simple matching algorithm, to check if nodes are semantically similar
+    // TODO: Allow setting of a matching model from matching.models
+    // TODO :private void matchNodes(PDGNode node1, PDGNode node2, Model matchingModel)
     private void matchNodes(PDGNode node1, PDGNode node2) {
         // Match nodes only if they meet a similarity threshold
         if (similarityScore(node1, node2) >= 2.0) {
@@ -76,8 +79,9 @@ public class GraphMatcher {
         if (node1.getBackDependets().size() == node2.getBackDependets().size()) {
             score += 0.5;
         }
-
-        // You can add more attributes (like node labels) to the score as needed
+        // TODO: Add more attributes like Node Labels, node labels contain the actual code a node represents
+        // This is pretty critical but im not exactly sure how to represent these sections, perhaps represent them in turn as
+        // an abstract syntax tree which I can then compare?
         return score;
     }
 }

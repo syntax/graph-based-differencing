@@ -8,7 +8,7 @@ import java.util.*;
 public class GraphTraversal {
 
     // Method to traverse the graph using a breadth-first search
-    public void traverseGraphBFS(HashMutablePDG pdg) {
+    public static int traverseGraphBFS(HashMutablePDG pdg) {
         System.out.println("[BFS] Traversing graph" );
         // TODO Add logic to actually traverse the graph nodes
 
@@ -16,7 +16,7 @@ public class GraphTraversal {
 
         if (start_node == null) {
             System.out.println("[BFS] No start node found in the PDG.");
-            return;
+            return -1;
         }
 
         Queue<PDGNode> queue = new LinkedList<PDGNode>();
@@ -41,17 +41,18 @@ public class GraphTraversal {
         }
 
         System.out.println("[BFS] BFS Graph traversal complete.");
+        return visited.size();
     }
 
     // Method to traverse the graph using a depth-first search
-    public void traverseGraphDFS(HashMutablePDG pdg) {
+    public static int traverseGraphDFS(HashMutablePDG pdg) {
         System.out.println("[DFS] Traversing graph");
 
         PDGNode start_node = pdg.GetStartNode();
 
         if (start_node == null) {
             System.out.println("[DFS] No start node found in the PDG.");
-            return;
+            return -1;
         }
 
         Stack<PDGNode> stack = new Stack<PDGNode>();
@@ -76,5 +77,6 @@ public class GraphTraversal {
         }
 
         System.out.println("[DFS] DFS Graph traversal complete.");
+        return visited.size();
     }
 }

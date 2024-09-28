@@ -40,6 +40,7 @@ public class PDGDotVisualizer {
     }
 
     // Traversal logic to export PDG
+    // need to also include labels when using this...
     private void graphTraverse(PDGNode currentNode) {
         if (currentNode == null || visited.contains(currentNode)) {
             return;
