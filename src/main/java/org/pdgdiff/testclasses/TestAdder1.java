@@ -1,14 +1,21 @@
 package org.pdgdiff.testclasses;
 
-public class TestAdder {
+public class TestAdder1 {
     public static void main(String[] args) {
-        TestAdder test = new TestAdder();
+        TestAdder1 test = new TestAdder1();
         int result = test.addNumbers(5, 10);
         System.out.println("Result: " + result);
+        int res = test.minus(10, 5);
+        System.out.println("Result: " + res);
     }
 
     public int addNumbers(int a, int b) {
         int sum = a + b;
+        return sum;
+    }
+
+    public int minus(int a, int b) {
+        int sum = a - b;
         return sum;
     }
 }

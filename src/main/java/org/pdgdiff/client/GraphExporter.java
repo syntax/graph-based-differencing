@@ -9,6 +9,24 @@ import java.io.PrintWriter;
 
 public class GraphExporter {
 
+    /**
+     * Export the PDG to both DOT format and text format
+     * @param pdg The PDG to export
+     * @param dotFileName The filename for the DOT file
+     * @param txtFileName The filename for the text file
+     */
+    public static void exportPDG(HashMutablePDG pdg, String dotFileName, String txtFileName) throws IOException {
+        // Get the method associated with the PDG via the UnitGraph in HashMutablePDG
+        SootMethod method = pdg.getCFG().getBody().getMethod();
+
+        // Export the PDG to a DOT file
+        exportPDGToDot(method, dotFileName);
+
+        // Export the PDG to a text file
+        exportPDGToFile(pdg, txtFileName, method.getName());
+    }
+
+
     // Method to export PDG to a file for each class
     public static void exportPDGToFile(HashMutablePDG pdg, String fileName, String methodName) throws IOException {
         PrintWriter writer = null;

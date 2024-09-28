@@ -7,15 +7,23 @@ import java.util.*;
 
 public class GraphTraversal {
 
+    private static boolean debug = false;
+
+
+    public static void setLogging(boolean enable) {
+        debug = enable;
+    }
+
+
     // Method to traverse the graph using a breadth-first search
     public static int traverseGraphBFS(HashMutablePDG pdg) {
-        System.out.println("[BFS] Traversing graph" );
+        if (debug) System.out.println("[BFS] Traversing graph" );
         // TODO Add logic to actually traverse the graph nodes
 
         PDGNode start_node = pdg.GetStartNode();
 
         if (start_node == null) {
-            System.out.println("[BFS] No start node found in the PDG.");
+            if (debug) System.out.println("[BFS] No start node found in the PDG.");
             return -1;
         }
 
@@ -28,7 +36,7 @@ public class GraphTraversal {
         // begin BFS
         while (!queue.isEmpty()) {
             PDGNode current_node = queue.poll();
-            System.out.println("[BFS] Visiting node: " + current_node.toShortString());
+            if (debug) System.out.println("[BFS] Visiting node: " + current_node.toShortString());
 
             // Add dependents to the queue
             List<PDGNode> dependents = current_node.getDependents();
@@ -40,18 +48,18 @@ public class GraphTraversal {
             }
         }
 
-        System.out.println("[BFS] BFS Graph traversal complete.");
+        if (debug) System.out.println("[BFS] BFS Graph traversal complete.");
         return visited.size();
     }
 
     // Method to traverse the graph using a depth-first search
     public static int traverseGraphDFS(HashMutablePDG pdg) {
-        System.out.println("[DFS] Traversing graph");
+        if (debug) System.out.println("[DFS] Traversing graph");
 
         PDGNode start_node = pdg.GetStartNode();
 
         if (start_node == null) {
-            System.out.println("[DFS] No start node found in the PDG.");
+            if (debug) System.out.println("[DFS] No start node found in the PDG.");
             return -1;
         }
 
@@ -64,7 +72,7 @@ public class GraphTraversal {
         // begin DFS
         while (!stack.isEmpty()) {
             PDGNode current_node = stack.pop();
-            System.out.println("[DFS] Visiting node: " + current_node.toShortString());
+            if (debug) System.out.println("[DFS] Visiting node: " + current_node.toShortString());
 
             // Add dependents to the stack
             List<PDGNode> dependents = current_node.getDependents();
@@ -76,7 +84,7 @@ public class GraphTraversal {
             }
         }
 
-        System.out.println("[DFS] DFS Graph traversal complete.");
+        if (debug) System.out.println("[DFS] DFS Graph traversal complete.");
         return visited.size();
     }
 }

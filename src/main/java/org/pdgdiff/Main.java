@@ -1,5 +1,6 @@
 package org.pdgdiff;
 
+import org.pdgdiff.client.GraphExporter;
 import org.pdgdiff.client.GraphGenerator;
 import org.pdgdiff.matching.PDGComparator;
 import soot.Scene;
@@ -9,6 +10,7 @@ import soot.G;
 import soot.options.Options;
 import soot.toolkits.graph.pdg.HashMutablePDG;
 
+import java.io.IOException;
 import java.util.Collections;
 
 public class Main {
@@ -39,7 +41,9 @@ public class Main {
             if (sootClass.getName().contains(testClassDir)) {
                 // Iterate over all methods in the class
                 for (SootMethod method : sootClass.getMethods()) {
+                    // TODO: For some reason this isnt picking up the addNumbers method from teh TestAdder1 class ?
                     if (method.isConcrete()) {
+                        method.retrieveActiveBody();
                         System.out.println("Class: " + sootClass.getName());
                         System.out.println("  Method: " + method.getName());
 
@@ -48,7 +52,7 @@ public class Main {
                             pdg1 = GraphGenerator.generatePDG(sootClass, method);
                         } else if (pdg2 == null) {
                             pdg2 = GraphGenerator.generatePDG(sootClass, method);
-                            break; // Assuming you want to compare two PDGs; you can modify this to select different methods.
+                            break; // TODO : modify this so it compares two from different files
                         }
                     }
                 }
@@ -58,6 +62,15 @@ public class Main {
         // If two PDGs are available, perform the graph matching and print the results
         if (pdg1 != null && pdg2 != null) {
             PDGComparator.compareAndPrintGraphSimilarity(pdg1, pdg2);
+        }
+        // output the PDG to a file, dot and text in /out
+        try {
+            // Assuming pdg1 is already defined
+            GraphExporter.exportPDG(pdg2, "out/pdg1.dot", "out/pdg1.txt");
+        } catch (IOException e) {
+            // Handle the exception (e.g., print error message)
+            System.err.println("An error occurred during PDG export: " + e.getMessage());
+            e.printStackTrace();
         }
 
         // Clean up Soot resources
@@ -70,6 +83,7 @@ public class Main {
         Options.v().set_prepend_classpath(true);
         Options.v().set_allow_phantom_refs(true);
         Options.v().set_output_format(Options.output_format_jimple);
+        Options.v().set_verbose(true); // debug
 
         // Set the class path to your program's compiled classes
         String classPath = "target/classes";
