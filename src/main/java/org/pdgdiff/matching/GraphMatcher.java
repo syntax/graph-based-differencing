@@ -1,7 +1,10 @@
 package org.pdgdiff.matching;
 
+import org.pdgdiff.matching.models.JaroWinklerSimilarity;
+import soot.toolkits.graph.Block;
 import soot.toolkits.graph.pdg.HashMutablePDG;
 import soot.toolkits.graph.pdg.PDGNode;
+import soot.toolkits.graph.pdg.IRegion;
 
 import java.util.List;
 
@@ -29,13 +32,10 @@ public class GraphMatcher {
         return mapping;
     }
 
-    // This is a recursive method to match nodes in the PDG
-    // This is a beginning of a simple matching algorithm, to check if nodes are semantically similar
-    // TODO: Allow setting of a matching model from matching.models
-    // TODO :private void matchNodes(PDGNode node1, PDGNode node2, Model matchingModel)
+    // Recursive method to match nodes in the PDG
     private void matchNodes(PDGNode node1, PDGNode node2) {
         // Match nodes only if they meet a similarity threshold
-        if (similarityScore(node1, node2) >= 2.0) {
+        if (similarityScore(node1, node2) >= 0.6) {  // Threshold for similarity
             // Add the matched nodes to the mapping
             mapping.addMapping(node1, node2);
 
@@ -58,7 +58,7 @@ public class GraphMatcher {
         }
     }
 
-    // Calculate a similarity score between two nodes
+    // Calculate a similarity score between two nodes (returns a similarity percentage)
     private double similarityScore(PDGNode node1, PDGNode node2) {
         double score = 0.0;
 
@@ -79,9 +79,74 @@ public class GraphMatcher {
         if (node1.getBackDependets().size() == node2.getBackDependets().size()) {
             score += 0.5;
         }
-        // TODO: Add more attributes like Node Labels, node labels contain the actual code a node represents
-        // This is pretty critical but im not exactly sure how to represent these sections, perhaps represent them in turn as
-        // an abstract syntax tree which I can then compare?
+
+        // **Extract the actual content from the node's m_node field**
+        String label1 = extractCodeOrLabel(node1);  // Extract the content/label for node1
+        String label2 = extractCodeOrLabel(node2);  // Extract the content/label for node2
+
+        // Add a score based on label similarity
+        score += compareLabels(label1, label2);  // Custom comparison logic for partial/full matches
+
         return score;
+    }
+
+
+    /*
+    Code below is used for matching similarity of actual syntax each node has. This is going to be pretty critical
+    and needs investigation / running past supervisor. Perhaps granularity of the graph is too high, but the paper
+    (PDG and its use in optimisation) believes in defining regions to lump together section with similar control/data
+    flow.
+
+    A bit of a conflict of interest there of using a PDG vs code differencing.
+     */
+
+    // Extract the actual code or detailed label from the PDGNode's m_node field
+    private String extractCodeOrLabel(PDGNode node) {
+        Object m_node = node.getNode();  // Access m_node from PDGNode
+
+        if (m_node instanceof Block) {
+            Block block = (Block) m_node;
+            return extractCodeFromBlock(block);  // Extract code from the block
+        } else if (m_node instanceof IRegion) {
+            IRegion region = (IRegion) m_node;
+            return extractDetailsFromRegion(region);  // Extract region details
+        } else {
+            return node.toShortString();  // Fallback to the short string
+        }
+    }
+
+    // Extract detailed code from a Block
+    private String extractCodeFromBlock(Block block) {
+        StringBuilder codeRepresentation = new StringBuilder();
+        for (Object unit : block) {
+            codeRepresentation.append(unit.toString()).append("\n");  // Append each statement in the block
+        }
+        return codeRepresentation.toString();
+    }
+
+    // Extract detailed information from a Region
+    private String extractDetailsFromRegion(IRegion region) {
+        StringBuilder regionDetails = new StringBuilder("Region ID: " + region.getID() + "\n");
+
+        List<Block> blocks = region.getBlocks();
+        for (Block block : blocks) {
+            regionDetails.append(extractCodeFromBlock(block)).append("\n");
+        }
+
+        return regionDetails.toString();
+    }
+
+    // Compare node labels (strings) using Jaro-Winkler similarity and return a percentage
+    private double compareLabels(String label1, String label2) {
+        if (label1 == null || label2 == null) {
+            return 0.0;
+        }
+
+        // TODO: Figure out how this is acc working and if its doing the right thing. need some testing......
+        // Calculate the Jaro-Winkler similarity
+        double similarity = JaroWinklerSimilarity.JaroWinklerSimilarity(label1, label2);
+        System.out.println("Similarity between labels: " + similarity);
+        // Return the similarity score as a percentage
+        return similarity;
     }
 }

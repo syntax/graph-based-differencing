@@ -23,3 +23,7 @@
 
 7. **Graph Neural Networks (GNNs)**
     - For more complex cases, gna consider using **GNNs** to learn graph node embeddings and compare the graphs. More advanced, but potentially effective for large or complex graphs.
+
+
+
+NB: Can probably have some sort of threshold for heurisitics vs exact matching, where if the PDGs are too large, we fall back to approximate matching to avoid time complexity limitations.
