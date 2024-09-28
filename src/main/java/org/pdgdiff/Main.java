@@ -81,8 +81,6 @@ public class Main {
             // Output or handle the PDG for this method
             System.out.println("PDG for method " + method.getName() + ": " + pdg);
 
-
-            // TODO: implement graph traversal
             GraphTraversal graphTraversal = new GraphTraversal();
             graphTraversal.traverseGraphBFS(pdg);
             graphTraversal.traverseGraphDFS(pdg);

@@ -11,11 +11,11 @@ public class GraphMapping {
     private Map<PDGNode, PDGNode> nodeMapping;
 
     public GraphMapping() {
-        nodeMapping = new HashMap<>();
+        nodeMapping = new HashMap<PDGNode, PDGNode>();
     }
 
-    public void addMapping(PDGNode node1, PDGNode node2) {
-        nodeMapping.put(node1, node2);
+    public void addMapping(PDGNode srcNode, PDGNode dstNode) {
+        nodeMapping.put(srcNode, dstNode);
     }
 
     public PDGNode getMappedNode(PDGNode node) {
