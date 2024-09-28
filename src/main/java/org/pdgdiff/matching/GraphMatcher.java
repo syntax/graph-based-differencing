@@ -20,6 +20,8 @@ public class GraphMatcher {
     }
 
     // This method is the entry point for the matching process
+    // TODO: need to think a bit more about this. Each class has a selection of PDGs. For each class, I need to compare each PDG with
+    // TODO: each other, and then within each PDG, I need to compare each node with each other.
     public GraphMapping match() {
         PDGNode startNode1 = graph1.GetStartNode();
         PDGNode startNode2 = graph2.GetStartNode();
