@@ -1,72 +1,49 @@
 package org.pdgdiff.client;
 
-import soot.toolkits.graph.pdg.PDGNode;
-import soot.util.dot.DotGraph;
+import soot.Body;
+import soot.SootMethod;
+import soot.toolkits.graph.ExceptionalUnitGraph;
 import soot.toolkits.graph.pdg.HashMutablePDG;
-import java.util.HashSet;
-import java.util.List;
+import soot.util.dot.DotGraph;
+import soot.util.cfgcmd.CFGToDotGraph;
 
-// TODO: Fix this as it doesnt really work. Im sure I could write a better traversal and export logic.
 public class PDGDotVisualizer {
-    private DotGraph dotPDG;
-    private HashSet<PDGNode> visited = new HashSet<>();
     private String fileName;
-    private HashMutablePDG pdg;
 
     // Constructor for PDGDotVisualizer
-    public PDGDotVisualizer(String fileName, HashMutablePDG pdg) {
+    public PDGDotVisualizer(String fileName) {
+        if (fileName == null || fileName.isEmpty()) {
+            throw new IllegalArgumentException("Please provide a valid filename.");
+        }
+
         this.fileName = fileName;
-        this.pdg = pdg;
-        this.dotPDG = new DotGraph("PDG");
-
-        if (this.fileName == null || this.fileName.isEmpty()) {
-            System.out.println("Please provide a valid filename");
-        }
-        if (this.pdg == null) {
-            System.out.println("PDG is null!");
-        }
     }
 
-    // Export the PDG to DOT format
-    public void exportToDot() {
-        if (this.pdg != null && this.fileName != null) {
-            PDGNode startNode = pdg.GetStartNode();
-            graphTraverse(startNode);
-            dotPDG.plot(this.fileName);
-            System.out.println("PDG exported to " + this.fileName);
-        } else {
-            System.out.println("Parameters not properly initialized!");
-        }
-    }
-
-    // Traversal logic to export PDG
-    // need to also include labels when using this...
-    private void graphTraverse(PDGNode currentNode) {
-        if (currentNode == null || visited.contains(currentNode)) {
+    // Export the PDG of a given method to DOT format
+    public void exportToDot(SootMethod method) {
+        if (method == null) {
+            System.out.println("Method is null!");
             return;
         }
 
-        visited.add(currentNode);
+        try {
+            // Retrieve the method body and create an ExceptionalUnitGraph
+            Body body = method.retrieveActiveBody();
+            ExceptionalUnitGraph exceptionalUnitGraph = new ExceptionalUnitGraph(body);
 
-        // Add current node to DOT graph
-        dotPDG.drawNode(currentNode.toShortString());
+            // Generate the PDG using the ExceptionalUnitGraph
+            HashMutablePDG pdg = new HashMutablePDG(exceptionalUnitGraph);
 
-        // Traverse dependents and add edges
-        List<PDGNode> dependents = currentNode.getDependents();
-        for (PDGNode dep : dependents) {
-            dotPDG.drawEdge(currentNode.toShortString(), dep.toShortString());
-            if (!visited.contains(dep)) {
-                graphTraverse(dep);
-            }
-        }
+            // Use CFGToDotGraph to create a DOT graph from the PDG
+            CFGToDotGraph pdgForMethod = new CFGToDotGraph();
+            DotGraph pdgDot = pdgForMethod.drawCFG(pdg, body);
 
-        // Traverse back-dependents and add edges (for loops or back-dependencies)
-        List<PDGNode> backDependents = currentNode.getBackDependets();
-        for (PDGNode backDep : backDependents) {
-            dotPDG.drawEdge(currentNode.toShortString(), backDep.toShortString());
-            if (!visited.contains(backDep)) {
-                graphTraverse(backDep);
-            }
+            // Export the DOT graph to the specified file
+            pdgDot.plot(fileName);
+            System.out.println("PDG exported to " + fileName);
+
+        } catch (RuntimeException e) {
+            System.out.println("Error exporting PDG: " + e.getMessage());
         }
     }
 }
