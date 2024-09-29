@@ -3,36 +3,44 @@ package org.pdgdiff;
 import org.pdgdiff.client.GraphExporter;
 import org.pdgdiff.client.GraphGenerator;
 import org.pdgdiff.matching.PDGComparator;
+import org.pdgdiff.util.SootInitializer;
 import soot.Scene;
 import soot.SootClass;
 import soot.SootMethod;
-import soot.G;
-import soot.options.Options;
 import soot.toolkits.graph.pdg.HashMutablePDG;
 
-import java.io.IOException;
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.List;
+
 
 public class Main {
     public static void main(String[] args) {
         System.out.println("Starting PDG Diff...");
 
         // Initialize Soot
-        initializeSoot();
+        SootInitializer.initializeSoot();
 
         // Load all classes in the program
         Scene.v().loadNecessaryClasses();
 
-        // Hardcode the classes for TestAdder1 and TestAdder2
+        // Hardcode the classes for TestAdder1 and TestAdder2, temporary
         String class1Name = "org.pdgdiff.testclasses.TestAdder1";
         String class2Name = "org.pdgdiff.testclasses.TestAdder2";
 
         try {
-            // Retrieve the classes from the Soot Scene
+            // Retrieve the classes from the Soot Scene, these are placeholders rn
             SootClass testAdder1 = Scene.v().getSootClass(class1Name);
             SootClass testAdder2 = Scene.v().getSootClass(class2Name);
 
-            // Generate PDGs for methods and compare
+            // Generate PDGs for all methods in both classes and store in lists
+            List<HashMutablePDG> pdgsClass1 = generatePDGsForClass(testAdder1);
+            List<HashMutablePDG> pdgsClass2 = generatePDGsForClass(testAdder2);
+
+            // Print the number of PDGs generated for each class
+            System.out.println("PDGs generated for " + testAdder1.getName() + ": " + pdgsClass1.size());
+            System.out.println("PDGs generated for " + testAdder2.getName() + ": " + pdgsClass2.size());
+            // processing
+            // TODO: Attempt to match PDGs across classes (see the todo.md file for more details)
             compareMethodsAcrossClasses(testAdder1, testAdder2);
 
         } catch (Exception e) {
@@ -41,24 +49,23 @@ public class Main {
         }
 
         // Clean up Soot resources
-        G.reset();
+        SootInitializer.resetSoot();
     }
 
-    // Method to compare methods across two classes
     private static void compareMethodsAcrossClasses(SootClass class1, SootClass class2) {
         HashMutablePDG pdg1;
         HashMutablePDG pdg2;
 
         System.out.println("Comparing methods between " + class1.getName() + " and " + class2.getName());
 
-        // Iterate over methods in TestAdder1
+        // Iterate over methods in class1
         for (SootMethod method1 : class1.getMethods()) {
             if (method1.isConcrete()) {
                 try {
                     method1.retrieveActiveBody();
                     System.out.println("Successfully retrieved active body for: " + method1.getName() + " in " + class1.getName());
 
-                    // Generate the PDG for the method
+                    // Generate the PDG for the method in class1
                     pdg1 = GraphGenerator.generatePDG(class1, method1);
                 } catch (Exception e) {
                     System.err.println("Failed to retrieve body for method: " + method1.getName());
@@ -66,14 +73,14 @@ public class Main {
                     continue; // Skip to the next method
                 }
 
-                // Iterate over methods in TestAdder2 and compare
+                // Iterate over methods in class2 and compare
                 for (SootMethod method2 : class2.getMethods()) {
                     if (method2.isConcrete() && method1.getName().equals(method2.getName())) {
                         try {
                             method2.retrieveActiveBody();
                             System.out.println("Successfully retrieved active body for: " + method2.getName() + " in " + class2.getName());
 
-                            // Generate the PDG for the corresponding method in TestAdder2
+                            // Generate the PDG for the corresponding method in class2
                             pdg2 = GraphGenerator.generatePDG(class2, method2);
 
                             // Perform the comparison between PDG1 and PDG2
@@ -92,27 +99,38 @@ public class Main {
                             System.err.println("Failed to retrieve or generate PDG for method: " + method2.getName());
                             e.printStackTrace();
                         }
-                        break; // Stop after finding the corresponding method in TestAdder2
+                        break; // Stop after finding the corresponding method in class2
                     }
                 }
             }
         }
     }
 
-    // Method to initialize Soot configuration
-    private static void initializeSoot() {
-        // Set Soot options
-        Options.v().set_prepend_classpath(true);
-        Options.v().set_allow_phantom_refs(true);
-        Options.v().set_output_format(Options.output_format_jimple);
-        Options.v().set_verbose(true); // Debug output
+    // Method to generate PDGs for all methods in a given class and store them in a list
+    private static List<HashMutablePDG> generatePDGsForClass(SootClass sootClass) {
+        List<HashMutablePDG> pdgList = new ArrayList<>();
+        System.out.println("Generating PDGs for class: " + sootClass.getName());
 
-        // Set the class path to your program's compiled classes
-        String classPath = System.getProperty("user.dir") + "/target/classes";
-        Options.v().set_soot_classpath(classPath);
-        Options.v().set_process_dir(Collections.singletonList(classPath));
+        // Iterate over each method in the class
+        for (SootMethod method : sootClass.getMethods()) {
+            if (method.isConcrete()) {
+                try {
+                    // Retrieve the active body and generate the PDG
+                    method.retrieveActiveBody();
+                    System.out.println("Successfully retrieved active body for: " + method.getName() + " in " + sootClass.getName());
 
-        // Whole program analysis
-        Options.v().set_whole_program(true);
+                    // Generate the PDG for the method
+                    HashMutablePDG pdg = GraphGenerator.generatePDG(sootClass, method);
+                    if (pdg != null) {
+                        pdgList.add(pdg);
+                        System.out.println("PDG generated for method: " + method.getName());
+                    }
+                } catch (Exception e) {
+                    System.err.println("Failed to retrieve body or generate PDG for method: " + method.getName());
+                    e.printStackTrace();
+                }
+            }
+        }
+        return pdgList;
     }
 }
