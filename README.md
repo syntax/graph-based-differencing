@@ -9,6 +9,10 @@ The graph is to be represented as a JSON object, which can be visualized using a
 Due to the fact that a PDG is often run on an intermediate representation, such as LLVM for a C/C++ program or Java Bytecode in this case, some syntactic differences won't be captured, and the algorithm will be limited to the granularity of the intermediate representation.
 In some use cases, such as analysis efficiencies or trying to determine if programs are semantically identical, this tool will be more useful.
 
+**Please note;** This is a current WIP. The project is currently in the early stages of development, and the README will be updated as the project progresses.
+A large amount of TODOs regarding graph matching, and the actual approach can be found in `src.main.java.org.pdgdiff.models.TODO.md.`
+
+
 ### Preliminary list of dependencies
  - Java 8
  - Springboot 2.5.x
@@ -32,4 +36,9 @@ mvn exec:java -Dexec.mainClass="org.pdgdiff.Main"
 Run the front-end (spring-boot, wip);
 ```bash
 mvn spring-boot:run
+```
+
+To run test suite (this largely checks heuristics and graph isomorphism algorithms);
+```bash
+mvn test
 ```
