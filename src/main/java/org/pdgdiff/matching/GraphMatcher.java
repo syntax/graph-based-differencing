@@ -87,6 +87,7 @@ public class GraphMatcher {
         String label2 = extractCodeOrLabel(node2);  // Extract the content/label for node2
 
         // Add a score based on label similarity
+        System.out.println("Comparing labels from node: " + node1.toShortString() + " and " + node2.toShortString());
         score += compareLabels(label1, label2);  // Custom comparison logic for partial/full matches
 
         return score;
@@ -139,12 +140,12 @@ public class GraphMatcher {
     }
 
     // Compare node labels (strings) using Jaro-Winkler similarity and return a percentage
-    private double compareLabels(String label1, String label2) {
+    protected double compareLabels(String label1, String label2) {
         if (label1 == null || label2 == null) {
             return 0.0;
         }
 
-        // TODO: Figure out how this is acc working and if its doing the right thing. need some testing......
+        // TODO: Assess Jaro-Winkler similarity as a metric, seems to generally just return high scores even if non similar
         // Calculate the Jaro-Winkler similarity
         double similarity = JaroWinklerSimilarity.JaroWinklerSimilarity(label1, label2);
         System.out.println("Similarity between labels: " + similarity);
