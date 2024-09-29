@@ -11,18 +11,18 @@ import java.util.List;
 public class GraphMatcher {
     private HashMutablePDG graph1;
     private HashMutablePDG graph2;
-    private GraphMapping mapping;
+    private NodeMapping mapping;
 
     public GraphMatcher(HashMutablePDG g1, HashMutablePDG g2) {
         this.graph1 = g1;
         this.graph2 = g2;
-        this.mapping = new GraphMapping();
+        this.mapping = new NodeMapping();
     }
 
     // This method is the entry point for the matching process
     // TODO: need to think a bit more about this. Each class has a selection of PDGs. For each class, I need to compare each PDG with
     // TODO: each other, and then within each PDG, I need to compare each node with each other.
-    public GraphMapping match() {
+    public NodeMapping match() {
         PDGNode startNode1 = graph1.GetStartNode();
         PDGNode startNode2 = graph2.GetStartNode();
 

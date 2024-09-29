@@ -13,7 +13,7 @@ public class PDGComparator {
         GraphMatcher matcher = new GraphMatcher(pdg1, pdg2);
 
         // Perform the graph matching
-        GraphMapping mapping = matcher.match();
+        NodeMapping mapping = matcher.match();
 
         // Retrieve the class and method information from the PDG
         String class1 = pdg1.getCFG().getBody().getMethod().getDeclaringClass().getName();

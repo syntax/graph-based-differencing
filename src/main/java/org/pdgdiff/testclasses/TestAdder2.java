@@ -12,7 +12,7 @@ public class TestAdder2 {
     }
 
     public int addNumbers(int number, int number2) {
-        int sum = number + number2;
+        int sum = number - number2;
         return sum;
     }
 
