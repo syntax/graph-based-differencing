@@ -16,6 +16,12 @@ public class SootInitializer {
         Options.v().set_output_format(Options.output_format_jimple);
         Options.v().set_verbose(true); // Debug output
 
+        // TODO: Maintain code as close to original as possible when compiled
+        // TODO: configure compiler and investigate this
+        Options.v().set_keep_line_number(true);
+        Options.v().set_no_bodies_for_excluded(true);
+        Options.v().setPhaseOption("jb", "use-original-names:true");
+
         // Set the class path to your program's compiled classes
         String classPath = System.getProperty("user.dir") + "/target/classes";
         Options.v().set_soot_classpath(classPath);
