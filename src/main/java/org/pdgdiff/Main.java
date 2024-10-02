@@ -41,7 +41,9 @@ public class Main {
             System.out.println("PDGs generated for " + testAdder2.getName() + ": " + pdgsClass2.size());
             // processing
             // TODO: Attempt to match PDGs across classes (see the todo.md file for more details)
-            compareMethodsAcrossClasses(testAdder1, testAdder2);
+            if (!pdgsClass1.isEmpty() && !pdgsClass2.isEmpty()) {
+                PDGComparator.compareAndPrintGraphSimilarity(pdgsClass1, pdgsClass2);
+            }
 
         } catch (Exception e) {
             System.err.println("An error occurred while processing the classes: " + e.getMessage());
@@ -84,10 +86,10 @@ public class Main {
                             pdg2 = GraphGenerator.generatePDG(class2, method2);
 
                             // Perform the comparison between PDG1 and PDG2
-                            if (pdg1 != null && pdg2 != null) {
-                                System.out.println("Comparing " + method1.getName() + " between " + class1.getName() + " and " + class2.getName());
-                                PDGComparator.compareAndPrintGraphSimilarity(pdg1, pdg2);
-                            }
+//                            if (pdg1 != null && pdg2 != null) {
+//                                System.out.println("Comparing " + method1.getName() + " between " + class1.getName() + " and " + class2.getName());
+//                                PDGComparator.compareAndPrintGraphSimilarity(pdg1, pdg2);
+//                            }
 
                             // Export the PDG for further analysis (optional)
                             GraphExporter.exportPDG(pdg1, "out/pdg_" + class1.getName() + "_" + method1.getName() + ".dot",
@@ -119,9 +121,9 @@ public class Main {
                     method.retrieveActiveBody();
                     System.out.println("Successfully retrieved active body for: " + method.getName() + " in " + sootClass.getName());
 
-                    // Print the Jimple body for inspection
-                    System.out.println("Jimple output for method " + method.getName() + ":");
-                    System.out.println(method.getActiveBody().toString());
+                    // Print the Jimple body for inspection (GOOD FOR DEBUGGING)
+//                    System.out.println("Jimple output for method " + method.getName() + ":");
+//                    System.out.println(method.getActiveBody().toString());
 
                     // Generate the PDG for the method
                     HashMutablePDG pdg = GraphGenerator.generatePDG(sootClass, method);
