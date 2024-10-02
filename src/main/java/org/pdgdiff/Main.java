@@ -119,6 +119,10 @@ public class Main {
                     method.retrieveActiveBody();
                     System.out.println("Successfully retrieved active body for: " + method.getName() + " in " + sootClass.getName());
 
+                    // Print the Jimple body for inspection
+                    System.out.println("Jimple output for method " + method.getName() + ":");
+                    System.out.println(method.getActiveBody().toString());
+
                     // Generate the PDG for the method
                     HashMutablePDG pdg = GraphGenerator.generatePDG(sootClass, method);
                     if (pdg != null) {
