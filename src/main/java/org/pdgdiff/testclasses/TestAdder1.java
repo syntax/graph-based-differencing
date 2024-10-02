@@ -10,7 +10,10 @@ public class TestAdder1 {
     }
 
     public int addNumbers(int a, int b) {
-        int sum = a + b;
+        int toadd1 = a;
+        int toadd2 = b;
+        int sum = toadd1 + toadd2;
+        int minus = toadd1 - toadd2;
         return sum;
     }
 

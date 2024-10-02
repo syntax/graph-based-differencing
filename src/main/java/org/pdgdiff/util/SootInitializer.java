@@ -10,6 +10,7 @@ public class SootInitializer {
 
     // Method to initialize Soot configuration
     public static void initializeSoot() {
+        resetSoot();
         // Set Soot options
         Options.v().set_prepend_classpath(true);
         Options.v().set_allow_phantom_refs(true);
@@ -18,9 +19,12 @@ public class SootInitializer {
 
         // TODO: Maintain code as close to original as possible when compiled
         // TODO: configure compiler and investigate this
+        // read https://www.sable.mcgill.ca/soot/tutorial/phase/phase.html
         Options.v().set_keep_line_number(true);
         Options.v().set_no_bodies_for_excluded(true);
         Options.v().setPhaseOption("jb", "use-original-names:true");
+        Options.v().setPhaseOption("jb.dce", "enabled:false");  // Disable dead code elimination
+        Options.v().setPhaseOption("jop", "enabled:false");     // Disable optimizations like constant folding
 
         // Set the class path to your program's compiled classes
         String classPath = System.getProperty("user.dir") + "/target/classes";
@@ -28,7 +32,7 @@ public class SootInitializer {
         Options.v().set_process_dir(Collections.singletonList(classPath));
 
         // Whole program analysis
-        Options.v().set_whole_program(true);
+        Options.v().set_whole_program(false); // Investigating if this stops DCE
 
         // Load necessary classes
         Scene.v().loadNecessaryClasses();
