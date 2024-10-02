@@ -4,14 +4,16 @@ _Objectives of this repository: Create a graph-based differencing approach, with
 
 This application is designed to take two Java classes, and produce a graph-based representation of the differences between them. 
 It represents both classes as a [Program Dependence Graph](https://dl.acm.org/doi/10.1145/24039.24041) (generated through [Soot](https://github.com/soot-oss/soot)) and uses heuristics (WIP) to perform graph isomorphism.
-The graph is to be represented as a JSON object, which can be visualized using a tool like [D3.js](https://d3js.org/), or as a .dot file for human readability.
+The application suggested which methods might have originated from one another and suggests edit scripts between methods in the source and destination file. 
 
-Due to the fact that a PDG is often run on an intermediate representation, such as LLVM for a C/C++ program or Java Bytecode in this case, some syntactic differences won't be captured, and the algorithm will be limited to the granularity of the intermediate representation.
+Due to the fact that a PDG is often run on an intermediate representation, such as LLVM for a C/C++ program or Java Bytecode in this case, some syntactic differences won't be captured, and the algorithm will be limited to the granularity of the intermediate representation. For the purpose of a closer and more accurate
+differencing, compiler optimisations are disabled for target comparison files both at the java compiler level and the Soot level. Soot 
 In some use cases, such as analysis efficiencies or trying to determine if programs are semantically identical, this tool will be more useful.
 
 **Please note;** This is a current WIP. The project is currently in the early stages of development, and the README will be updated as the project progresses.
 A large amount of TODOs regarding graph matching, and the actual approach can be found in `src.main.java.org.pdgdiff.models.TODO.md.`
 
+Documentation, in the form of a complete dissertation report, is in the works.
 
 ### Preliminary list of dependencies
  - Java 8
