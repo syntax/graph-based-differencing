@@ -16,7 +16,8 @@ import java.util.List;
 public class Main {
     public static void main(String[] args) {
         System.out.println("Starting PDG Diff...");
-
+        // clear out folder
+        GraphExporter.clearOutputFolder("out");
         // Initialize Soot
         SootInitializer.initializeSoot();
 
@@ -130,6 +131,11 @@ public class Main {
                     if (pdg != null) {
                         pdgList.add(pdg);
                         System.out.println("PDG generated for method: " + method.getName());
+
+                        // Export the PDG for this method to a .dot and .txt file
+                        String baseFileName = "out/pdg_" + sootClass.getName() + "_" + method.getName();
+                        GraphExporter.exportPDG(pdg, baseFileName + ".dot", baseFileName + ".txt");
+
                     }
                 } catch (Exception e) {
                     System.err.println("Failed to retrieve body or generate PDG for method: " + method.getName());

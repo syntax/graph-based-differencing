@@ -6,12 +6,28 @@ import soot.toolkits.graph.pdg.HashMutablePDG;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.File;
+
 
 /**
  * GraphExporter class to export the PDG to both DOT and text formats. This class contains methods to export the PDG
  * to a DOT file and a text file for each class.
  */
 public class GraphExporter {
+
+
+    public static void clearOutputFolder(String folderPath) {
+        File outputFolder = new File(folderPath);
+        if (outputFolder.exists()) {
+            File[] files = outputFolder.listFiles();
+            if (files != null) {
+                for (File file : files) {
+                    file.delete();
+                }
+            }
+        }
+
+    }
 
     /**
      * Export the PDG to both DOT format and text format

@@ -48,7 +48,8 @@ public class SootInitializer {
         Options.v().set_process_dir(Collections.singletonList(classPath));
 
         // Whole program analysis
-//        Options.v().set_whole_program(false); // Investigating if this stops DCE
+        Options.v().set_whole_program(false); // Investigating if this stops DCE
+        Options.v().set_no_bodies_for_excluded(true);
 
         // Load necessary classes
         Scene.v().loadNecessaryClasses();

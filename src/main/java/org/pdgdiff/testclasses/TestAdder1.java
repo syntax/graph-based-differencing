@@ -7,6 +7,9 @@ public class TestAdder1 {
         System.out.println("Result: " + result);
         int res = test.minus(10, 5);
         System.out.println("Result: " + res);
+
+        int complexRes = test.detailedComputation(5, 10);
+        System.out.println("Detailed Computation Result: " + complexRes);
     }
 
     public int addNumbers(int a, int b) {
@@ -21,4 +24,39 @@ public class TestAdder1 {
         int sum = a - b;
         return sum;
     }
+
+    public int detailedComputation(int num1, int num2) {
+        int result = 0;
+
+        // Conditional statements
+        if (num1 > num2) {
+            result = num1 + num2;
+        } else if (num1 < num2) {
+            result = num1 - num2;
+        } else {
+            result = num1 * num2;
+        }
+
+        // Loop that performs additional operations
+        for (int i = 0; i < 4; i++) {
+            result -= i;
+            if (result % 3 == 0) {
+                result /= 3;
+            } else {
+                result += i * 2;
+            }
+        }
+
+        // Nested conditional inside a loop
+        for (int i = 0; i < 6; i++) {
+            if (i % 2 == 1) {
+                result *= i;
+            } else {
+                result /= (i + 1);
+            }
+        }
+
+        return result;
+    }
+
 }
