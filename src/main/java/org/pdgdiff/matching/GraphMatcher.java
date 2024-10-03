@@ -1,5 +1,6 @@
 package org.pdgdiff.matching;
 
+import org.pdgdiff.matching.models.VF2Matcher;
 import org.pdgdiff.matching.models.JaroWinklerSimilarity;
 import org.pdgdiff.util.GraphTraversal;
 import soot.toolkits.graph.pdg.HashMutablePDG;
@@ -60,6 +61,49 @@ public class GraphMatcher {
 
         return graphMapping;  // Return the complete GraphMapping
     }
+
+    public GraphMapping matchPDGListsVF2() {
+        for (HashMutablePDG pdg1 : pdgList1) {
+            HashMutablePDG bestMatch = null;
+            NodeMapping nodeMapping = null; // Initialize node mapping for this PDG
+
+            // Use VF2Matcher to compare pdg1 with each PDG from the second list
+            for (HashMutablePDG pdg2 : pdgList2) {
+                // Skip if this PDG has already been matched
+                if (matchedPDGs.contains(pdg2)) {
+                    continue;
+                }
+
+                // Instantiate VF2Matcher
+                VF2Matcher vf2Matcher = new VF2Matcher(pdg1, pdg2);
+
+                // Perform the graph matching
+                NodeMapping mapping = vf2Matcher.match();
+
+                // If a mapping is found, consider it as a match
+                if (mapping != null) {
+                    // Assign pdg2 as the best match for pdg1
+                    bestMatch = pdg2;
+                    nodeMapping = mapping;
+
+                    // Since we found a match, we can break out of the loop
+                    break;
+                }
+            }
+
+            if (bestMatch != null && nodeMapping != null) {
+                // Add the best match along with node mapping to the GraphMapping
+                matchedPDGs.add(bestMatch);
+                graphMapping.addGraphMapping(pdg1, bestMatch, nodeMapping);
+            } else {
+                // No match found for pdg1
+                System.out.println("No matching PDG found for: " + pdg1.getCFG().getBody().getMethod().getSignature());
+            }
+        }
+
+        return graphMapping;  // Return the complete GraphMapping
+    }
+
 
     // Use GraphTraversal to get all nodes in a PDG
     private List<PDGNode> getPDGNodes(HashMutablePDG pdg) {

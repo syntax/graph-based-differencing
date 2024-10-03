@@ -94,4 +94,15 @@ public class GraphTraversal {
         if (debug) System.out.println("[DFS] DFS Graph traversal complete.");
         return nodeList;
     }
+
+    public static int getNodeCount(HashMutablePDG pdg) {
+        List<PDGNode> nodeList = collectNodesBFS(pdg);
+        return nodeList.size();
+    }
+
+    // Optionally, if you have already collected nodes and want to avoid traversal:
+    public static int getNodeCount(List<PDGNode> nodeList) {
+        return nodeList.size();
+    }
+
 }

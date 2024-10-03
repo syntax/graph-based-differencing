@@ -53,7 +53,9 @@ public class PDGComparator {
         GraphMatcher matcher = new GraphMatcher(pdgList1, pdgList2);
 
         // Perform the graph matching between the lists
-        GraphMapping graphMapping = matcher.matchPDGLists();
+//        GraphMapping graphMapping = matcher.matchPDGLists();
+        System.out.println("Matching PDGs using VF2 algorithm...");
+        GraphMapping graphMapping = matcher.matchPDGListsVF2();
 
         // Print the number of nodes in each graph
 //        System.out.println("Graph 1 has " + GraphTraversal.collectNodesBFS(pdgList1.get(0)).size() + " nodes.");
