@@ -7,6 +7,12 @@ import soot.toolkits.graph.pdg.PDGNode;
 import java.util.HashMap;
 import java.util.Map;
 
+
+/**
+ * VF2Matcher class to perform graph matching using the VF2 algorithm. This class contains methods to match two PDGs
+ * using the VF2 algorithm and return the node mappings between the two PDGs.
+ * TODO: Check I have done this correctly, quite tired at time of implementation (its 11pm :( )
+ */
 public class VF2Matcher {
     private HashMutablePDG pdg1;
     private HashMutablePDG pdg2;

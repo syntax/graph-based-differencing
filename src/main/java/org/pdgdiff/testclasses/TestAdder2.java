@@ -24,6 +24,7 @@ public class TestAdder2 {
         return product;
     }
 
+    // added these more complex classes with more intense control flow and non-matching names to try and catch edge cases
     public int complexCalculation(int num1, int num2) {
         int result = 0;
 

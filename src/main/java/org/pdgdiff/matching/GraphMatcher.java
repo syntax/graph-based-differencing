@@ -112,6 +112,7 @@ public class GraphMatcher {
     }
 
     // Compare two individual PDGs
+    // TODO refactor this heuristic algorithm to its own class in .models for consistency and maintaing an organised codebase
     private double comparePDGs(HashMutablePDG pdg1, HashMutablePDG pdg2, NodeMapping nodeMapping) {
         double totalScore = 0.0;
 
