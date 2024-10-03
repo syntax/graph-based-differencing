@@ -157,13 +157,3 @@ class VF2State {
         }
     }
 }
-
-class CandidatePair {
-    PDGNode n1;
-    PDGNode n2;
-
-    public CandidatePair(PDGNode n1, PDGNode n2) {
-        this.n1 = n1;
-        this.n2 = n2;
-    }
-}
