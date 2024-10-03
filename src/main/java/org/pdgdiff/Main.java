@@ -1,7 +1,7 @@
 package org.pdgdiff;
 
-import org.pdgdiff.client.GraphExporter;
-import org.pdgdiff.client.GraphGenerator;
+import org.pdgdiff.graph.GraphExporter;
+import org.pdgdiff.graph.GraphGenerator;
 import org.pdgdiff.matching.PDGComparator;
 import org.pdgdiff.util.SootInitializer;
 import soot.Scene;

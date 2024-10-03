@@ -1,5 +1,6 @@
-package org.pdgdiff.client;
+package org.pdgdiff.graph;
 
+import org.pdgdiff.client.PDGDotVisualizer;
 import soot.SootMethod;
 import soot.toolkits.graph.pdg.HashMutablePDG;
 

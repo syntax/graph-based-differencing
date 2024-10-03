@@ -1,6 +1,6 @@
 package org.pdgdiff.matching.models;
 
-import org.pdgdiff.util.GraphTraversal;
+import org.pdgdiff.graph.GraphTraversal;
 import soot.toolkits.graph.pdg.HashMutablePDG;
 import soot.toolkits.graph.pdg.PDGNode;
 

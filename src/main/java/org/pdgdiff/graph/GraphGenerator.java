@@ -1,4 +1,4 @@
-package org.pdgdiff.client;
+package org.pdgdiff.graph;
 
 import soot.Body;
 import soot.SootClass;
@@ -24,8 +24,6 @@ public class GraphGenerator {
 
             System.out.println("PDG for method " + method.getName() + " generated");
 
-            // Optionally: traverse or export the PDG if needed
-            // TODO condsider.
             return pdg;
         } catch (Exception e) {
             System.err.println("Error generating PDG for method: " + method.getName());

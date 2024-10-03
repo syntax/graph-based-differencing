@@ -2,7 +2,7 @@ package org.pdgdiff.matching;
 
 import org.pdgdiff.matching.models.VF2Matcher;
 import org.pdgdiff.matching.models.JaroWinklerSimilarity;
-import org.pdgdiff.util.GraphTraversal;
+import org.pdgdiff.graph.GraphTraversal;
 import soot.toolkits.graph.pdg.HashMutablePDG;
 import soot.toolkits.graph.pdg.PDGNode;
 

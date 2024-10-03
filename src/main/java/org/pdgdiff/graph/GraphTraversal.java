@@ -1,4 +1,4 @@
-package org.pdgdiff.util;
+package org.pdgdiff.graph;
 
 import soot.toolkits.graph.pdg.HashMutablePDG;
 import soot.toolkits.graph.pdg.PDGNode;

@@ -1,6 +1,6 @@
 //package org.pdgdiff.matching;
 //
-//import org.pdgdiff.util.GraphTraversal;
+//import org.pdgdiff.graph.GraphTraversal;
 //import soot.toolkits.graph.pdg.HashMutablePDG;
 //
 //public class PDGComparator {
@@ -40,7 +40,6 @@
 
 package org.pdgdiff.matching;
 
-import org.pdgdiff.util.GraphTraversal;
 import soot.toolkits.graph.pdg.HashMutablePDG;
 
 import java.util.List;
