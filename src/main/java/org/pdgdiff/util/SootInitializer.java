@@ -26,6 +26,8 @@ public class SootInitializer {
         Options.v().set_keep_line_number(true);
 //        Options.v().set_no_bodies_for_excluded(true);
         Options.v().setPhaseOption("jb", "use-original-names:true");
+        Options.v().setPhaseOption("jb", "use-original-bytecode:true");
+        Options.v().setPhaseOption("jj", "simplify-off:true");
 
         Options.v().setPhaseOption("jb.dce", "enabled:false");  // Disable dead code elimination
         Options.v().setPhaseOption("jb.dae", "enabled:false");  // Disable dead assignment elimination
@@ -42,6 +44,8 @@ public class SootInitializer {
         Options.v().setPhaseOption("jop.uce", "enabled:false"); // Disable unreachable code elimination (for good measure)
         Options.v().setPhaseOption("jop.cpf", "enabled:false");
 
+        disableOptimizations();
+
         // Set the class path to your program's compiled classes
         String classPath = System.getProperty("user.dir") + "/target/classes";
         Options.v().set_soot_classpath(classPath);
@@ -51,8 +55,29 @@ public class SootInitializer {
         Options.v().set_whole_program(false); // Investigating if this stops DCE
         Options.v().set_no_bodies_for_excluded(true);
 
+//        Options.v().set_coffi(true); -> dont use, renames variables to stacknums instead of preserving original
+//        Options.v().set_keep_bytecode_offset(true);
+
+//        System.out.println("Active phases: " + PhaseDumper.v().getPhaseStack());
+
+
         // Load necessary classes
         Scene.v().loadNecessaryClasses();
+    }
+
+
+    // TODO: refactor above to use this, just holding off for comments/documentation
+    private static void disableOptimizations() {
+        // Disable all known optimization phases
+        String[] phasesToDisable = {
+                "jb.dae", "jb.dce", "jb.cp", "jb.uce", "jb.ne", "jb.tr",
+                "jb.ule", "jb.lp", "jb.cp-ule", "jop", "wjop", "bb",
+                "jap", "jtp.ls", "jop.uce", "jop.cpf", "wjtp", "wjap", "cg"
+        };
+
+        for (String phase : phasesToDisable) {
+            Options.v().setPhaseOption(phase, "enabled:false");
+        }
     }
 
     // Method to reset Soot (clean up)
