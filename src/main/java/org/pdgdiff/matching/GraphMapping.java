@@ -5,6 +5,10 @@ import soot.toolkits.graph.pdg.HashMutablePDG;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * GraphMapping class to store mappings between PDGs. This class is used to store the mapping between
+ * PDGs in two lists that have been matched by the GraphMatcher.
+ */
 public class GraphMapping {
     private Map<HashMutablePDG, HashMutablePDG> graphMapping;
     private Map<HashMutablePDG, NodeMapping> nodeMappings; // TODO : to store node-level mappings for each PDG pair

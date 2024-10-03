@@ -5,6 +5,10 @@ import soot.toolkits.graph.pdg.PDGNode;
 
 import java.util.*;
 
+/**
+ * GraphTraversal class to perform graph traversal on a PDG. This class contains methods to traverse the PDG
+ * using both breadth-first search (BFS) and depth-first search (DFS) algorithms.
+ */
 public class GraphTraversal {
 
     private static boolean debug = false;

@@ -8,6 +8,11 @@ import soot.toolkits.graph.pdg.PDGNode;
 import java.util.HashSet;
 import java.util.List;
 
+/**
+ * GraphMatcher class to compare two lists of PDGs and find similarities, aiming to create a 1:1 mapping between
+ * PDGs from the two lists. These PDGs represent methods, which each list representing a different class (or file)
+ * This class uses a custom similarity score to compare PDG nodes and labels. WIP.
+ */
 public class GraphMatcher {
     private final HashSet<HashMutablePDG> matchedPDGs;
     private List<HashMutablePDG> pdgList1;

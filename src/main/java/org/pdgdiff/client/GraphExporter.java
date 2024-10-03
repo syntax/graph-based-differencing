@@ -7,6 +7,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 
+/**
+ * GraphExporter class to export the PDG to both DOT and text formats. This class contains methods to export the PDG
+ * to a DOT file and a text file for each class.
+ */
 public class GraphExporter {
 
     /**

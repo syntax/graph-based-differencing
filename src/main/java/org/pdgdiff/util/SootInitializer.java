@@ -6,6 +6,9 @@ import soot.options.Options;
 
 import java.util.Collections;
 
+/**
+ * SootInitializer class to initialize Soot with the necessary configurations for PDG generation.
+ */
 public class SootInitializer {
 
     // Method to initialize Soot configuration
