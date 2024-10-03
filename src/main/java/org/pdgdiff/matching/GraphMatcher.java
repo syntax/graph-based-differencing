@@ -5,9 +5,11 @@ import org.pdgdiff.util.GraphTraversal;
 import soot.toolkits.graph.pdg.HashMutablePDG;
 import soot.toolkits.graph.pdg.PDGNode;
 
+import java.util.HashSet;
 import java.util.List;
 
 public class GraphMatcher {
+    private final HashSet<HashMutablePDG> matchedPDGs;
     private List<HashMutablePDG> pdgList1;
     private List<HashMutablePDG> pdgList2;
     private GraphMapping graphMapping; // To store graph-level and node-level mappings
@@ -16,6 +18,7 @@ public class GraphMatcher {
         this.pdgList1 = list1;
         this.pdgList2 = list2;
         this.graphMapping = new GraphMapping(); // Initialize GraphMapping
+        this.matchedPDGs = new HashSet<>();  // Initialize the set to track matched PDGs
     }
 
     // Entry point for matching lists of PDGs
@@ -23,15 +26,21 @@ public class GraphMatcher {
         for (HashMutablePDG pdg1 : pdgList1) {
             HashMutablePDG bestMatch = null;
             NodeMapping nodeMapping = new NodeMapping(); // Track node-level mappings
-            double bestScore = Double.MAX_VALUE;
+
+            double bestScore = Double.NEGATIVE_INFINITY;  // Start with a very low score
 
             // Compare pdg1 with each PDG from the second list
             for (HashMutablePDG pdg2 : pdgList2) {
+                // Skip if this PDG has already been matched
+                if (matchedPDGs.contains(pdg2)) {
+                    continue;
+                }
+
                 // Compute similarity score between the two PDGs
                 double score = comparePDGs(pdg1, pdg2, nodeMapping);
 
-                // Keep track of the best match based on the similarity score
-                if (score < bestScore) {
+                // Prioritize name similarity first
+                if (score > bestScore) {
                     bestScore = score;
                     bestMatch = pdg2;
                 }
@@ -39,6 +48,7 @@ public class GraphMatcher {
 
             if (bestMatch != null) {
                 // Add the best match along with node mapping to the GraphMapping
+                matchedPDGs.add(bestMatch);
                 graphMapping.addGraphMapping(pdg1, bestMatch, nodeMapping);
             }
         }
@@ -74,8 +84,16 @@ public class GraphMatcher {
             totalScore += nodeScore;
         }
 
-        // Normalize score by the number of nodes to handle graphs of different sizes
-        return totalScore / Math.max(nodes1.size(), nodes2.size());
+        // normalise node score by the number of nodes to handle graphs of different sizes
+        totalScore = totalScore / Math.max(nodes1.size(), nodes2.size());
+
+        String methodName1 = pdg1.getCFG().getBody().getMethod().getName();
+        String methodName2 = pdg2.getCFG().getBody().getMethod().getName();
+        double nameSimilarity = JaroWinklerSimilarity.JaroWinklerSimilarity(methodName1, methodName2);
+
+        totalScore += nameSimilarity * 2;
+
+        return totalScore;
     }
 
     // Calculate a similarity score between two PDG nodes
@@ -154,6 +172,6 @@ public class GraphMatcher {
 
         // Calculate the Jaro-Winkler similarity
         double similarity = JaroWinklerSimilarity.JaroWinklerSimilarity(label1, label2);
-        return similarity;
+        return similarity * 2.0;
     }
 }

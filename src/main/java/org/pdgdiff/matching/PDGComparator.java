@@ -63,11 +63,18 @@ public class PDGComparator {
         System.out.println("--> Graph matching complete. Node similarities:");
 
         graphMapping.getGraphMapping().forEach((pdg1, pdg2) -> {
-            System.out.println("PDG from class 1: " + pdg1.toString() + " is matched with PDG from class 2: " + pdg2.toString());
+
+            String class1 = pdg1.getCFG().getBody().getMethod().getDeclaringClass().getName();
+            String method1 = pdg1.getCFG().getBody().getMethod().getName();
+
+            String class2 = pdg2.getCFG().getBody().getMethod().getDeclaringClass().getName();
+            String method2 = pdg2.getCFG().getBody().getMethod().getName();
+
+            System.out.println("PDG from class 1: " + class1 + "." + method1 + " is matched with PDG from class 2: " + class2 + "." + method2);
             NodeMapping nodeMapping = graphMapping.getNodeMapping(pdg1);
-            if (nodeMapping != null) {
-                nodeMapping.printMappings();  // Print detailed node mappings between these PDGs
-            }
+//            if (nodeMapping != null) {
+//                nodeMapping.printMappings();  // Print detailed node mappings between these PDGs
+//            }
         });
     }
 }
