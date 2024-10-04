@@ -104,6 +104,7 @@ class VF2State {
     }
 
     public boolean isFeasible(CandidatePair pair) {
+//        System.out.println("Checking feasibility for pair");
         return checkSyntacticFeasibility(pair) && checkSemanticFeasibility(pair);
     }
 
@@ -137,6 +138,8 @@ class VF2State {
     }
 
     private boolean checkSemanticFeasibility(CandidatePair pair) {
+        // TODO: investigate this function as it seems to be non-deterministic and only works sometimes, maybe
+        // TODO: sometimes it just takes longer to complete that other times... not quite sure. ugh!
         PDGNodeWrapper n1 = pair.n1;
         PDGNodeWrapper n2 = pair.n2;
         // Get successors and predecessors once (cache these)
@@ -146,7 +149,7 @@ class VF2State {
         List<PDGNodeWrapper> preds2 = new ArrayList<>(wrapPDGNodes(pdg2.getPredsOf(n2.getPDGNode())));
 
         // Check successors
-        System.out.println("Checking successors");
+//        System.out.println("Checking successors");
         for (PDGNodeWrapper m1 : succs1) {
             PDGNodeWrapper m2 = mapping.get(m1);
             if (m2 != null && !succs2.contains(m2)) {
@@ -155,7 +158,7 @@ class VF2State {
         }
 
         // Check predecessors
-        System.out.println("Checking predecessors");
+//        System.out.println("Checking predecessors");
         for (PDGNodeWrapper m1 : preds1) {
             PDGNodeWrapper m2 = mapping.get(m1);
             if (m2 != null && !preds2.contains(m2)) {

@@ -48,7 +48,7 @@ public class VF2Matcher {
         // Avoid revisiting the same state
         if (state.isComplete()) {
             // Mapping is complete, return success
-            System.out.println("Mapping complete, returning...");
+//            System.out.println("Mapping complete, returning...");
             for (Map.Entry<PDGNodeWrapper, PDGNodeWrapper> entry : state.getMapping().entrySet()) {
                 PDGNode originalNode1 = entry.getKey().getPDGNode();
                 PDGNode originalNode2 = entry.getValue().getPDGNode();
@@ -58,7 +58,7 @@ public class VF2Matcher {
         }
 
         if (visitedStates.contains(state)) {
-            System.out.println("State already visited, skipping...");
+//            System.out.println("State already visited, skipping...");
             return false;
         }
 
