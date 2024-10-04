@@ -24,8 +24,8 @@ class VF2State {
     private Set<PDGNodeWrapper> T1;  // Nodes in PDG1 that are in the mapping or adjacent to mapped nodes
     private Set<PDGNodeWrapper> T2;  // Same for PDG2
 
-    private Set<PDGNodeWrapper> unmapped1;  // Unmapped nodes in PDG1
-    private Set<PDGNodeWrapper> unmapped2;  // Unmapped nodes in PDG2
+    private Set<PDGNodeWrapper> unmapped1;  // Unmapped nodes in PDG1 (src)
+    private Set<PDGNodeWrapper> unmapped2;  // Unmapped nodes in PDG2 (dst)
 
     public VF2State(HashMutablePDG pdg1, HashMutablePDG pdg2) {
         this.pdg1 = pdg1;
@@ -40,6 +40,25 @@ class VF2State {
         this.T2 = new HashSet<>();
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+
+        VF2State other = (VF2State) obj;
+        return Objects.equals(mapping, other.mapping) &&
+                Objects.equals(T1, other.T1) &&
+                Objects.equals(T2, other.T2) &&
+                Objects.equals(unmapped1, other.unmapped1) &&
+                Objects.equals(unmapped2, other.unmapped2);
+    }
+
+    // Override hashCode() to ensure consistency with equals()
+    @Override
+    public int hashCode() {
+        return Objects.hash(mapping, T1, T2, unmapped1, unmapped2);
+    }
+
     // Helper method to wrap PDGNode objects in PDGNodeWrapper
     private Set<PDGNodeWrapper> wrapPDGNodes(List<PDGNode> nodes) {
         Set<PDGNodeWrapper> wrappedNodes = new HashSet<>();
@@ -50,7 +69,8 @@ class VF2State {
     }
 
     public boolean isComplete() {
-        return mapping.size() == unmapped1.size();  // Check if all nodes are mapped
+        // I believe this is sufficient, as partial mapping is sufficient
+        return unmapped1.isEmpty() || unmapped2.isEmpty();  // Check if all nodes are mapped
     }
 
     public Map<PDGNodeWrapper, PDGNodeWrapper> getMapping() {
@@ -107,7 +127,9 @@ class VF2State {
 
     private boolean nodesAreCompatible(PDGNodeWrapper n1, PDGNodeWrapper n2) {
         return n1.getPDGNode().getType() == n2.getPDGNode().getType() &&
-                n1.getPDGNode().getAttrib() == n2.getPDGNode().getAttrib();
+                n1.getPDGNode().getAttrib() == n2.getPDGNode().getAttrib() &&
+                pdg1.getSuccsOf(n1.getPDGNode()).size() == pdg2.getSuccsOf(n2.getPDGNode()).size() &&
+                pdg1.getPredsOf(n1.getPDGNode()).size() == pdg2.getPredsOf(n2.getPDGNode()).size();
     }
 
     private boolean checkSyntacticFeasibility(CandidatePair pair) {
@@ -122,12 +144,6 @@ class VF2State {
         List<PDGNodeWrapper> succs2 = new ArrayList<>(wrapPDGNodes(pdg2.getSuccsOf(n2.getPDGNode())));
         List<PDGNodeWrapper> preds1 = new ArrayList<>(wrapPDGNodes(pdg1.getPredsOf(n1.getPDGNode())));
         List<PDGNodeWrapper> preds2 = new ArrayList<>(wrapPDGNodes(pdg2.getPredsOf(n2.getPDGNode())));
-
-        // early exit
-        if (succs1.size() != succs2.size() || preds1.size() != preds2.size()) {
-            System.out.println("Early exit");
-            return false;
-        }
 
         // Check successors
         System.out.println("Checking successors");
