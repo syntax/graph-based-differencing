@@ -1,6 +1,7 @@
 package org.pdgdiff.matching.models.vf2;
 
 import org.pdgdiff.matching.NodeMapping;
+import org.pdgdiff.util.PDGNodeWrapper;
 import soot.toolkits.graph.pdg.HashMutablePDG;
 import soot.toolkits.graph.pdg.PDGNode;
 
@@ -38,8 +39,11 @@ public class VF2Matcher {
     private boolean matchRecursive(VF2State state) {
         if (state.isComplete()) {
             // Mapping is complete, transfer mappings to nodeMapping
-            for (Map.Entry<PDGNode, PDGNode> entry : state.getMapping().entrySet()) {
-                nodeMapping.addMapping(entry.getKey(), entry.getValue());
+            // Unwrap the PDGNodeWrapper and map the original PDGNode
+            for (Map.Entry<PDGNodeWrapper, PDGNodeWrapper> entry : state.getMapping().entrySet()) {
+                PDGNode originalNode1 = entry.getKey().getPDGNode(); // Unwrap PDGNodeWrapper
+                PDGNode originalNode2 = entry.getValue().getPDGNode(); // Unwrap PDGNodeWrapper
+                nodeMapping.addMapping(originalNode1, originalNode2); // Add to NodeMapping
             }
             return true;
         }

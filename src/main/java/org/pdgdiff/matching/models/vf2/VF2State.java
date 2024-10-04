@@ -1,50 +1,59 @@
 package org.pdgdiff.matching.models.vf2;
 
 import org.pdgdiff.graph.GraphTraversal;
+import org.pdgdiff.util.PDGNodeWrapper;
 import soot.toolkits.graph.pdg.HashMutablePDG;
 import soot.toolkits.graph.pdg.PDGNode;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
-
 import java.util.*;
-
 
 /*
  * VF2State class to store the state of the VF2 algorithm. This class contains methods to store the current state
  * of the VF2 algorithm and perform operations on the state.
- * TODO: STILL IN THE WORKS
+ * TODO improvements to be made here
  */
 class VF2State {
     private HashMutablePDG pdg1;
     private HashMutablePDG pdg2;
-    private Map<PDGNode, PDGNode> mapping;  // The current partial mapping
+    private Map<PDGNodeWrapper, PDGNodeWrapper> mapping;  // The current partial mapping
 
-    private Set<PDGNode> T1;  // Nodes in PDG1 that are in the mapping or adjacent to mapped nodes
-    private Set<PDGNode> T2;  // Same for PDG2
+    private Set<PDGNodeWrapper> T1;  // Nodes in PDG1 that are in the mapping or adjacent to mapped nodes
+    private Set<PDGNodeWrapper> T2;  // Same for PDG2
 
-    private Set<PDGNode> unmapped1;  // Unmapped nodes in PDG1
-    private Set<PDGNode> unmapped2;  // Unmapped nodes in PDG2
+    private Set<PDGNodeWrapper> unmapped1;  // Unmapped nodes in PDG1
+    private Set<PDGNodeWrapper> unmapped2;  // Unmapped nodes in PDG2
 
     public VF2State(HashMutablePDG pdg1, HashMutablePDG pdg2) {
         this.pdg1 = pdg1;
         this.pdg2 = pdg2;
         this.mapping = new HashMap<>();
 
-        this.unmapped1 = new HashSet<>(GraphTraversal.collectNodesBFS(pdg1));
-        this.unmapped2 = new HashSet<>(GraphTraversal.collectNodesBFS(pdg2));
+        // Wrapping the PDGNodes in PDGNodeWrapper
+        this.unmapped1 = new HashSet<>(wrapPDGNodes(GraphTraversal.collectNodesBFS(pdg1)));
+        this.unmapped2 = new HashSet<>(wrapPDGNodes(GraphTraversal.collectNodesBFS(pdg2)));
 
         this.T1 = new HashSet<>();
         this.T2 = new HashSet<>();
     }
 
-    public boolean isComplete() {
-        return mapping.size() == GraphTraversal.getNodeCount(pdg1);
+    // Helper method to wrap PDGNode objects in PDGNodeWrapper
+    private Set<PDGNodeWrapper> wrapPDGNodes(List<PDGNode> nodes) {
+        Set<PDGNodeWrapper> wrappedNodes = new HashSet<>();
+        for (PDGNode node : nodes) {
+            wrappedNodes.add(new PDGNodeWrapper(node));  // Wrapping each PDGNode
+        }
+        return wrappedNodes;
     }
 
-    public Map<PDGNode, PDGNode> getMapping() {
+    public boolean isComplete() {
+        return mapping.size() == unmapped1.size();  // Check if all nodes are mapped
+    }
+
+    public Map<PDGNodeWrapper, PDGNodeWrapper> getMapping() {
         return mapping;
     }
 
@@ -53,18 +62,18 @@ class VF2State {
 
         if (!T1.isEmpty() && !T2.isEmpty()) {
             // Pick nodes from T1 and T2
-            for (PDGNode n1 : T1) {
-                for (PDGNode n2 : T2) {
-                    if (nodesAreCompatible(n1, n2)) {
+            for (PDGNodeWrapper n1 : T1) {
+                for (PDGNodeWrapper n2 : T2) {
+                    if (nodesAreCompatible(n1, n2) && !mapping.containsKey(n1) && !mapping.containsValue(n2)) {
                         candidates.add(new CandidatePair(n1, n2));
                     }
                 }
             }
         } else {
             // If T1 and T2 are empty, pick any unmapped nodes
-            for (PDGNode n1 : unmapped1) {
-                for (PDGNode n2 : unmapped2) {
-                    if (nodesAreCompatible(n1, n2)) {
+            for (PDGNodeWrapper n1 : unmapped1) {
+                for (PDGNodeWrapper n2 : unmapped2) {
+                    if (nodesAreCompatible(n1, n2) && !mapping.containsKey(n1) && !mapping.containsValue(n2)) {
                         candidates.add(new CandidatePair(n1, n2));
                     }
                 }
@@ -75,9 +84,6 @@ class VF2State {
     }
 
     public boolean isFeasible(CandidatePair pair) {
-        // Implement feasibility checks:
-        // - Syntactic feasibility: node attributes match
-        // - Semantic feasibility: the mapping is consistent with the graph structure
         return checkSyntacticFeasibility(pair) && checkSemanticFeasibility(pair);
     }
 
@@ -99,38 +105,64 @@ class VF2State {
         recalculateTerminalSets();
     }
 
-    // Helper methods...
-
-    private boolean nodesAreCompatible(PDGNode n1, PDGNode n2) {
-        // Compare node types, labels, attributes
-        return n1.getType() == n2.getType() && n1.getAttrib() == n2.getAttrib();
-        // TODO: Add more detailed comparison/ metrics
+    private boolean nodesAreCompatible(PDGNodeWrapper n1, PDGNodeWrapper n2) {
+        return n1.getPDGNode().getType() == n2.getPDGNode().getType() &&
+                n1.getPDGNode().getAttrib() == n2.getPDGNode().getAttrib();
     }
 
     private boolean checkSyntacticFeasibility(CandidatePair pair) {
-        // Ensure that the nodes can be mapped based on their attributes
         return nodesAreCompatible(pair.n1, pair.n2);
     }
 
     private boolean checkSemanticFeasibility(CandidatePair pair) {
-        // Ensure that the mapping preserves the graph structure
-        // For each neighbor of n1, check that the corresponding neighbor in n2 exists
-        // and is consistent with the current mapping
-        // TODO: fix
-        return true;  // Simplified for now
+        PDGNodeWrapper n1 = pair.n1;
+        PDGNodeWrapper n2 = pair.n2;
+        // Get successors and predecessors once (cache these)
+        List<PDGNodeWrapper> succs1 = new ArrayList<>(wrapPDGNodes(pdg1.getSuccsOf(n1.getPDGNode())));
+        List<PDGNodeWrapper> succs2 = new ArrayList<>(wrapPDGNodes(pdg2.getSuccsOf(n2.getPDGNode())));
+        List<PDGNodeWrapper> preds1 = new ArrayList<>(wrapPDGNodes(pdg1.getPredsOf(n1.getPDGNode())));
+        List<PDGNodeWrapper> preds2 = new ArrayList<>(wrapPDGNodes(pdg2.getPredsOf(n2.getPDGNode())));
+
+        // early exit
+        if (succs1.size() != succs2.size() || preds1.size() != preds2.size()) {
+            System.out.println("Early exit");
+            return false;
+        }
+
+        // Check successors
+        System.out.println("Checking successors");
+        for (PDGNodeWrapper m1 : succs1) {
+            PDGNodeWrapper m2 = mapping.get(m1);
+            if (m2 != null && !succs2.contains(m2)) {
+                return false;
+            }
+        }
+
+        // Check predecessors
+        System.out.println("Checking predecessors");
+        for (PDGNodeWrapper m1 : preds1) {
+            PDGNodeWrapper m2 = mapping.get(m1);
+            if (m2 != null && !preds2.contains(m2)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
-    private void updateTerminalSets(PDGNode n1, PDGNode n2) {
+    private void updateTerminalSets(PDGNodeWrapper n1, PDGNodeWrapper n2) {
         // Add neighbors of n1 to T1 if they are not mapped
-        for (PDGNode neighbor : n1.getDependents()) {
-            if (!mapping.containsKey(neighbor)) {
-                T1.add(neighbor);
+        for (PDGNode neighbor : n1.getPDGNode().getDependents()) {
+            PDGNodeWrapper wrappedNeighbor = new PDGNodeWrapper(neighbor);
+            if (!mapping.containsKey(wrappedNeighbor)) {
+                T1.add(wrappedNeighbor);
             }
         }
         // Same for n2
-        for (PDGNode neighbor : n2.getDependents()) {
-            if (!mapping.containsValue(neighbor)) {
-                T2.add(neighbor);
+        for (PDGNode neighbor : n2.getPDGNode().getDependents()) {
+            PDGNodeWrapper wrappedNeighbor = new PDGNodeWrapper(neighbor);
+            if (!mapping.containsValue(wrappedNeighbor)) {
+                T2.add(wrappedNeighbor);
             }
         }
         // Remove n1 and n2 from T1 and T2
@@ -141,17 +173,19 @@ class VF2State {
     private void recalculateTerminalSets() {
         T1.clear();
         T2.clear();
-        for (PDGNode mappedNode1 : mapping.keySet()) {
-            for (PDGNode neighbor : mappedNode1.getDependents()) {
-                if (!mapping.containsKey(neighbor)) {
-                    T1.add(neighbor);
+        for (PDGNodeWrapper mappedNode1 : mapping.keySet()) {
+            for (PDGNode neighbor : mappedNode1.getPDGNode().getDependents()) {
+                PDGNodeWrapper wrappedNeighbor = new PDGNodeWrapper(neighbor);
+                if (!mapping.containsKey(wrappedNeighbor)) {
+                    T1.add(wrappedNeighbor);
                 }
             }
         }
-        for (PDGNode mappedNode2 : mapping.values()) {
-            for (PDGNode neighbor : mappedNode2.getDependents()) {
-                if (!mapping.containsValue(neighbor)) {
-                    T2.add(neighbor);
+        for (PDGNodeWrapper mappedNode2 : mapping.values()) {
+            for (PDGNode neighbor : mappedNode2.getPDGNode().getDependents()) {
+                PDGNodeWrapper wrappedNeighbor = new PDGNodeWrapper(neighbor);
+                if (!mapping.containsValue(wrappedNeighbor)) {
+                    T2.add(wrappedNeighbor);
                 }
             }
         }
