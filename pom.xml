@@ -12,7 +12,7 @@
         <dependency>
             <groupId>org.soot-oss</groupId>
             <artifactId>soot</artifactId>
-            <version>4.3.0</version> <!-- Stable version -->
+            <version>4.4.1</version> <!-- Stable version -->
         </dependency>
 
         <!-- SLF4J for logging (Soot uses this for logging) -->
