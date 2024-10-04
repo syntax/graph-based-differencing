@@ -1,10 +1,9 @@
-package org.pdgdiff.matching.models;
+package org.pdgdiff.matching.models.vf2;
 
 import org.pdgdiff.matching.NodeMapping;
 import soot.toolkits.graph.pdg.HashMutablePDG;
 import soot.toolkits.graph.pdg.PDGNode;
 
-import java.util.HashMap;
 import java.util.Map;
 
 

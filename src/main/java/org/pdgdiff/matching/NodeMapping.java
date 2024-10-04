@@ -42,4 +42,8 @@ public class NodeMapping {
     public boolean isMapped(PDGNode node) {
         return nodeMapping.containsKey(node);
     }
+
+    public boolean isEmpty() {
+        return nodeMapping.isEmpty();
+    }
 }

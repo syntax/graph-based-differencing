@@ -1,4 +1,4 @@
-package org.pdgdiff.matching.models;
+package org.pdgdiff.matching.models.vf2;
 
 import org.pdgdiff.graph.GraphTraversal;
 import soot.toolkits.graph.pdg.HashMutablePDG;

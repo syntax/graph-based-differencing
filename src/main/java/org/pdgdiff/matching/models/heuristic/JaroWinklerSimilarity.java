@@ -1,4 +1,4 @@
-package org.pdgdiff.matching.models;
+package org.pdgdiff.matching.models.heuristic;
 
 
 // Calculates % similarity between strings using Jaro-Winkler algorithm

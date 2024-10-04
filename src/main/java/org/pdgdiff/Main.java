@@ -41,9 +41,9 @@ public class Main {
             System.out.println("PDGs generated for " + testAdder1.getName() + ": " + pdgsClass1.size());
             System.out.println("PDGs generated for " + testAdder2.getName() + ": " + pdgsClass2.size());
             // processing
-            // TODO: Attempt to match PDGs across classes (see the todo.md file for more details)
+
             if (!pdgsClass1.isEmpty() && !pdgsClass2.isEmpty()) {
-                PDGComparator.compareAndPrintGraphSimilarity(pdgsClass1, pdgsClass2);
+                PDGComparator.compareAndPrintGraphSimilarity(pdgsClass1, pdgsClass2, "vf2");
             }
 
         } catch (Exception e) {
