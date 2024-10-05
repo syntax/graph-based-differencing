@@ -6,7 +6,6 @@ import soot.toolkits.graph.pdg.PDGNode;
 
 import java.util.Map;
 
-
 /**
  * VF2Matcher class to perform graph matching using the VF2 algorithm. This class contains methods to match two PDGs
  * using the VF2 algorithm and return the node mappings between the two PDGs.
