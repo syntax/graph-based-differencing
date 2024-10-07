@@ -22,19 +22,16 @@ public class PDGController {
                               @RequestParam("class2") String class2Content,
                               Model model) {
         try {
-            // Save the class contents to files
             saveClassToFile(class1Content, "Class1");
             saveClassToFile(class2Content, "Class2");
 
-            // Compile the saved classes
             compileClass("Class1");
             compileClass("Class2");
 
-            // Generate the PDGs for both classes
             String pdg1 = generatePDGForCompiledClass("Class1");
             String pdg2 = generatePDGForCompiledClass("Class2");
 
-            // Add the generated PDGs to the model to display in the result page
+            // Add  generated PDGs to the model to display in the result page
             model.addAttribute("pdg1", pdg1);
             model.addAttribute("pdg2", pdg2);
 
@@ -42,7 +39,7 @@ public class PDGController {
             model.addAttribute("error", "Error generating PDG: " + e.getMessage());
         }
 
-        return "result";  // Return the view displaying PDGs
+        return "result";
     }
 
     private void saveClassToFile(String classContent, String className) throws IOException {

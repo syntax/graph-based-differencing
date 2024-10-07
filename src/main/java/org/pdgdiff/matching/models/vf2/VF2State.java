@@ -94,7 +94,6 @@ class VF2State {
 
     private boolean nodesAreCompatible(PDGNode n1, PDGNode n2) {
         // Compare node types, labels, attributes
-        // Assuming PDGNode has methods getType() and getAttrib()
         return n1.getType().equals(n2.getType()) && n1.getAttrib().equals(n2.getAttrib());
     }
 
@@ -109,6 +108,7 @@ class VF2State {
         // Check consistency of predecessors and successors
 
         // For all edges (n1', n1) in pdg1
+        // NB getBackDependets typo exists in original soot code
         for (PDGNode n1Prime : pair.n1.getBackDependets()) {
             PDGNode mappedN1Prime = mapping.get(n1Prime);
             if (mappedN1Prime != null) {

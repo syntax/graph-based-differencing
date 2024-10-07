@@ -41,7 +41,7 @@ public class SootInitializer {
         Options.v().setPhaseOption("bb", "enabled:false");      // Disable basic block merging or splitting
         Options.v().setPhaseOption("jap", "enabled:false");     // Disable aggregation
         Options.v().setPhaseOption("jtp.ls", "enabled:false");  // Disable loop simplification
-        Options.v().setPhaseOption("jop.uce", "enabled:false"); // Disable unreachable code elimination (for good measure)
+        Options.v().setPhaseOption("jop.uce", "enabled:false"); // Disable unreachable code elimination
         Options.v().setPhaseOption("jop.cpf", "enabled:false");
 
         disableOptimizations();
