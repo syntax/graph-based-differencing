@@ -11,27 +11,19 @@ import java.util.Map;
  */
 public class NodeMapping {
     private Map<PDGNode, PDGNode> nodeMapping;
-    private Map<PDGNode, PDGNode> reverseMapping; // dst to src
 
     public NodeMapping() {
         nodeMapping = new HashMap<>();
-        reverseMapping = new HashMap<>();
     }
 
     // Adds a mapping between a source node and a destination node
     public void addMapping(PDGNode srcNode, PDGNode dstNode) {
         nodeMapping.put(srcNode, dstNode);
-        reverseMapping.put(dstNode, srcNode);
     }
 
     // Retrieves the mapped destination node for a given source node
     public PDGNode getMappedNode(PDGNode node) {
         return nodeMapping.get(node);
-    }
-
-    // Retrieves the mapped source node for a given destination node
-    public PDGNode getReverseMappedNode(PDGNode node) {
-        return reverseMapping.get(node);
     }
 
     // Exposes the entire node mapping
