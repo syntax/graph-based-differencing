@@ -34,6 +34,9 @@ public class VF2Matcher {
         }
     }
 
+
+    // TODO: investigate vf2, i believe it to be too strict. need to figure out way of mapping methods -> methods if they
+    // TODO: are similar 'ish', dont' need exact matches when I am effectively looking at version differences.
     private boolean matchRecursive(VF2State state) {
         if (state.isComplete()) {
             // Mapping is complete, transfer mappings to nodeMapping
