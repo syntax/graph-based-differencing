@@ -34,7 +34,13 @@ public class NodeMapping {
     // Pretty print all node mappings for debugging
     public void printMappings() {
         for (Map.Entry<PDGNode, PDGNode> entry : nodeMapping.entrySet()) {
-            System.out.println("Source Node: " + entry.getKey() + " --> Mapped to: " + entry.getValue());
+            System.out.println("Source Node: " + entry.getKey().toShortString() + " --> Mapped to: " + entry.getValue().toShortString());
+        }
+    }
+
+    public void printMappingsVerbose() {
+        for (Map.Entry<PDGNode, PDGNode> entry : nodeMapping.entrySet()) {
+            System.out.println("Source Node: " + entry.getKey().toString() + " --> Mapped to: " + entry.getValue().toString());
         }
     }
 
