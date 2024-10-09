@@ -16,7 +16,6 @@ public class TestAdder1 {
         int toadd1 = a;
         int toadd2 = b;
         int sum = toadd1 + toadd2;
-        int minus = toadd1 - toadd2;
         return sum;
     }
 
