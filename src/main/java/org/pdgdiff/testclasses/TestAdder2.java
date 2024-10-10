@@ -12,6 +12,8 @@ public class TestAdder2 {
 
         int complexResult = test.complexCalculation(number1, number2);
         System.out.println("Complex Calculation Result: " + complexResult);
+        int meep = test.identical(3,10);
+        System.out.println("identical Result: " + meep);
     }
 
     public int addNumbers(int number, int number2) {
@@ -56,6 +58,20 @@ public class TestAdder2 {
             }
         }
 
+        return result;
+    }
+
+    public int identical(int num1, int num2) {
+        int result = 0;
+
+        // Conditional statements
+        if (num1 > num2) {
+            result = num1 + num2;
+        } else if (num1 < num2) {
+            result = num1 - num2;
+        } else {
+            result = num1 * num2;
+        }
         return result;
     }
 }

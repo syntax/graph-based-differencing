@@ -10,6 +10,8 @@ public class TestAdder1 {
 
         int complexRes = test.detailedComputation(5, 10);
         System.out.println("Detailed Computation Result: " + complexRes);
+        int t = test.identical(5, 10);
+        System.out.println("identical Result: " + t);
     }
 
     public int addNumbers(int a, int b) {
@@ -51,12 +53,23 @@ public class TestAdder1 {
         for (int i = 0; i < 6; i++) {
             if (i % 2 == 1) {
                 result *= i;
-            } else {
-                result /= (i + 1);
             }
         }
 
         return result;
     }
 
+    public int identical(int num1, int num2) {
+        int result = 0;
+
+        // Conditional statements
+        if (num1 > num2) {
+            result = num1 + num2;
+        } else if (num1 < num2) {
+            result = num1 - num2;
+        } else {
+            result = num1 * num2;
+        }
+        return  result;
+    }
 }
