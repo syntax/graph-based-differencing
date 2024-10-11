@@ -24,13 +24,13 @@ class VF2State {
     public VF2State(HashMutablePDG pdg1, HashMutablePDG pdg2) {
         this.pdg1 = pdg1;
         this.pdg2 = pdg2;
-        this.mapping = new HashMap<>();
+        this.mapping = new LinkedHashMap<>();
 
-        this.unmapped1 = new HashSet<>(GraphTraversal.collectNodesBFS(pdg1));
-        this.unmapped2 = new HashSet<>(GraphTraversal.collectNodesBFS(pdg2));
+        this.unmapped1 = new LinkedHashSet<>(GraphTraversal.collectNodesBFS(pdg1));
+        this.unmapped2 = new LinkedHashSet<>(GraphTraversal.collectNodesBFS(pdg2));
 
-        this.T1 = new HashSet<>();
-        this.T2 = new HashSet<>();
+        this.T1 = new LinkedHashSet<>();
+        this.T2 = new LinkedHashSet<>();
     }
 
     public boolean isComplete() {
