@@ -43,6 +43,9 @@ class VF2State {
     }
 
     public List<CandidatePair> generateCandidates() {
+        // TODO: If non determinism prevails, consider implementing a sort on these candidates
+        // TODO: probably need to sort by id e.g. CFGNODE 1 sorta thing. should hopefully work,
+        // If not implementing this here, possibly need to implement it in the matchRecursvie function.
         List<CandidatePair> candidates = new ArrayList<>();
 
         if (!T1.isEmpty() && !T2.isEmpty()) {
