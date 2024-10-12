@@ -66,9 +66,11 @@ public class EditScriptGenerator {
                 if (!nodesAreEqual(srcNode, dstNode, visitedNodes)) {
                     // syntax or semantic differences detected, generate appropriate update or move operation
                     // TODO: need to perfect this to analyse bodies probably, so i can acc print syntax differences
+                    // TODO: as of right now this is only storing the different attribute name and has no recollection of the syntactic changes to the body.
                     editScript.add(new Update(srcNode, srcNode.getAttrib().toString(), dstNode.getAttrib().toString()));
                 } else {
                     // if syntax is equal, check for moves (if connections change)
+                    // TODO: Need to consider the case where the node is both moved and updated...
                     List<PDGNode> srcPredecessors = srcNode.getBackDependets();
                     List<PDGNode> dstPredecessors = dstNode.getBackDependets();
 
