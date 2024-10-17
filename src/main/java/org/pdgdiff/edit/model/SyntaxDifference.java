@@ -55,9 +55,11 @@ public class SyntaxDifference {
         if (message != null) {
             return message;
         } else if (oldUnit != null || newUnit != null) {
-            return String.format("Unit Difference: '%s' -> '%s'",
+            return String.format("Unit Difference: '%s' -> '%s' [Old line num: %s, New line num: %s]",
                     oldUnit == null ? "null" : oldUnit.toString(),
-                    newUnit == null ? "null" : newUnit.toString());
+                    newUnit == null ? "null" : newUnit.toString(),
+                    oldUnit == null ? "null" : oldUnit.getTags().toString(),
+                    newUnit == null ? "null" : newUnit.getTags().toString());
         } else {
             return String.format("Node Difference: '%s' -> '%s'",
                     oldNode == null ? "null" : oldNode.toShortString(),
