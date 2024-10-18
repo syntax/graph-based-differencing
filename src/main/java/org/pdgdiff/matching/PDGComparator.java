@@ -5,6 +5,15 @@ import org.pdgdiff.edit.model.EditOperation;
 import org.pdgdiff.edit.EditScriptGenerator;
 import soot.toolkits.graph.pdg.HashMutablePDG;
 
+import org.pdgdiff.io.OperationSerializer;
+import org.pdgdiff.io.JsonOperationSerializer;
+import org.pdgdiff.io.XmlOperationSerializer;
+import org.pdgdiff.io.TextOperationSerializer;
+
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.Writer;
 import java.util.List;
 
 public class PDGComparator {
@@ -38,7 +47,38 @@ public class PDGComparator {
                 for (EditOperation op : editScript) {
                     System.out.println(op);
                 }
+
+                // Serialize the edit script and export it
+                exportEditScript(editScript, method1, method2);
             }
         });
+    }
+
+    private static void exportEditScript(List<EditOperation> editScript, String method1Signature, String method2Signature) {
+        // Sanitize method names for use in filenames
+        String method1Safe = method1Signature.replaceAll("[^a-zA-Z0-9\\.\\-]", "_");
+        String method2Safe = method2Signature.replaceAll("[^a-zA-Z0-9\\.\\-]", "_");
+
+        // Define the output directory (you can adjust this as needed)
+        String outputDir = "out/";
+
+        // Define the filename
+        String filename = outputDir + "editScript_" + method1Safe + "_to_" + method2Safe + ".json";
+
+        // Create the directory if it doesn't exist
+        File dir = new File(outputDir);
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
+
+        // Serialize to JSON
+        try (Writer writer = new FileWriter(filename)) {
+            OperationSerializer serializer = new JsonOperationSerializer(editScript);
+            serializer.writeTo(writer);
+            System.out.println("Edit script exported to: " + filename);
+        } catch (Exception e) {
+            System.err.println("Failed to export edit script to " + filename);
+            e.printStackTrace();
+        }
     }
 }
