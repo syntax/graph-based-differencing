@@ -3,42 +3,57 @@ package org.pdgdiff.edit;
 import org.pdgdiff.edit.model.*;
 import org.pdgdiff.matching.GraphMapping;
 import org.pdgdiff.matching.NodeMapping;
+import org.pdgdiff.util.SourceCodeMapper;
 import soot.Unit;
+import soot.tagkit.LineNumberTag;
 import soot.toolkits.graph.Block;
 import soot.toolkits.graph.pdg.HashMutablePDG;
-import soot.toolkits.graph.pdg.IRegion;
 import soot.toolkits.graph.pdg.PDGNode;
-import soot.Body;
-import soot.util.Chain;
 
+import java.io.IOException;
 import java.util.*;
 
 /**
  * Generates edit scripts based on PDG node mappings.
  */
 public class EditScriptGenerator {
-    // TODO: THIS SEEMS VERY 'UDPATE' INSTRUCTION HEAVY ATM. need to investigate this, seems to never pick other stuff
+
     /**
      * Generates a list of edit operations required to transform srcPDG into dstPDG based on the provided node mappings.
      *
-     * @param srcPDG       Source PDG
-     * @param dstPDG       Target PDG
-     * @param graphMapping The mapping between PDGs and their node mappings
+     * @param srcPDG            Source PDG
+     * @param dstPDG            Target PDG
+     * @param graphMapping      The mapping between PDGs and their node mappings
+     * @param srcSourceFilePath Path to the source file of the srcPDG
+     * @param dstSourceFilePath Path to the source file of the dstPDG
      * @return List of EditOperation objects representing the edit script
+     * @throws IOException If an I/O error occurs
      */
-    public static List<EditOperation> generateEditScript(HashMutablePDG srcPDG, HashMutablePDG dstPDG, GraphMapping graphMapping) {
+    public static List<EditOperation> generateEditScript(
+            HashMutablePDG srcPDG,
+            HashMutablePDG dstPDG,
+            GraphMapping graphMapping,
+            String srcSourceFilePath,
+            String dstSourceFilePath
+    ) throws IOException {
         List<EditOperation> editScript = new ArrayList<>();
-        Set<PDGNode> visitedNodes = new HashSet<>();
+
+        // Initialize source code mappers
+        SourceCodeMapper srcCodeMapper = new SourceCodeMapper(srcSourceFilePath);
+        SourceCodeMapper dstCodeMapper = new SourceCodeMapper(dstSourceFilePath);
 
         NodeMapping nodeMapping = graphMapping.getNodeMapping(srcPDG);
         if (nodeMapping == null) {
             // No mapping exists; delete all nodes from srcPDG and insert all nodes from dstPDG
-            // dont think this condition will ever actually hit as of rn
             for (PDGNode node : srcPDG) {
-                editScript.add(new Delete(node));
+                int lineNumber = getNodeLineNumber(node);
+                String codeSnippet = srcCodeMapper.getCodeLine(lineNumber);
+                editScript.add(new Delete(node, lineNumber, codeSnippet));
             }
             for (PDGNode node : dstPDG) {
-                editScript.add(new Insert(node));
+                int lineNumber = getNodeLineNumber(node);
+                String codeSnippet = dstCodeMapper.getCodeLine(lineNumber);
+                editScript.add(new Insert(node, lineNumber, codeSnippet));
             }
             return editScript;
         }
@@ -50,60 +65,45 @@ public class EditScriptGenerator {
         // Handle deletions
         for (PDGNode srcNode : srcPDG) {
             if (!srcNodesMapped.contains(srcNode)) {
-                editScript.add(new Delete(srcNode));
+                int lineNumber = getNodeLineNumber(srcNode);
+                String codeSnippet = srcCodeMapper.getCodeLine(lineNumber);
+                editScript.add(new Delete(srcNode, lineNumber, codeSnippet));
             }
         }
 
         // Handle insertions
         for (PDGNode dstNode : dstPDG) {
             if (!dstNodesMapped.contains(dstNode)) {
-                editScript.add(new Insert(dstNode));
+                int lineNumber = getNodeLineNumber(dstNode);
+                String codeSnippet = dstCodeMapper.getCodeLine(lineNumber);
+                editScript.add(new Insert(dstNode, lineNumber, codeSnippet));
             }
         }
 
-        // Handle updates and moves
+        // Handle updates
+        Set<PDGNode> visitedNodes = new HashSet<>();
         for (PDGNode srcNode : srcNodesMapped) {
             PDGNode dstNode = mappings.get(srcNode);
 
-            if (!visitedNodes.contains(srcNode) && !visitedNodes.contains(dstNode)) {
-                ComparisonResult compResult = nodesAreEqual(srcNode, dstNode, new HashSet<>());
+            if (!visitedNodes.contains(srcNode)) {
+                ComparisonResult compResult = nodesAreEqual(srcNode, dstNode, visitedNodes, srcCodeMapper, dstCodeMapper);
 
                 if (!compResult.isEqual) {
-                    // syntax or semantic differences detected, generate appropriate update operation
-                    // TODO: cut getAttrib or add more features to update class, not sure
                     if (!compResult.syntaxDifferences.isEmpty()) {
-                        editScript.add(new Update(srcNode, srcNode.getAttrib().toString(), dstNode.getAttrib().toString(), compResult.syntaxDifferences));
-                    }
-                } else {
-                    // if syntax is equal, check for moves (if connections change)
-                    List<PDGNode> srcPredecessors = srcNode.getBackDependets();
-                    List<PDGNode> dstPredecessors = dstNode.getBackDependets();
-
-                    // map predecessors to their counterparts in the other PDG
-                    List<PDGNode> mappedSrcPredecessors = mapNodes(srcPredecessors, nodeMapping);
-                    List<PDGNode> mappedDstPredecessors = dstPredecessors;
-
-                    if (!new HashSet<>(mappedSrcPredecessors).equals(new HashSet<>(mappedDstPredecessors))) {
-                        editScript.add(new Move(srcNode, mappedSrcPredecessors, mappedDstPredecessors));
+                        for (SyntaxDifference syntaxDiff : compResult.syntaxDifferences) {
+                            int oldLineNumber = syntaxDiff.getOldLineNumber();
+                            int newLineNumber = syntaxDiff.getNewLineNumber();
+                            String oldCodeSnippet = syntaxDiff.getOldCodeSnippet();
+                            String newCodeSnippet = syntaxDiff.getNewCodeSnippet();
+                            PDGNode node = srcNode; // Or syntaxDiff.getOldNode()
+                            editScript.add(new Update(node, oldLineNumber, newLineNumber, oldCodeSnippet, newCodeSnippet, syntaxDiff));
+                        }
                     }
                 }
-                visitedNodes.add(srcNode);
-                visitedNodes.add(dstNode);
             }
         }
 
         return editScript;
-    }
-
-    private static List<PDGNode> mapNodes(List<PDGNode> nodes, NodeMapping nodeMapping) {
-        List<PDGNode> mappedNodes = new ArrayList<>();
-        for (PDGNode node : nodes) {
-            PDGNode mappedNode = nodeMapping.getMappedNode(node);
-            if (mappedNode != null) {
-                mappedNodes.add(mappedNode);
-            }
-        }
-        return mappedNodes;
     }
 
     private static class ComparisonResult {
@@ -121,14 +121,15 @@ public class EditScriptGenerator {
         }
     }
 
-    private static ComparisonResult nodesAreEqual(PDGNode n1, PDGNode n2, Set<PDGNode> visitedNodes) {
+    private static ComparisonResult nodesAreEqual(PDGNode n1, PDGNode n2, Set<PDGNode> visitedNodes,
+                                                  SourceCodeMapper srcCodeMapper, SourceCodeMapper dstCodeMapper) {
         if (visitedNodes.contains(n1) || visitedNodes.contains(n2)) {
             return new ComparisonResult(true);
         }
         visitedNodes.add(n1);
         visitedNodes.add(n2);
 
-        // compare basic properties
+        // Compare basic properties
         if (!n1.getType().equals(n2.getType())) {
             return new ComparisonResult(false);
         }
@@ -136,53 +137,32 @@ public class EditScriptGenerator {
         List<SyntaxDifference> syntaxDifferences = new ArrayList<>();
 
         if (n1.getType() == PDGNode.Type.CFGNODE) {
-            // cmp CFGNODEs
-            Block block1 = (Block) n1.getNode();
-            Block block2 = (Block) n2.getNode();
-
-            ComparisonResult blockCompResult = compareBlockContents(block1, block2);
+            // Compare CFG nodes
+            ComparisonResult blockCompResult = compareCFGNodes(n1, n2, srcCodeMapper, dstCodeMapper);
             if (!blockCompResult.isEqual) {
                 return blockCompResult;
             }
         } else if (n1.getType() == PDGNode.Type.REGION) {
-            // cmp REGION nodes
-            ComparisonResult regionCompResult = compareRegions(n1, n2, visitedNodes);
-            if (!regionCompResult.isEqual) {
-                return regionCompResult;
-            }
-        }
-
-        // compare additional attributes (e.g., header/entry/loop conditions)
-        if (!n1.getAttrib().equals(n2.getAttrib())) {
-            syntaxDifferences.add(new SyntaxDifference(n1, n2));
-            return new ComparisonResult(false, syntaxDifferences);
-        }
-
-        // compare dependencies (if needed)
-        boolean dependenciesEqual = compareDependencies(n1, n2, visitedNodes);
-        if (!dependenciesEqual) {
-            syntaxDifferences.add(new SyntaxDifference(n1, n2));
-            return new ComparisonResult(false, syntaxDifferences);
+            // Optionally ignore or handle Region nodes differently
+            return new ComparisonResult(true);
         }
 
         return new ComparisonResult(true);
     }
 
-    private static ComparisonResult compareBlockContents(Block block1, Block block2) {
+    private static ComparisonResult compareCFGNodes(PDGNode n1, PDGNode n2,
+                                                    SourceCodeMapper srcCodeMapper, SourceCodeMapper dstCodeMapper) {
+        Block block1 = (Block) n1.getNode();
+        Block block2 = (Block) n2.getNode();
+
         List<SyntaxDifference> differences = new ArrayList<>();
 
-        Body body1 = block1.getBody();
-        Body body2 = block2.getBody();
+        // Get units (statements) from each block
+        List<Unit> units1 = collectUnits(block1);
+        List<Unit> units2 = collectUnits(block2);
 
-        // get the unit chains (the list of instructions/statements in the body)
-        Chain<Unit> units1 = body1.getUnits();
-        Chain<Unit> units2 = body2.getUnits();
-
-        // create lists of units from head to tail (inclusive)
-        List<Unit> unitsList1 = collectUnits(units1, block1.getHead(), block1.getTail());
-        List<Unit> unitsList2 = collectUnits(units2, block2.getHead(), block2.getTail());
-
-        differences = compareUnitLists(unitsList1, unitsList2);
+        // Compare the units
+        differences = compareUnitLists(units1, units2, srcCodeMapper, dstCodeMapper);
 
         if (!differences.isEmpty()) {
             return new ComparisonResult(false, differences);
@@ -191,115 +171,94 @@ public class EditScriptGenerator {
         }
     }
 
-    private static List<Unit> collectUnits(Chain<Unit> unitsChain, Unit head, Unit tail) {
+    private static List<Unit> collectUnits(Block block) {
         List<Unit> unitsList = new ArrayList<>();
-        Iterator<Unit> iterator = unitsChain.iterator(head, tail);
+        Iterator<Unit> iterator = block.iterator();
 
         while (iterator.hasNext()) {
             Unit unit = iterator.next();
             unitsList.add(unit);
-            if (unit == tail) {
-                break;
-            }
         }
 
         return unitsList;
     }
 
-    private static ComparisonResult compareRegions(PDGNode regionNode1, PDGNode regionNode2, Set<PDGNode> visitedNodes) {
+    private static List<SyntaxDifference> compareUnitLists(List<Unit> units1, List<Unit> units2,
+                                                           SourceCodeMapper srcCodeMapper, SourceCodeMapper dstCodeMapper) {
         List<SyntaxDifference> differences = new ArrayList<>();
+        Set<String> processedDifferences = new HashSet<>();
 
-        IRegion region1 = (IRegion) regionNode1.getNode();
-        IRegion region2 = (IRegion) regionNode2.getNode();
+        int i = 0, j = 0;
+        while (i < units1.size() && j < units2.size()) {
+            Unit unit1 = units1.get(i);
+            Unit unit2 = units2.get(j);
 
-        // Get the units from each region
-        List<Unit> units1 = region1.getUnits();
-        List<Unit> units2 = region2.getUnits();
-
-        // Compare units
-        differences = compareUnitLists(units1, units2);
-
-        if (!differences.isEmpty()) {
-            return new ComparisonResult(false, differences);
-        } else {
-            return new ComparisonResult(true);
-        }
-    }
-
-    private static List<SyntaxDifference> compareUnitLists(List<Unit> units1, List<Unit> units2) {
-        List<SyntaxDifference> differences = new ArrayList<>();
-
-        // remove any units that are not significant (e.g., labels, line numbers)
-        // TODO: use line numbers to roll abck to src
-        List<Unit> filteredUnits1 = filterUnits(units1);
-        List<Unit> filteredUnits2 = filterUnits(units2);
-
-        if (filteredUnits1.size() != filteredUnits2.size()) {
-            differences.add(new SyntaxDifference("Region unit counts differ"));
-            return differences;
-        }
-
-        for (int i = 0; i < filteredUnits1.size(); i++) {
-            Unit unit1 = filteredUnits1.get(i);
-            Unit unit2 = filteredUnits2.get(i);
-
-            if (!unit1.toString().equals(unit2.toString())) {
-                differences.add(new SyntaxDifference(unit1, unit2));
+            if (unitsAreEqual(unit1, unit2)) {
+                i++;
+                j++;
+            } else {
+                SyntaxDifference diff = new SyntaxDifference(unit1, unit2, srcCodeMapper, dstCodeMapper);
+                String diffKey = diff.getOldLineNumber() + "_" + diff.getNewLineNumber() + "_" + diff.getOldCodeSnippet() + "_" + diff.getNewCodeSnippet();
+                if (!processedDifferences.contains(diffKey)) {
+                    differences.add(diff);
+                    processedDifferences.add(diffKey);
+                }
+                i++;
+                j++;
             }
+        }
+
+        // Handle remaining units in units1 (deletions)
+        while (i < units1.size()) {
+            SyntaxDifference diff = new SyntaxDifference(units1.get(i), null, srcCodeMapper, dstCodeMapper);
+            String diffKey = diff.getOldLineNumber() + "_-1_" + diff.getOldCodeSnippet() + "_null";
+            if (!processedDifferences.contains(diffKey)) {
+                differences.add(diff);
+                processedDifferences.add(diffKey);
+            }
+            i++;
+        }
+
+        // Handle remaining units in units2 (insertions)
+        while (j < units2.size()) {
+            SyntaxDifference diff = new SyntaxDifference(null, units2.get(j), srcCodeMapper, dstCodeMapper);
+            String diffKey = "-1_" + diff.getNewLineNumber() + "_null_" + diff.getNewCodeSnippet();
+            if (!processedDifferences.contains(diffKey)) {
+                differences.add(diff);
+                processedDifferences.add(diffKey);
+            }
+            j++;
         }
 
         return differences;
     }
 
-    private static List<Unit> filterUnits(List<Unit> units) {
-        List<Unit> filteredUnits = new ArrayList<>();
-        for (Unit unit : units) {
-            // TODO: filter out units that are not significant, doing all atm
-            filteredUnits.add(unit);
-        }
-        return filteredUnits;
-    }
-
-    private static boolean compareDependencies(PDGNode n1, PDGNode n2, Set<PDGNode> visitedNodes) {
-        // cmp both back dependencies (control or data flow) and forward dependencies
-        List<PDGNode> n1Dependents = n1.getDependents();
-        List<PDGNode> n1BackDependents = n1.getBackDependets();
-        List<PDGNode> n2Dependents = n2.getDependents();
-        List<PDGNode> n2BackDependents = n2.getBackDependets();
-
-        // cmp forward dependencies
-        if (!compareNodeLists(n1Dependents, n2Dependents, visitedNodes)) {
+    private static boolean unitsAreEqual(Unit unit1, Unit unit2) {
+        if (unit1 == null || unit2 == null) {
             return false;
         }
 
-        // cmp backward dependencies
-        return compareNodeLists(n1BackDependents, n2BackDependents, visitedNodes);
+        // Compare the string representations
+        return unit1.toString().equals(unit2.toString());
     }
 
-    private static boolean compareNodeLists(List<PDGNode> list1, List<PDGNode> list2, Set<PDGNode> visitedNodes) {
-        // TODO simple comparison for now; this can be extended for more sophisticated checks
-        if (list1.size() != list2.size()) {
-            return false;
+    private static int getNodeLineNumber(PDGNode node) {
+        if (node.getType() == PDGNode.Type.CFGNODE) {
+            Block block = (Block) node.getNode();
+            Unit headUnit = block.getHead();
+            return getLineNumber(headUnit);
         }
+        return -1; // Line number not available
+    }
 
-        // sort the lists to ensure consistent order
-        // time complexity overhead but im scared of non-determinism lol!
-        List<PDGNode> sortedList1 = new ArrayList<>(list1);
-        List<PDGNode> sortedList2 = new ArrayList<>(list2);
-
-        sortedList1.sort(Comparator.comparingInt(Object::hashCode));
-        sortedList2.sort(Comparator.comparingInt(Object::hashCode));
-
-        for (int i = 0; i < sortedList1.size(); i++) {
-            PDGNode node1 = sortedList1.get(i);
-            PDGNode node2 = sortedList2.get(i);
-
-            ComparisonResult compResult = nodesAreEqual(node1, node2, visitedNodes);
-            if (!compResult.isEqual) {
-                return false;
-            }
+    private static int getLineNumber(Unit unit) {
+        if (unit == null) {
+            return -1;
         }
-
-        return true;
+        LineNumberTag tag = (LineNumberTag) unit.getTag("LineNumberTag");
+        if (tag != null) {
+            return tag.getLineNumber();
+        }
+        return -1;
     }
 }

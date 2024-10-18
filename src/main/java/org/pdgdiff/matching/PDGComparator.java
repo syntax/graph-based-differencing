@@ -1,15 +1,11 @@
 package org.pdgdiff.matching;
 
 import org.pdgdiff.edit.EditDistanceCalculator;
-import org.pdgdiff.edit.model.EditOperation;
 import org.pdgdiff.edit.EditScriptGenerator;
-import soot.toolkits.graph.pdg.HashMutablePDG;
-
-import org.pdgdiff.io.OperationSerializer;
+import org.pdgdiff.edit.model.EditOperation;
 import org.pdgdiff.io.JsonOperationSerializer;
-import org.pdgdiff.io.XmlOperationSerializer;
-import org.pdgdiff.io.TextOperationSerializer;
-
+import org.pdgdiff.io.OperationSerializer;
+import soot.toolkits.graph.pdg.HashMutablePDG;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -18,7 +14,8 @@ import java.util.List;
 
 public class PDGComparator {
 
-    public static void compareAndPrintGraphSimilarity(List<HashMutablePDG> pdgList1, List<HashMutablePDG> pdgList2, String strategy) {
+    public static void compareAndPrintGraphSimilarity(List<HashMutablePDG> pdgList1, List<HashMutablePDG> pdgList2,
+                                                      String strategy, String srcSourceFilePath, String dstSourceFilePath) {
         // Instantiate the appropriate GraphMatcher
         GraphMatcher matcher = GraphMatcherFactory.createMatcher(strategy, pdgList1, pdgList2);
 
@@ -37,19 +34,24 @@ public class PDGComparator {
                 System.out.println("--- Node Mapping:");
                 nodeMapping.printMappings();
 
-                List<EditOperation> editScript = EditScriptGenerator.generateEditScript(srcPDG, dstPDG, graphMapping);
+                try {
+                    List<EditOperation> editScript = EditScriptGenerator.generateEditScript(srcPDG, dstPDG, graphMapping,
+                            srcSourceFilePath, dstSourceFilePath);
 
-                int editDistance = EditDistanceCalculator.calculateEditDistance(editScript);
-                System.out.println("--- Edit information ---");
-                System.out.println("-- Edit Distance: " + editDistance);
+                    int editDistance = EditDistanceCalculator.calculateEditDistance(editScript);
+                    System.out.println("--- Edit information ---");
+                    System.out.println("-- Edit Distance: " + editDistance);
 
-                System.out.println("-- Edit Script:");
-                for (EditOperation op : editScript) {
-                    System.out.println(op);
+                    System.out.println("-- Edit Script:");
+                    for (EditOperation op : editScript) {
+                        System.out.println(op);
+                    }
+
+                    // Serialize the edit script and export it
+                    exportEditScript(editScript, method1, method2);
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
-
-                // Serialize the edit script and export it
-                exportEditScript(editScript, method1, method2);
             }
         });
     }
@@ -59,7 +61,7 @@ public class PDGComparator {
         String method1Safe = method1Signature.replaceAll("[^a-zA-Z0-9\\.\\-]", "_");
         String method2Safe = method2Signature.replaceAll("[^a-zA-Z0-9\\.\\-]", "_");
 
-        // Define the output directory (you can adjust this as needed)
+        // Define the output directory
         String outputDir = "out/";
 
         // Define the filename
