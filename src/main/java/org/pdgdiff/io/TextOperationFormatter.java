@@ -1,8 +1,6 @@
 package org.pdgdiff.io;
 
 import org.pdgdiff.edit.model.*;
-import soot.toolkits.graph.pdg.PDGNode;
-
 import java.io.IOException;
 import java.io.Writer;
 
@@ -18,7 +16,7 @@ public class TextOperationFormatter implements OperationFormatter {
 
     @Override
     public void startOutput() throws IOException {
-        // No-op for text format
+        // No operation needed for plain text format
     }
 
     @Override
@@ -29,36 +27,39 @@ public class TextOperationFormatter implements OperationFormatter {
 
     @Override
     public void startOperations() throws IOException {
-        writer.write("Actions:\n"); // Keeping "Actions" to match GumTree's format
+        writer.write("Actions:\n");
     }
 
     @Override
     public void endOperations() throws IOException {
-        // No-op for text format
+        // No operation needed for plain text format
     }
 
     @Override
     public void insertOperation(Insert operation) throws IOException {
-        writer.write("Insert: " + nodeToString(operation.getNode()) + "\n");
+        writer.write(String.format("Insert at line %d: %s\n", operation.getLineNumber(), operation.getCodeSnippet()));
     }
 
     @Override
     public void deleteOperation(Delete operation) throws IOException {
-        writer.write("Delete: " + nodeToString(operation.getNode()) + "\n");
+        writer.write(String.format("Delete at line %d: %s\n", operation.getLineNumber(), operation.getCodeSnippet()));
     }
 
     @Override
     public void updateOperation(Update operation) throws IOException {
-        writer.write("Update: " + nodeToString(operation.getNode()) +
-                " from '" + operation.getOldValue() + "' to '" + operation.getNewValue() + "'\n");
+        writer.write(String.format("Update at lines %d -> %d:\n", operation.getOldLineNumber(), operation.getNewLineNumber()));
+        writer.write(String.format("Old Code: %s\n", operation.getOldCodeSnippet()));
+        writer.write(String.format("New Code: %s\n", operation.getNewCodeSnippet()));
+        writer.write("Difference:\n");
+        writer.write(operation.getSyntaxDifference().toString() + "\n");
     }
 
     @Override
     public void moveOperation(Move operation) throws IOException {
-        writer.write("Move: " + nodeToString(operation.getNode()) + "\n");
-    }
-
-    private String nodeToString(PDGNode node) {
-        return node.toShortString(); // TODO: adjust
+        // TODO: implement for a Move operation
+//        writer.write(String.format("Move from line %d to line %d: %s\n",
+//                operation.getOldLineNumber(),
+//                operation.getNewLineNumber(),
+//                operation.getCodeSnippet()));
     }
 }

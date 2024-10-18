@@ -2,9 +2,6 @@ package org.pdgdiff.edit.model;
 
 import soot.toolkits.graph.pdg.PDGNode;
 
-/**
- * Base class for all edit operations in the edit script.
- */
 public abstract class EditOperation {
     protected PDGNode node;
 
@@ -18,5 +15,6 @@ public abstract class EditOperation {
 
     public abstract String getName();
 
+    @Override
     public abstract String toString();
 }

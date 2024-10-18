@@ -2,12 +2,22 @@ package org.pdgdiff.edit.model;
 
 import soot.toolkits.graph.pdg.PDGNode;
 
-/**
- * Represents a delete operation in a PDG.
- */
 public class Delete extends EditOperation {
-    public Delete(PDGNode node) {
+    private int lineNumber;
+    private String codeSnippet;
+
+    public Delete(PDGNode node, int lineNumber, String codeSnippet) {
         super(node);
+        this.lineNumber = lineNumber;
+        this.codeSnippet = codeSnippet;
+    }
+
+    public int getLineNumber() {
+        return lineNumber;
+    }
+
+    public String getCodeSnippet() {
+        return codeSnippet;
     }
 
     @Override
@@ -17,6 +27,6 @@ public class Delete extends EditOperation {
 
     @Override
     public String toString() {
-        return String.format("Delete %s", node.toShortString());
+        return String.format("Delete at line %d: %s", lineNumber, codeSnippet);
     }
 }
