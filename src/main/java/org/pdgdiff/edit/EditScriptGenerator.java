@@ -18,17 +18,6 @@ import java.util.*;
  */
 public class EditScriptGenerator {
 
-    /**
-     * Generates a list of edit operations required to transform srcPDG into dstPDG based on the provided node mappings.
-     *
-     * @param srcPDG            Source PDG
-     * @param dstPDG            Target PDG
-     * @param graphMapping      The mapping between PDGs and their node mappings
-     * @param srcSourceFilePath Path to the source file of the srcPDG
-     * @param dstSourceFilePath Path to the source file of the dstPDG
-     * @return List of EditOperation objects representing the edit script
-     * @throws IOException If an I/O error occurs
-     */
     public static List<EditOperation> generateEditScript(
             HashMutablePDG srcPDG,
             HashMutablePDG dstPDG,
@@ -38,31 +27,16 @@ public class EditScriptGenerator {
     ) throws IOException {
         List<EditOperation> editScript = new ArrayList<>();
 
-        // Initialize source code mappers
         SourceCodeMapper srcCodeMapper = new SourceCodeMapper(srcSourceFilePath);
         SourceCodeMapper dstCodeMapper = new SourceCodeMapper(dstSourceFilePath);
 
         NodeMapping nodeMapping = graphMapping.getNodeMapping(srcPDG);
-        if (nodeMapping == null) {
-            // No mapping exists; delete all nodes from srcPDG and insert all nodes from dstPDG
-            for (PDGNode node : srcPDG) {
-                int lineNumber = getNodeLineNumber(node);
-                String codeSnippet = srcCodeMapper.getCodeLine(lineNumber);
-                editScript.add(new Delete(node, lineNumber, codeSnippet));
-            }
-            for (PDGNode node : dstPDG) {
-                int lineNumber = getNodeLineNumber(node);
-                String codeSnippet = dstCodeMapper.getCodeLine(lineNumber);
-                editScript.add(new Insert(node, lineNumber, codeSnippet));
-            }
-            return editScript;
-        }
 
         Map<PDGNode, PDGNode> mappings = nodeMapping.getNodeMapping();
         Set<PDGNode> srcNodesMapped = mappings.keySet();
         Set<PDGNode> dstNodesMapped = new HashSet<>(mappings.values());
 
-        // Handle deletions
+        // delete and insert
         for (PDGNode srcNode : srcPDG) {
             if (!srcNodesMapped.contains(srcNode)) {
                 int lineNumber = getNodeLineNumber(srcNode);
@@ -71,7 +45,6 @@ public class EditScriptGenerator {
             }
         }
 
-        // Handle insertions
         for (PDGNode dstNode : dstPDG) {
             if (!dstNodesMapped.contains(dstNode)) {
                 int lineNumber = getNodeLineNumber(dstNode);
@@ -80,7 +53,8 @@ public class EditScriptGenerator {
             }
         }
 
-        // Handle updates
+        // updates
+        // TODO: investgiate why so heavy on the updates
         Set<PDGNode> visitedNodes = new HashSet<>();
         for (PDGNode srcNode : srcNodesMapped) {
             PDGNode dstNode = mappings.get(srcNode);
@@ -121,6 +95,8 @@ public class EditScriptGenerator {
         }
     }
 
+    // This is the work horse of this class
+    // TODO: possibly can clean this up, considering it shares some logic with the node-mappings already...
     private static ComparisonResult nodesAreEqual(PDGNode n1, PDGNode n2, Set<PDGNode> visitedNodes,
                                                   SourceCodeMapper srcCodeMapper, SourceCodeMapper dstCodeMapper) {
         if (visitedNodes.contains(n1) || visitedNodes.contains(n2)) {
@@ -129,39 +105,34 @@ public class EditScriptGenerator {
         visitedNodes.add(n1);
         visitedNodes.add(n2);
 
-        // Compare basic properties
         if (!n1.getType().equals(n2.getType())) {
             return new ComparisonResult(false);
         }
 
-        List<SyntaxDifference> syntaxDifferences = new ArrayList<>();
-
         if (n1.getType() == PDGNode.Type.CFGNODE) {
-            // Compare CFG nodes
             ComparisonResult blockCompResult = compareCFGNodes(n1, n2, srcCodeMapper, dstCodeMapper);
             if (!blockCompResult.isEqual) {
                 return blockCompResult;
             }
         } else if (n1.getType() == PDGNode.Type.REGION) {
-            // Optionally ignore or handle Region nodes differently
+            // TODO: need to improve region handling because I am missing else changes, like on insert of a else clause
             return new ComparisonResult(true);
         }
 
         return new ComparisonResult(true);
     }
 
+    // Get anc compare units per each block
     private static ComparisonResult compareCFGNodes(PDGNode n1, PDGNode n2,
                                                     SourceCodeMapper srcCodeMapper, SourceCodeMapper dstCodeMapper) {
         Block block1 = (Block) n1.getNode();
         Block block2 = (Block) n2.getNode();
 
-        List<SyntaxDifference> differences = new ArrayList<>();
+        List<SyntaxDifference> differences;
 
-        // Get units (statements) from each block
         List<Unit> units1 = collectUnits(block1);
         List<Unit> units2 = collectUnits(block2);
 
-        // Compare the units
         differences = compareUnitLists(units1, units2, srcCodeMapper, dstCodeMapper);
 
         if (!differences.isEmpty()) {
@@ -237,8 +208,7 @@ public class EditScriptGenerator {
         if (unit1 == null || unit2 == null) {
             return false;
         }
-
-        // Compare the string representations
+        // compares the actual body representation of the units
         return unit1.toString().equals(unit2.toString());
     }
 
@@ -248,7 +218,8 @@ public class EditScriptGenerator {
             Unit headUnit = block.getHead();
             return getLineNumber(headUnit);
         }
-        return -1; // Line number not available
+        return -1; // no line num available
+        // TODO: consider this case a bit more cleverly, probably just want to del that entry as it doesnt show in the src
     }
 
     private static int getLineNumber(Unit unit) {
