@@ -1,6 +1,6 @@
 package org.pdgdiff.io;
 
-import org.pdgdiff.edit.model.*;
+import org.pdgdiff.edit.model.EditOperation;
 import java.io.Writer;
 import java.util.List;
 

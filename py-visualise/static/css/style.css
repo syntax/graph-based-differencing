@@ -1,0 +1,54 @@
+.highlight-change1-old {
+    background-color: #ffcccc;
+    color: #990000;
+}
+
+.highlight-change1-new {
+    background-color: #ccffcc;
+    color: #006600;
+}
+
+.highlight-change2-old {
+    background-color: #ccccff;
+    color: #000099;
+}
+
+.highlight-change2-new {
+    background-color: #ccffdd;
+    color: #006666;
+}
+
+.highlight-change3-old {
+    background-color: #ffccff;
+    color: #990099;
+}
+
+.highlight-change3-new {
+    background-color: #ffddcc;
+    color: #996600;
+}
+
+.highlight-change4-old {
+    background-color: #ffeecc;
+    color: #996633;
+}
+
+.highlight-change4-new {
+    background-color: #ccffff;
+    color: #003366;
+}
+
+.diff-container {
+    display: flex;
+    gap: 20px;
+}
+
+.file-content {
+    width: 45%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    background-color: #f9f9f9;
+    white-space: pre-wrap;
+    font-family: monospace;
+    overflow-x: auto;
+}
