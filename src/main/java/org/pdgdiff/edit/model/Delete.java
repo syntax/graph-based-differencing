@@ -2,6 +2,8 @@ package org.pdgdiff.edit.model;
 
 import soot.toolkits.graph.pdg.PDGNode;
 
+import java.util.Objects;
+
 public class Delete extends EditOperation {
     private int lineNumber;
     private String codeSnippet;
@@ -28,5 +30,19 @@ public class Delete extends EditOperation {
     @Override
     public String toString() {
         return String.format("Delete at line %d: %s", lineNumber, codeSnippet);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (!(obj instanceof Delete)) return false;
+        Delete other = (Delete) obj;
+        return lineNumber == other.lineNumber &&
+                Objects.equals(codeSnippet, other.codeSnippet);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(lineNumber, codeSnippet);
     }
 }

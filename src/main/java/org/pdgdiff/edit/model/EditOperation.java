@@ -17,4 +17,11 @@ public abstract class EditOperation {
 
     @Override
     public abstract String toString();
+
+    // following are to prevent duplicate entries in edit scripts
+    @Override
+    public abstract boolean equals(Object obj);
+
+    @Override
+    public abstract int hashCode();
 }

@@ -2,6 +2,8 @@ package org.pdgdiff.edit.model;
 
 import soot.toolkits.graph.pdg.PDGNode;
 
+import java.util.Objects;
+
 /**
  * Represents an update operation in the edit script.
  */
@@ -52,5 +54,22 @@ public class Update extends EditOperation {
     public String toString() {
         return String.format("Update at lines %d -> %d:\nOld Code: %s\nNew Code: %s\nDifference: %s",
                 oldLineNumber, newLineNumber, oldCodeSnippet, newCodeSnippet, syntaxDifference);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (!(obj instanceof Update)) return false;
+        Update other = (Update) obj;
+        return oldLineNumber == other.oldLineNumber &&
+                newLineNumber == other.newLineNumber &&
+                Objects.equals(oldCodeSnippet, other.oldCodeSnippet) &&
+                Objects.equals(newCodeSnippet, other.newCodeSnippet) &&
+                Objects.equals(syntaxDifference, other.syntaxDifference);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(oldLineNumber, newLineNumber, oldCodeSnippet, newCodeSnippet, syntaxDifference);
     }
 }
