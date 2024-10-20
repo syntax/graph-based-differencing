@@ -207,6 +207,7 @@ public class EditScriptGenerator {
         Set<SyntaxDifference> differences = compareUnitLists(units1, units2, srcCodeMapper, dstCodeMapper);
 
         if (!differences.isEmpty()) {
+            // TODO: this as of right now looks for jimple differences. might be useful to make sure differences are not just jimple differences
             return new ComparisonResult(false, false, differences);
         } else {
             // check for move operations based on line numbers

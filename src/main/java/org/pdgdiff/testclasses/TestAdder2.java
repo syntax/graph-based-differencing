@@ -10,9 +10,11 @@ public class TestAdder2 {
         int product = test.multiplyNumbers(number1, number2);
         System.out.println("Product: " + product);
 
+
+
         int complexResult = test.complexCalculation(number1, number2);
-        System.out.println("Complex Calculation Result: " + complexResult);
         int meep = test.identical(3,10);
+        System.out.println("Complex Calculation Result: " + complexResult);
         System.out.println("identical Result: " + meep);
     }
 
