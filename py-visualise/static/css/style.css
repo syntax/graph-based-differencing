@@ -14,8 +14,8 @@
 }
 
 .highlight-change2-new {
-    background-color: #ccffdd;
-    color: #006666;
+    background-color: #ffccf2;
+    color: #cc0099;
 }
 
 .highlight-change3-old {
@@ -24,8 +24,8 @@
 }
 
 .highlight-change3-new {
-    background-color: #ffddcc;
-    color: #996600;
+    background-color: #ebccff;
+    color: #6600cc;
 }
 
 .highlight-change4-old {
@@ -36,6 +36,26 @@
 .highlight-change4-new {
     background-color: #ccffff;
     color: #003366;
+}
+
+.highlight-change5-old {
+    background-color: #e6e6ff;
+    color: #3333cc;
+}
+
+.highlight-change5-new {
+    background-color: #e6ffe6;
+    color: #339933;
+}
+
+.highlight-change6-old {
+    background-color: #ffe6e6;
+    color: #cc3333;
+}
+
+.highlight-change6-new {
+    background-color: #e6ffff;
+    color: #339999;
 }
 
 .diff-container {
