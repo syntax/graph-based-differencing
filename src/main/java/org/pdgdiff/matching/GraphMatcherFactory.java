@@ -8,14 +8,14 @@ import soot.toolkits.graph.pdg.HashMutablePDG;
 import java.util.List;
 
 public class GraphMatcherFactory {
-    public static GraphMatcher createMatcher(String strategy, List<HashMutablePDG> pdgList1, List<HashMutablePDG> pdgList2) {
+    public static GraphMatcher createMatcher(String strategy, List<HashMutablePDG> srcPDGs, List<HashMutablePDG> destPDGs) {
         switch (strategy.toLowerCase()) {
             case "vf2":
-                return new VF2GraphMatcher(pdgList1, pdgList2);
+                return new VF2GraphMatcher(srcPDGs, destPDGs);
             case "heuristic":
-                return new HeuristicGraphMatcher(pdgList1, pdgList2);
+                return new HeuristicGraphMatcher(srcPDGs, destPDGs);
             case "ullmann":
-                return new UllmannGraphMatcher(pdgList1, pdgList2);
+                return new UllmannGraphMatcher(srcPDGs, destPDGs);
             default:
                 throw new IllegalArgumentException("Unknown matching strategy: " + strategy);
         }

@@ -17,6 +17,7 @@ public class VF2GraphMatcher extends GraphMatcher {
 
     @Override
     public GraphMapping matchPDGLists() {
+        // TODO: rename these legacy names 'pdglist1' to be more informative i.e. src and dest
         List<HashMutablePDG> unmappedPDGs1 = new ArrayList<>(pdgList1);
         List<HashMutablePDG> unmappedPDGs2 = new ArrayList<>(pdgList2);
 
@@ -38,6 +39,8 @@ public class VF2GraphMatcher extends GraphMatcher {
                         int unmappedNodes2 = GraphTraversal.getNodeCount(pdg2) - mappedNodes;
 
                         // calculate the score that minimizes unmapped nodes, this is my 'similarity' metric as of rn lol
+                        // this might be to be improved. TODO look into other metrics/ measures.
+                        // TODO might want to add a threshold. possibly not all graphs should be mapped to all graphs!
                         double score = (double) mappedNodes / (mappedNodes + unmappedNodes1 + unmappedNodes2);
 
                         if (score > maxScore) {
