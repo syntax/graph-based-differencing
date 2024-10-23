@@ -37,12 +37,10 @@ public class VF2GraphMatcher extends GraphMatcher {
                 }
             }
 
-            if (match != null && nodeMapping != null) {
-                // Add the match along with node mapping to the GraphMapping
+            if (match != null) {
                 matchedPDGs.add(match);
                 graphMapping.addGraphMapping(pdg1, match, nodeMapping);
             } else {
-                // No match found for pdg1
                 System.out.println("No matching PDG found for: " + pdg1.getCFG().getBody().getMethod().getSignature());
             }
         }

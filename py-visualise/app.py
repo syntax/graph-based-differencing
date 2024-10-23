@@ -99,15 +99,17 @@ def diff_view():
                     "newCode": highlighted_new
                 })
         elif action["action"] == "Insert":
-            new_line_number = action["newLine"] - 1
 
+            new_line_number = action["line"] - 1
+  
             if 0 <= new_line_number < len(highlighted_class2):
                 highlighted_new = f"<span class='{color_pairs[i % len(color_pairs)][1]}'>{class2_content[new_line_number]}</span>"
                 highlighted_class2[new_line_number] = highlighted_new
 
                 highlighted_diffs.append({
                     "oldLine": None,
-                    "newLine": action["newLine"],
+                    "newLine": action["line"],
+
                     "oldCode": "",
                     "newCode": highlighted_new
                 })

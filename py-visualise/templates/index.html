@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Diff Viewer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .preformatted {
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>Code Difference Viewer</h1>
+
+    <div class="diff-container">
+        <div class="file-content" id="class1">
+            <h3>TestAdder1.java</h3>
+            <div class="preformatted">{{ class1 | safe }}</div>
+        </div>
+        <div class="file-content" id="class2">
+            <h3>TestAdder2.java</h3>
+            <div class="preformatted">{{ class2 | safe }}</div>
+        </div>
+    </div>
+
+    <h2>Highlighted Differences Summary</h2>
+    <div>
+        {% for diff in diffs %}
+            <div>
+                <h4>Old Line {{ diff.oldLine }}:</h4>
+                <div class="preformatted">{{ diff.oldCode | safe }}</div>
+            </div>
+            <div>
+                <h4>New Line {{ diff.newLine }}:</h4>
+                <div class="preformatted">{{ diff.newCode | safe }}</div>
+            </div>
+            <hr>
+        {% endfor %}
+    </div>
+</body>
+</html>

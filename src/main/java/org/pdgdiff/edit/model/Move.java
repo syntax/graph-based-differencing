@@ -2,27 +2,34 @@ package org.pdgdiff.edit.model;
 
 import soot.toolkits.graph.pdg.PDGNode;
 
-import java.util.List;
+import java.util.Objects;
 
 /**
- * Represents a move operation in a PDG.
+ * Represents a move operation in the edit script.
  */
 public class Move extends EditOperation {
-    private List<PDGNode> oldPredecessors;
-    private List<PDGNode> newPredecessors;
+    // TODO: Fix this new version of move, it doesnt work lol.
+    private int oldLineNumber;
+    private int newLineNumber;
+    private String codeSnippet;
 
-    public Move(PDGNode node, List<PDGNode> oldPredecessors, List<PDGNode> newPredecessors) {
+    public Move(PDGNode node, int oldLineNumber, int newLineNumber, String codeSnippet) {
         super(node);
-        this.oldPredecessors = oldPredecessors;
-        this.newPredecessors = newPredecessors;
+        this.oldLineNumber = oldLineNumber;
+        this.newLineNumber = newLineNumber;
+        this.codeSnippet = codeSnippet;
     }
 
-    public List<PDGNode> getOldPredecessors() {
-        return oldPredecessors;
+    public int getOldLineNumber() {
+        return oldLineNumber;
     }
 
-    public List<PDGNode> getNewPredecessors() {
-        return newPredecessors;
+    public int getNewLineNumber() {
+        return newLineNumber;
+    }
+
+    public String getCodeSnippet() {
+        return codeSnippet;
     }
 
     @Override
@@ -32,9 +39,22 @@ public class Move extends EditOperation {
 
     @Override
     public String toString() {
-        return String.format("Move %s from predecessors %s to %s",
-                node.toShortString(),
-                oldPredecessors.toString(),
-                newPredecessors.toString());
+        return String.format("Move from line %d to line %d: %s", oldLineNumber, newLineNumber, codeSnippet);
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (!(obj instanceof Move)) return false;
+        Move other = (Move) obj;
+        return oldLineNumber == other.oldLineNumber &&
+                newLineNumber == other.newLineNumber &&
+                Objects.equals(codeSnippet, other.codeSnippet);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(oldLineNumber, newLineNumber, codeSnippet);
+    }
+
 }

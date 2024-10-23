@@ -11,7 +11,7 @@ import java.util.Map;
  */
 public class GraphMapping {
     private Map<HashMutablePDG, HashMutablePDG> graphMapping;
-    private Map<HashMutablePDG, NodeMapping> nodeMappings; // TODO : to store node-level mappings for each PDG pair
+    private Map<HashMutablePDG, NodeMapping> nodeMappings; // TODO: make heuristic algo find node mappings
 
     public GraphMapping() {
         this.graphMapping = new HashMap<>();
@@ -21,7 +21,7 @@ public class GraphMapping {
     // Adds a mapping between two PDGs
     public void addGraphMapping(HashMutablePDG srcPDG, HashMutablePDG dstPDG, NodeMapping nodeMapping) {
         graphMapping.put(srcPDG, dstPDG);
-        nodeMappings.put(srcPDG, nodeMapping); // TODO: Store node mapping for this graph pair
+        nodeMappings.put(srcPDG, nodeMapping);
     }
 
     // Retrieves the mapped PDG for a given PDG

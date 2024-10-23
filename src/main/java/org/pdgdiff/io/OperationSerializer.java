@@ -4,9 +4,6 @@ import org.pdgdiff.edit.model.*;
 import java.io.Writer;
 import java.util.List;
 
-/**
- * Abstract serializer for edit scripts.
- */
 public abstract class OperationSerializer {
     protected List<EditOperation> editScript;
 
@@ -19,11 +16,6 @@ public abstract class OperationSerializer {
     public void writeTo(Writer writer) throws Exception {
         OperationFormatter formatter = newFormatter(writer);
         formatter.startOutput();
-
-        // TODO include mappings here
-        // formatter.startMatches();
-        // ... write mappings ...
-        // formatter.endMatches();
 
         formatter.startOperations();
         for (EditOperation op : editScript) {
