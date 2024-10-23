@@ -72,4 +72,8 @@ public class NodeMapping {
     public boolean isEmpty() {
         return nodeMapping.isEmpty();
     }
+
+    public int size() {
+        return nodeMapping.size();
+    }
 }

@@ -14,6 +14,20 @@ public class TestAdder1 {
         System.out.println("identical Result: " + t);
     }
 
+    public int identical(int num1, int num2) {
+        int result = 0;
+
+        // Conditional statements
+        if (num1 > num2) {
+            result = num1 + num2;
+        } else if (num1 < num2) {
+            result = num1 - num2;
+        } else {
+            result = num1 * num2;
+        }
+        return  result;
+    }
+
     public int addNumbers(int a, int b) {
         int toadd1 = a;
         int toadd2 = b;
@@ -25,6 +39,7 @@ public class TestAdder1 {
         int sum = a - b;
         return sum;
     }
+
 
     // added these more complex classes with more intense control flow and non-matching names to try and catch edge cases
     public int detailedComputation(int num1, int num2) {
@@ -59,17 +74,4 @@ public class TestAdder1 {
         return result;
     }
 
-    public int identical(int num1, int num2) {
-        int result = 0;
-
-        // Conditional statements
-        if (num1 > num2) {
-            result = num1 + num2;
-        } else if (num1 < num2) {
-            result = num1 - num2;
-        } else {
-            result = num1 * num2;
-        }
-        return  result;
-    }
 }
