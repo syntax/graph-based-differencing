@@ -19,7 +19,6 @@ public class GraphGenerator {
             // TODO: invesigate optimisations applied a thtis point, probably.
             UnitGraph unitGraph = new ExceptionalUnitGraph(body);
 
-            // Generate a Program Dependency Graph (PDG)
             HashMutablePDG pdg = new HashMutablePDG(unitGraph);
 
             System.out.println("PDG for method " + method.getName() + " generated");

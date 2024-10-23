@@ -19,10 +19,9 @@ public abstract class GraphMatcher {
     public GraphMatcher(List<HashMutablePDG> list1, List<HashMutablePDG> list2) {
         this.pdgList1 = list1;
         this.pdgList2 = list2;
-        this.graphMapping = new GraphMapping(); // Initialize GraphMapping
-        this.matchedPDGs = new HashSet<>();  // Initialize the set to track matched PDGs
+        this.graphMapping = new GraphMapping();
+        this.matchedPDGs = new HashSet<>();
     }
 
-    // Abstract method to be implemented by subclasses
     public abstract GraphMapping matchPDGLists();
 }
