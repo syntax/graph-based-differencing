@@ -5,6 +5,9 @@ import soot.toolkits.graph.pdg.PDGNode;
 /**
  * Base class for all edit operations in the edit script.
  */
+
+
+// THIS BRANCH REPRESNETS THE EDIT DISTANCE/OPERATIONS AT A NODE LEVEL, NOT NECESSARILY A SYNTAX LEVEL
 public abstract class EditOperation {
     protected PDGNode node;
 
