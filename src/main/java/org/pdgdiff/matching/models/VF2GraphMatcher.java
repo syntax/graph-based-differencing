@@ -31,6 +31,7 @@ public class VF2GraphMatcher extends GraphMatcher {
                 nodeMapping = vf2Matcher.match();
 
                 // If a mapping is found, consider it as a match
+                // TODO: need to try ALL mappings and then select best. time complexity unfortunatley going to go 📈
                 if (nodeMapping != null && !nodeMapping.isEmpty()) {
                     match = pdg2;
                     break; // Since we found a match, we can break out of the loop
