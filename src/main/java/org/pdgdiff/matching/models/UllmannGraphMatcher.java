@@ -21,19 +21,18 @@ public class UllmannGraphMatcher extends GraphMatcher {
 
             // Compare pdg1 with each PDG from the second list
             for (HashMutablePDG pdg2 : pdgList2) {
-                // Skip if this PDG has already been matched
                 if (matchedPDGs.contains(pdg2)) {
                     continue;
                 }
 
-                // Use UllmannMatcher
                 UllmannMatcher ullmannMatcher = new UllmannMatcher(pdg1, pdg2);
                 nodeMapping = ullmannMatcher.match();
 
                 // If a mapping is found, consider it as a match
+                // TODO: threshold needed here, and in VF2 to pick BEST match
                 if (nodeMapping != null && !nodeMapping.isEmpty()) {
                     match = pdg2;
-                    break; // Since we found a match, we can break out of the loop
+                    break;
                 }
             }
 
@@ -46,6 +45,6 @@ public class UllmannGraphMatcher extends GraphMatcher {
             }
         }
 
-        return graphMapping; // Return the complete GraphMapping
+        return graphMapping;
     }
 }
