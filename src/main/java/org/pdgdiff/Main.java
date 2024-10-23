@@ -60,7 +60,7 @@ public class Main {
     private static List<HashMutablePDG> generatePDGsForClass(SootClass sootClass) {
         List<HashMutablePDG> pdgList = new ArrayList<>();
         System.out.println("Generating PDGs for class: " + sootClass.getName());
-
+        // TODO investigate getting metadata from here.
         // Iterate over each method in the class
         for (SootMethod method : sootClass.getMethods()) {
             if (method.isConcrete()) {
