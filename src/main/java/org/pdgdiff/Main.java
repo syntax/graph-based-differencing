@@ -10,7 +10,9 @@ import soot.SootMethod;
 import soot.toolkits.graph.pdg.HashMutablePDG;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Main {
     public static void main(String[] args) {
@@ -35,9 +37,13 @@ public class Main {
             SootClass testAdder1 = Scene.v().getSootClass(class1Name);
             SootClass testAdder2 = Scene.v().getSootClass(class2Name);
 
-            // Generate PDGs for all methods in both classes and store in lists
-            List<HashMutablePDG> pdgsClass1 = generatePDGsForClass(testAdder1);
-            List<HashMutablePDG> pdgsClass2 = generatePDGsForClass(testAdder2);
+            Map<HashMutablePDG, SootMethod> pdgToMethodMapClass1 = generatePDGsForClass(testAdder1);
+            Map<HashMutablePDG, SootMethod> pdgToMethodMapClass2 = generatePDGsForClass(testAdder2);
+
+            // Extract lists of PDGs for legacy functions
+            List<HashMutablePDG> pdgsClass1 = new ArrayList<>(pdgToMethodMapClass1.keySet());
+            List<HashMutablePDG> pdgsClass2 = new ArrayList<>(pdgToMethodMapClass2.keySet());
+
 
             // Print the number of PDGs generated for each class
             System.out.println("PDGs generated for " + testAdder1.getName() + ": " + pdgsClass1.size());
@@ -57,28 +63,23 @@ public class Main {
     }
 
     // Method to generate PDGs for all methods in a given class and store them in a list
-    private static List<HashMutablePDG> generatePDGsForClass(SootClass sootClass) {
-        List<HashMutablePDG> pdgList = new ArrayList<>();
+    private static Map<HashMutablePDG, SootMethod> generatePDGsForClass(SootClass sootClass) {
+        // TODO : continue to investagte getting more metadata from soot
+        Map<HashMutablePDG, SootMethod> pdgToMethodMap = new HashMap<>();
         System.out.println("Generating PDGs for class: " + sootClass.getName());
-        // TODO investigate getting metadata from here.
-        // Iterate over each method in the class
         for (SootMethod method : sootClass.getMethods()) {
             if (method.isConcrete()) {
                 try {
-                    // Retrieve the active body and generate the PDG
                     method.retrieveActiveBody();
                     System.out.println("Successfully retrieved active body for: " + method.getName() + " in " + sootClass.getName());
 
-                    // Generate the PDG for the method
                     HashMutablePDG pdg = GraphGenerator.generatePDG(sootClass, method);
                     if (pdg != null) {
-                        pdgList.add(pdg);
+                        pdgToMethodMap.put(pdg, method);
                         System.out.println("PDG generated for method: " + method.getName());
 
-                        // Export the PDG for this method to a .dot and .txt file
                         String baseFileName = "out/pdg_" + sootClass.getName() + "_" + method.getName();
                         GraphExporter.exportPDG(pdg, baseFileName + ".dot", baseFileName + ".txt");
-
                     }
                 } catch (Exception e) {
                     System.err.println("Failed to retrieve body or generate PDG for method: " + method.getName());
@@ -86,6 +87,7 @@ public class Main {
                 }
             }
         }
-        return pdgList;
+        return pdgToMethodMap;
     }
+
 }
