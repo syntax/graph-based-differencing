@@ -61,14 +61,20 @@ public class JsonOperationFormatter implements OperationFormatter {
         writer.name("oldCode").value(operation.getOldCodeSnippet());
         writer.name("newCode").value(operation.getNewCodeSnippet());
 
-        writer.name("difference").beginObject();
-        writer.name("message").value(operation.getSyntaxDifference().getMessage());
-        writer.name("oldJimple").value(operation.getSyntaxDifference().getOldJimpleCode());
-        writer.name("newJimple").value(operation.getSyntaxDifference().getNewJimpleCode());
-        writer.endObject();
+        SyntaxDifference diff = operation.getSyntaxDifference();
+        if (diff != null) {
+            writer.name("difference").beginObject();
+            writer.name("message").value(diff.getMessage());
+            writer.name("oldJimple").value(diff.getOldJimpleCode());
+            writer.name("newJimple").value(diff.getNewJimpleCode());
+            writer.endObject();
+        } else {
+            writer.name("difference").nullValue();
+        }
 
         writer.endObject();
     }
+
 
     @Override
     public void moveOperation(Move operation) throws IOException {

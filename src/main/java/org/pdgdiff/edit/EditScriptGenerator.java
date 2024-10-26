@@ -4,8 +4,12 @@ import org.pdgdiff.edit.model.*;
 import org.pdgdiff.matching.GraphMapping;
 import org.pdgdiff.matching.NodeMapping;
 import org.pdgdiff.util.SourceCodeMapper;
+import soot.Modifier;
+import soot.SootMethod;
+import soot.Type;
 import soot.Unit;
 import soot.tagkit.LineNumberTag;
+import soot.tagkit.SourceLnPosTag;
 import soot.toolkits.graph.Block;
 import soot.toolkits.graph.pdg.HashMutablePDG;
 import soot.toolkits.graph.pdg.IRegion;
@@ -32,6 +36,31 @@ public class EditScriptGenerator {
 
         SourceCodeMapper srcCodeMapper = new SourceCodeMapper(srcSourceFilePath);
         SourceCodeMapper dstCodeMapper = new SourceCodeMapper(dstSourceFilePath);
+
+        // before other processing, compare method signatures
+        SootMethod srcMethod = srcPDG.getCFG().getBody().getMethod();
+        SootMethod dstMethod = dstPDG.getCFG().getBody().getMethod();
+
+        // cmp method signatures and create Update operation if different
+        if (!srcMethod.getSubSignature().equals(dstMethod.getSubSignature())) {
+            int srcLineNumber = getMethodLineNumber(srcMethod);
+            int dstLineNumber = getMethodLineNumber(dstMethod);
+
+            String srcMethodSignatureCode = getMethodSignatureCode(srcMethod, srcCodeMapper);
+            String dstMethodSignatureCode = getMethodSignatureCode(dstMethod, dstCodeMapper);
+
+            // create Update operation for method signature
+            Update signatureUpdate = new Update(
+                    null, // no specific PDGNode associated
+                    srcLineNumber,
+                    dstLineNumber,
+                    srcMethodSignatureCode,
+                    dstMethodSignatureCode,
+                    null // no specific syntax difference object
+            );
+            editScriptSet.add(signatureUpdate);
+        }
+
 
         NodeMapping nodeMapping = graphMapping.getNodeMapping(srcPDG);
 
@@ -289,4 +318,75 @@ public class EditScriptGenerator {
         }
         return -1;
     }
+
+    // method signature helper functions
+
+    private static int getMethodLineNumber(SootMethod method) {
+        // try with thsi
+        SourceLnPosTag lnPosTag = (SourceLnPosTag) method.getTag("SourceLnPosTag");
+        if (lnPosTag != null) {
+            return lnPosTag.startLn();
+        }
+
+        // fallback
+        if (method.hasActiveBody()) {
+            for (Unit unit : method.getActiveBody().getUnits()) {
+                LineNumberTag lineTag = (LineNumberTag) unit.getTag("LineNumberTag");
+                if (lineTag != null) {
+                    return lineTag.getLineNumber();
+                }
+            }
+        }
+
+        // if not found, return -1
+        return -1;
+    }
+
+
+    private static String getMethodSignatureCode(SootMethod method, SourceCodeMapper codeMapper) {
+        int lineNumber = getMethodLineNumber(method);
+        if (lineNumber != -1) {
+            // attempt to retrieve the exact line from the source code
+            String codeLine = codeMapper.getCodeLine(lineNumber);
+            if (codeLine != null && codeLine.contains(method.getName())) {
+                return codeLine.trim();
+            }
+        }
+
+        // if unable to retrieve from source code, construct the signature
+        return methodSignatureToString(method);
+    }
+
+
+    private static String methodSignatureToString(SootMethod method) {
+        StringBuilder sb = new StringBuilder();
+
+        // include modifiers
+        String modifiersStr = Modifier.toString(method.getModifiers());
+        if (!modifiersStr.isEmpty()) {
+            sb.append(modifiersStr).append(' ');
+        }
+
+        // return type
+        sb.append(method.getReturnType().toString()).append(' ');
+
+        // method name
+        sb.append(method.getName());
+
+        // params
+        sb.append('(');
+        List<Type> params = method.getParameterTypes();
+        for (int i = 0; i < params.size(); i++) {
+            if (i > 0) {
+                sb.append(", ");
+            }
+            sb.append(params.get(i).toString());
+        }
+        sb.append(')');
+
+        return sb.toString();
+    }
+
+
+
 }

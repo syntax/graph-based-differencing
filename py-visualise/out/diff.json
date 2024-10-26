@@ -14,6 +14,14 @@
     },
     {
       "action": "Update",
+      "oldLine": 38,
+      "newLine": 20,
+      "oldCode": "public int minus(int, int)",
+      "newCode": "public int addNumbers(int, int)",
+      "difference": null
+    },
+    {
+      "action": "Update",
       "oldLine": 20,
       "newLine": 22,
       "oldCode": "        int sum = toadd1 + toadd2;",

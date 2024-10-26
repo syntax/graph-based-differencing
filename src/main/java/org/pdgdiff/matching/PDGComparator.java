@@ -5,17 +5,25 @@ import org.pdgdiff.edit.EditScriptGenerator;
 import org.pdgdiff.edit.model.EditOperation;
 import org.pdgdiff.io.JsonOperationSerializer;
 import org.pdgdiff.io.OperationSerializer;
+import soot.SootMethod;
 import soot.toolkits.graph.pdg.HashMutablePDG;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.Writer;
 import java.util.List;
+import java.util.Map;
 
 public class PDGComparator {
 
-    public static void compareAndPrintGraphSimilarity(List<HashMutablePDG> pdgList1, List<HashMutablePDG> pdgList2,
-                                                      String strategy, String srcSourceFilePath, String dstSourceFilePath) {
+    public static void compareAndPrintGraphSimilarity(List<HashMutablePDG> pdgList1,
+        List<HashMutablePDG> pdgList2,
+        String strategy,
+        String srcSourceFilePath,
+        String dstSourceFilePath,
+        Map<HashMutablePDG, SootMethod> pdgToMethodMap1,
+        Map<HashMutablePDG, SootMethod> pdgToMethodMap2
+    ) {
         // Instantiate the appropriate GraphMatcher
         GraphMatcher matcher = GraphMatcherFactory.createMatcher(strategy, pdgList1, pdgList2);
 
@@ -35,8 +43,13 @@ public class PDGComparator {
                 nodeMapping.printMappings();
 
                 try {
-                    List<EditOperation> editScript = EditScriptGenerator.generateEditScript(srcPDG, dstPDG, graphMapping,
-                            srcSourceFilePath, dstSourceFilePath);
+                    List<EditOperation> editScript = EditScriptGenerator.generateEditScript(
+                            srcPDG,
+                            dstPDG,
+                            graphMapping,
+                            srcSourceFilePath,
+                            dstSourceFilePath
+                    );
 
                     int editDistance = EditDistanceCalculator.calculateEditDistance(editScript);
                     System.out.println("--- Edit information ---");
@@ -54,6 +67,7 @@ public class PDGComparator {
                 }
             }
         });
+
     }
 
     private static void exportEditScript(List<EditOperation> editScript, String method1Signature, String method2Signature) {
