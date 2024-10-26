@@ -1,5 +1,6 @@
 package org.pdgdiff.matching;
 
+import com.google.gson.JsonObject;
 import org.pdgdiff.edit.EditDistanceCalculator;
 import org.pdgdiff.edit.EditScriptGenerator;
 import org.pdgdiff.edit.model.EditOperation;
@@ -7,22 +8,28 @@ import org.pdgdiff.io.JsonOperationSerializer;
 import org.pdgdiff.io.OperationSerializer;
 import soot.toolkits.graph.pdg.HashMutablePDG;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.Writer;
+
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
+
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class PDGComparator {
 
     public static void compareAndPrintGraphSimilarity(List<HashMutablePDG> pdgList1, List<HashMutablePDG> pdgList2,
                                                       String strategy, String srcSourceFilePath, String dstSourceFilePath) {
-        // Instantiate the appropriate GraphMatcher
+
         GraphMatcher matcher = GraphMatcherFactory.createMatcher(strategy, pdgList1, pdgList2);
 
-        // Perform the graph matching between the lists
+        // perform the actual graph matching
         GraphMapping graphMapping = matcher.matchPDGLists();
 
-        // Output the graph and node similarity results
+        // TODO: clean up debug print stmts
         System.out.println("--> Graph matching complete using strategy: " + strategy);
 
         graphMapping.getGraphMapping().forEach((srcPDG, dstPDG) -> {
@@ -47,13 +54,15 @@ public class PDGComparator {
                         System.out.println(op);
                     }
 
-                    // Serialize the edit script and export it
+                    // serialise and export
                     exportEditScript(editScript, method1, method2);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
         });
+
+        writeAggregatedEditScript();
     }
 
     private static void exportEditScript(List<EditOperation> editScript, String method1Signature, String method2Signature) {
@@ -61,19 +70,9 @@ public class PDGComparator {
         String method1Safe = method1Signature.replaceAll("[^a-zA-Z0-9\\.\\-]", "_");
         String method2Safe = method2Signature.replaceAll("[^a-zA-Z0-9\\.\\-]", "_");
 
-        // Define the output directory
         String outputDir = "out/";
-
-        // Define the filename
         String filename = outputDir + "editScript_" + method1Safe + "_to_" + method2Safe + ".json";
 
-        // Create the directory if it doesn't exist
-        File dir = new File(outputDir);
-        if (!dir.exists()) {
-            dir.mkdirs();
-        }
-
-        // Serialize to JSON
         try (Writer writer = new FileWriter(filename)) {
             OperationSerializer serializer = new JsonOperationSerializer(editScript);
             serializer.writeTo(writer);
@@ -83,4 +82,45 @@ public class PDGComparator {
             e.printStackTrace();
         }
     }
+
+
+    // hacky solution for the time being, just iterates across all json files and creates one edit script
+    private static void writeAggregatedEditScript() {
+        String outputDir = "out/";
+        String outputFileName = outputDir + "diff.json";
+        JsonArray consolidatedActions = new JsonArray();
+
+        try {
+            List<File> jsonFiles = Files.list(Paths.get(outputDir))
+                    .filter(path -> path.toString().endsWith(".json"))
+                    .map(java.nio.file.Path::toFile)
+                    .collect(Collectors.toList());
+
+            JsonParser parser = new JsonParser();
+            for (File file : jsonFiles) {
+                if (file.getName().equals("diff.json")) continue;  // skip diff.json
+                try (FileReader reader = new FileReader(file)) {
+                    JsonObject jsonObject = parser.parse(reader).getAsJsonObject();
+                    JsonArray actions = jsonObject.getAsJsonArray("actions");
+                    consolidatedActions.addAll(actions);
+                } catch (Exception e) {
+                    System.err.println("failed to read or parse JSON file: " + file.getName());
+                    e.printStackTrace();
+                }
+            }
+
+            JsonObject aggregatedOutput = new JsonObject();
+            aggregatedOutput.add("actions", consolidatedActions);
+
+            try (Writer writer = new FileWriter(outputFileName)) {
+                writer.write(aggregatedOutput.toString());
+                System.out.println("---> agg edit scripts exported to: " + outputFileName);
+            }
+
+        } catch (Exception e) {
+            System.err.println("Failed to aggregate JSON files into diff.json");
+            e.printStackTrace();
+        }
+    }
+
 }
