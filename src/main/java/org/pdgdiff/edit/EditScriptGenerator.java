@@ -4,6 +4,7 @@ import org.pdgdiff.edit.model.*;
 import org.pdgdiff.matching.GraphMapping;
 import org.pdgdiff.matching.NodeMapping;
 import org.pdgdiff.util.SourceCodeMapper;
+import soot.SootMethod;
 import soot.Unit;
 import soot.tagkit.LineNumberTag;
 import soot.toolkits.graph.Block;
@@ -24,7 +25,9 @@ public class EditScriptGenerator {
             HashMutablePDG dstPDG,
             GraphMapping graphMapping,
             String srcSourceFilePath,
-            String dstSourceFilePath
+            String dstSourceFilePath,
+            SootMethod srcMethod,
+            SootMethod destMethod
     ) throws IOException {
         // Using set to prevent duplicates, I realise this is probably a logic errorI am rashly fixing but will do for now.
         // order of edit operations does not matter.
@@ -69,7 +72,7 @@ public class EditScriptGenerator {
             }
         }
 
-        // hangle deletions
+        // handle deletions
         for (PDGNode srcNode : srcPDG) {
             if (!srcNodesMapped.contains(srcNode) && !visitedNodes.contains(srcNode)) {
                 int lineNumber = getNodeLineNumber(srcNode);
@@ -86,6 +89,32 @@ public class EditScriptGenerator {
                 editScriptSet.add(new Insert(dstNode, lineNumber, codeSnippet));
             }
         }
+
+        // Signature comparison
+
+        String oldMethodSignature = srcMethod.getDeclaration();
+        String newMethodSignature = destMethod.getDeclaration();
+
+        if (!oldMethodSignature.equals(newMethodSignature)) {
+            // TODO: this is a bit of a hacky solution (made by soot) and will need to be improve. Just -1 from the first line
+            // TODO: of the body to get the method signature line number, but comments/whitespace can be above it so this is naive.
+            int oldMethodLineNumber = srcMethod.getJavaSourceStartLineNumber();
+            int newMethodLineNumber = destMethod.getJavaSourceStartLineNumber();
+
+            Update signatureUpdate = new Update(
+                    null, // no specific PDGNode associated for signature update
+                    oldMethodLineNumber,
+                    newMethodLineNumber,
+                    oldMethodSignature,
+                    newMethodSignature,
+                    // TODO for the future this probably shouldnt be null.
+                    null
+            );
+
+            editScriptSet.add(signatureUpdate);
+        }
+
+        // TODO: use SootClass to collect things like fields and difference those as well. This might have to happen in a different class.
 
         return new ArrayList<>(editScriptSet);
     }

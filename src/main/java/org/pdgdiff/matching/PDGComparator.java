@@ -10,8 +10,8 @@ import soot.toolkits.graph.pdg.HashMutablePDG;
 
 
 import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
+import soot.SootMethod;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -42,8 +42,15 @@ public class PDGComparator {
                 nodeMapping.printMappings();
 
                 try {
+
+                    // collecting of 'metadata' of the code, i.e. function signatures and fields, will occur here. it should not have
+                    // any impact on the actual matching process, to ensure that this is as semantic and language-agnostic as possible.
+
+                    SootMethod srcObj = srcPDG.getCFG().getBody().getMethod();
+                    SootMethod destObj = dstPDG.getCFG().getBody().getMethod();
+
                     List<EditOperation> editScript = EditScriptGenerator.generateEditScript(srcPDG, dstPDG, graphMapping,
-                            srcSourceFilePath, dstSourceFilePath);
+                            srcSourceFilePath, dstSourceFilePath, srcObj, destObj);
 
                     int editDistance = EditDistanceCalculator.calculateEditDistance(editScript);
                     System.out.println("--- Edit information ---");
