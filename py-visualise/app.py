@@ -79,7 +79,6 @@ def diff_view():
 
     highlighted_diffs = []
 
-    # todo, as of right now im not even capturing all these actions, or showin them in the output
     for i, action in enumerate(diff_data["actions"]):
         if action["action"] == "Update":
             old_line_number = action["oldLine"] - 1
@@ -91,27 +90,40 @@ def diff_view():
                 )
                 highlighted_class1[old_line_number] = highlighted_old
                 highlighted_class2[new_line_number] = highlighted_new
-            
+
                 highlighted_diffs.append({
                     "oldLine": action["oldLine"],
                     "newLine": action["newLine"],
                     "oldCode": highlighted_old,
                     "newCode": highlighted_new
                 })
-        elif action["action"] == "Insert":
 
+        elif action["action"] == "Insert":
             new_line_number = action["line"] - 1
-  
+
             if 0 <= new_line_number < len(highlighted_class2):
-                highlighted_new = f"<span class='{color_pairs[i % len(color_pairs)][1]}'>{class2_content[new_line_number]}</span>"
+                highlighted_new = f"<span class='inserted-line'>+ {class2_content[new_line_number]}</span>"
                 highlighted_class2[new_line_number] = highlighted_new
 
                 highlighted_diffs.append({
                     "oldLine": None,
                     "newLine": action["line"],
-
                     "oldCode": "",
                     "newCode": highlighted_new
+                })
+
+        elif action["action"] == "Delete":
+            old_line_number = action["line"] - 1
+
+            if 0 <= old_line_number < len(highlighted_class1):
+                highlighted_old = f"<span class='deleted-line'>- {class1_content[old_line_number]}</span>"
+                highlighted_class1[old_line_number] = highlighted_old
+
+                highlighted_diffs.append({
+                    "oldLine": action["line"],
+                    "newLine": None,
+                    "oldCode": highlighted_old,
+                    "newCode": ""
                 })
 
     highlighted_class1_content = '\n'.join(highlighted_class1)
