@@ -4,14 +4,13 @@ import org.pdgdiff.edit.model.*;
 import org.pdgdiff.matching.GraphMapping;
 import org.pdgdiff.matching.NodeMapping;
 import org.pdgdiff.util.SourceCodeMapper;
-import soot.SootMethod;
-import soot.Type;
-import soot.Unit;
+import soot.*;
 import soot.tagkit.LineNumberTag;
 import soot.toolkits.graph.Block;
 import soot.toolkits.graph.pdg.HashMutablePDG;
 import soot.toolkits.graph.pdg.IRegion;
 import soot.toolkits.graph.pdg.PDGNode;
+import soot.util.Chain;
 
 import java.io.IOException;
 import java.util.*;
@@ -117,6 +116,14 @@ public class EditScriptGenerator {
 
         // TODO: use SootClass to collect things like fields and difference those as well. This might have to happen in a different class.
 
+        SootClass srcClass = srcMethod.getDeclaringClass();
+        SootClass dstClass = destMethod.getDeclaringClass();
+
+        compareClassMetadata(srcClass, dstClass, srcCodeMapper, dstCodeMapper, editScriptSet);
+
+        compareFields(srcClass, dstClass, srcCodeMapper, dstCodeMapper, editScriptSet);
+
+
         return new ArrayList<>(editScriptSet);
     }
 
@@ -137,6 +144,182 @@ public class EditScriptGenerator {
             this.syntaxDifferences = syntaxDifferences;
         }
     }
+
+    private static void compareClassMetadata(
+            SootClass srcClass,
+            SootClass dstClass,
+            SourceCodeMapper srcCodeMapper,
+            SourceCodeMapper dstCodeMapper,
+            Set<EditOperation> editScriptSet
+    ) throws IOException {
+        // Compare class modifiers
+        if (srcClass.getModifiers() != dstClass.getModifiers()) {
+            int srcClassLineNumber = getClassLineNumber(srcClass, srcCodeMapper);
+            int dstClassLineNumber = getClassLineNumber(dstClass, dstCodeMapper);
+
+            String srcClassDeclaration = getClassDeclaration(srcClass, srcCodeMapper);
+            String dstClassDeclaration = getClassDeclaration(dstClass, dstCodeMapper);
+
+            Update classUpdate = new Update(
+                    null, // No PDGNode associated
+                    srcClassLineNumber,
+                    dstClassLineNumber,
+                    srcClassDeclaration,
+                    dstClassDeclaration,
+                    null // No SyntaxDifference
+            );
+
+            editScriptSet.add(classUpdate);
+        }
+    }
+
+    private static void compareFields(
+            SootClass srcClass,
+            SootClass dstClass,
+            SourceCodeMapper srcCodeMapper,
+            SourceCodeMapper dstCodeMapper,
+            Set<EditOperation> editScriptSet
+    ) throws IOException {
+        Chain<SootField> srcFields = srcClass.getFields();
+        Chain<SootField> dstFields = dstClass.getFields();
+
+        // Create Maps from field signatures to SootField for efficient lookup
+        Map<String, SootField> srcFieldMap = new HashMap<>();
+        for (SootField field : srcFields) {
+            srcFieldMap.put(field.getSignature(), field);
+        }
+
+        Map<String, SootField> dstFieldMap = new HashMap<>();
+        for (SootField field : dstFields) {
+            dstFieldMap.put(field.getSignature(), field);
+        }
+
+        // Detect deletions and updates
+        for (SootField srcField : srcFields) {
+            String signature = srcField.getSignature();
+            SootField dstField = dstFieldMap.get(signature);
+
+            if (dstField == null) {
+                // Field has been deleted
+                int lineNumber = getFieldLineNumber(srcField, srcCodeMapper);
+                String codeSnippet = getFieldDeclaration(srcField, srcCodeMapper);
+                editScriptSet.add(new Delete(null, lineNumber, codeSnippet));
+            } else {
+                // Field exists in both, check for updates
+                if (!fieldsAreEqual(srcField, dstField)) {
+                    // Field has been updated
+                    int oldLineNumber = getFieldLineNumber(srcField, srcCodeMapper);
+                    int newLineNumber = getFieldLineNumber(dstField, dstCodeMapper);
+                    String oldCodeSnippet = getFieldDeclaration(srcField, srcCodeMapper);
+                    String newCodeSnippet = getFieldDeclaration(dstField, dstCodeMapper);
+
+                    Update fieldUpdate = new Update(
+                            null, // No PDGNode associated
+                            oldLineNumber,
+                            newLineNumber,
+                            oldCodeSnippet,
+                            newCodeSnippet,
+                            null // No SyntaxDifference
+                    );
+                    editScriptSet.add(fieldUpdate);
+                }
+            }
+        }
+
+        // Detect insertions
+        for (SootField dstField : dstFields) {
+            String signature = dstField.getSignature();
+            if (!srcFieldMap.containsKey(signature)) {
+                // Field has been inserted
+                int lineNumber = getFieldLineNumber(dstField, dstCodeMapper);
+                String codeSnippet = getFieldDeclaration(dstField, dstCodeMapper);
+                editScriptSet.add(new Insert(null, lineNumber, codeSnippet));
+            }
+        }
+    }
+
+    private static int getClassLineNumber(SootClass sootClass, SourceCodeMapper codeMapper) throws IOException {
+        int lineNumber = sootClass.getJavaSourceStartLineNumber();
+        if (lineNumber > 0) {
+            return lineNumber;
+        }
+
+        // If line number is not directly available, search for it
+        String className = sootClass.getShortName();
+        String classPattern = String.format(".*\\b(class|interface|enum)\\b\\s+\\b%s\\b.*\\{", Pattern.quote(className));
+        Pattern pattern = Pattern.compile(classPattern);
+
+        int totalLines = codeMapper.getTotalLines();
+        for (int i = 1; i <= totalLines; i++) {
+            String line = codeMapper.getCodeLine(i).trim();
+            Matcher matcher = pattern.matcher(line);
+            if (matcher.matches()) {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    private static String getClassDeclaration(SootClass sootClass, SourceCodeMapper codeMapper) throws IOException {
+        int lineNumber = getClassLineNumber(sootClass, codeMapper);
+        if (lineNumber > 0) {
+            return codeMapper.getCodeLine(lineNumber).trim();
+        }
+        return ""; // not found
+    }
+
+    private static int getFieldLineNumber(SootField field, SourceCodeMapper codeMapper) throws IOException {
+        int lineNumber = field.getJavaSourceStartLineNumber();
+        if (lineNumber > 0) {
+            return lineNumber;
+        }
+
+        // if line number is not directly available, search for it
+        String fieldName = field.getName();
+        String fieldType = field.getType().toString();
+
+        // Build a regex pattern to match the field declaration
+        String fieldPattern = String.format(".*\\b%s\\b\\s+\\b%s\\b.*;", Pattern.quote(fieldType), Pattern.quote(fieldName));
+        Pattern pattern = Pattern.compile(fieldPattern);
+
+        // search through the source code to find the field declaration line -> might be a better way of doing this ibr
+        int totalLines = codeMapper.getTotalLines();
+        for (int i = 1; i <= totalLines; i++) {
+            String line = codeMapper.getCodeLine(i).trim();
+            Matcher matcher = pattern.matcher(line);
+            if (matcher.matches()) {
+                return i;
+            }
+        }
+
+        return -1; // Line number not found
+    }
+
+    private static String getFieldDeclaration(SootField field, SourceCodeMapper codeMapper) throws IOException {
+        int lineNumber = getFieldLineNumber(field, codeMapper);
+        if (lineNumber > 0) {
+            return codeMapper.getCodeLine(lineNumber).trim();
+        }
+        return "";
+    }
+
+    private static boolean fieldsAreEqual(SootField field1, SootField field2) {
+        // cmp field types
+        if (!field1.getType().equals(field2.getType())) {
+            return false;
+        }
+        // cmp modifiers
+        if (field1.getModifiers() != field2.getModifiers()) {
+            return false;
+        }
+        // TODO:  compare annotations or initial values if necessary
+        return true;
+    }
+
+
+
+
 
     public static int getMethodLineNumber(SootMethod method, SourceCodeMapper srcCodeMapper) throws IOException {
         int currentLine = method.getJavaSourceStartLineNumber();

@@ -1,6 +1,11 @@
 package org.pdgdiff.testclasses;
 
 public class TestAdder1 {
+
+    private int cheese;
+
+    public String swag;
+
     public static void main(String[] args) {
         TestAdder1 test = new TestAdder1();
         int result = test.addNumbers(5, 10);
