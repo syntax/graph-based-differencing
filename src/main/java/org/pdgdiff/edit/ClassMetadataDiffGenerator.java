@@ -8,6 +8,7 @@ import org.pdgdiff.io.JsonOperationSerializer;
 import org.pdgdiff.io.OperationSerializer;
 import org.pdgdiff.util.CodeAnalysisUtils;
 import org.pdgdiff.util.SourceCodeMapper;
+import soot.Modifier;
 import soot.SootClass;
 import soot.SootField;
 import soot.util.Chain;
@@ -70,6 +71,10 @@ public class ClassMetadataDiffGenerator {
         }
     }
 
+
+    // in an ideal world this would also be able to compare uses of a field in the entire body, then I would be able to
+    // account for rename refactors in the code base quite cleverly, maybe somethnig to look into.
+
     private static void compareFields(
             SootClass srcClass,
             SootClass dstClass,
@@ -80,30 +85,31 @@ public class ClassMetadataDiffGenerator {
         Chain<SootField> srcFields = srcClass.getFields();
         Chain<SootField> dstFields = dstClass.getFields();
 
-        // TODO: prob can use soots own chain here for optimised lookup, but map is also O(1)
         Map<String, SootField> srcFieldMap = new HashMap<>();
-        for (SootField field : srcFields) {
-            srcFieldMap.put(field.getSignature(), field);
-        }
-
         Map<String, SootField> dstFieldMap = new HashMap<>();
-        for (SootField field : dstFields) {
-            dstFieldMap.put(field.getSignature(), field);
+
+        // TODO: look into using soots own 'Chain' for this
+        for (SootField field : srcFields) {
+            srcFieldMap.put(field.getName(), field);
         }
 
-        // deletions and updates
-        for (SootField srcField : srcFields) {
-            String signature = srcField.getSignature();
-            SootField dstField = dstFieldMap.get(signature);
+        for (SootField field : dstFields) {
+            dstFieldMap.put(field.getName(), field);
+        }
 
-            if (dstField == null) {
-                // delete
-                int lineNumber = CodeAnalysisUtils.getFieldLineNumber(srcField, srcCodeMapper);
-                String codeSnippet = CodeAnalysisUtils.getFieldDeclaration(srcField, srcCodeMapper);
-                editScriptSet.add(new Delete(null, lineNumber, codeSnippet));
-            } else {
+        // Matching fields by name, type, and modifiers to try and report update instructions where sensible
+        Set<String> matchedFields = new HashSet<>();
+
+        // firstly attempting to match by name
+        for (SootField srcField : srcFields) {
+            String fieldName = srcField.getName();
+            SootField dstField = dstFieldMap.get(fieldName);
+
+            if (dstField != null) {
+                matchedFields.add(fieldName);
+
                 if (!fieldsAreEqual(srcField, dstField)) {
-                    // update
+                    // update if field types or modifiers differ
                     int oldLineNumber = CodeAnalysisUtils.getFieldLineNumber(srcField, srcCodeMapper);
                     int newLineNumber = CodeAnalysisUtils.getFieldLineNumber(dstField, dstCodeMapper);
                     String oldCodeSnippet = CodeAnalysisUtils.getFieldDeclaration(srcField, srcCodeMapper);
@@ -122,16 +128,66 @@ public class ClassMetadataDiffGenerator {
             }
         }
 
-        // insertion
+        // secondary matching by type / modifier
+        for (SootField srcField : srcFields) {
+            String fieldName = srcField.getName();
+            if (matchedFields.contains(fieldName)) continue;
+
+            // look for a destination field with similar properties
+            SootField bestMatch = null;
+            for (SootField dstField : dstFields) {
+                if (matchedFields.contains(dstField.getName())) continue;
+
+                if (fieldsAreSimilar(srcField, dstField)) {
+                    bestMatch = dstField;
+                    break;
+                }
+            }
+
+            if (bestMatch != null) {
+                // field has a close match, so treat as an update
+                matchedFields.add(bestMatch.getName());
+                int oldLineNumber = CodeAnalysisUtils.getFieldLineNumber(srcField, srcCodeMapper);
+                int newLineNumber = CodeAnalysisUtils.getFieldLineNumber(bestMatch, dstCodeMapper);
+                String oldCodeSnippet = CodeAnalysisUtils.getFieldDeclaration(srcField, srcCodeMapper);
+                String newCodeSnippet = CodeAnalysisUtils.getFieldDeclaration(bestMatch, dstCodeMapper);
+
+                EditOperation fieldUpdate = new Update(
+                        null,
+                        oldLineNumber,
+                        newLineNumber,
+                        oldCodeSnippet,
+                        newCodeSnippet,
+                        null
+                );
+                editScriptSet.add(fieldUpdate);
+            } else {
+                // no similar field found, treat as a delete
+                int lineNumber = CodeAnalysisUtils.getFieldLineNumber(srcField, srcCodeMapper);
+                String codeSnippet = CodeAnalysisUtils.getFieldDeclaration(srcField, srcCodeMapper);
+                editScriptSet.add(new Delete(null, lineNumber, codeSnippet));
+            }
+        }
+
+        // cleanup with insertion operations
         for (SootField dstField : dstFields) {
-            String signature = dstField.getSignature();
-            if (!srcFieldMap.containsKey(signature)) {
+            if (!matchedFields.contains(dstField.getName())) {
                 int lineNumber = CodeAnalysisUtils.getFieldLineNumber(dstField, dstCodeMapper);
                 String codeSnippet = CodeAnalysisUtils.getFieldDeclaration(dstField, dstCodeMapper);
                 editScriptSet.add(new Insert(null, lineNumber, codeSnippet));
             }
         }
     }
+
+
+    private static boolean fieldsAreSimilar(SootField field1, SootField field2) {
+        // check if same protectness and type
+        return  ((field1.getModifiers() & Modifier.PUBLIC) == (field2.getModifiers() & Modifier.PUBLIC) ||
+                (field1.getModifiers() & Modifier.PRIVATE) == (field2.getModifiers() & Modifier.PRIVATE) ||
+                (field1.getModifiers() & Modifier.PROTECTED) == (field2.getModifiers() & Modifier.PROTECTED))
+                & (field1.getType().equals(field2.getType()));
+    }
+
 
     private static boolean fieldsAreEqual(SootField field1, SootField field2) {
         // cmp field types
