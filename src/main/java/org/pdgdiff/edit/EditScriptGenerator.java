@@ -11,12 +11,9 @@ import soot.toolkits.graph.Block;
 import soot.toolkits.graph.pdg.HashMutablePDG;
 import soot.toolkits.graph.pdg.IRegion;
 import soot.toolkits.graph.pdg.PDGNode;
-import soot.util.Chain;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Generates edit scripts based on PDG node mappings.

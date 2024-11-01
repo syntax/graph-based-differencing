@@ -1,6 +1,5 @@
 package org.pdgdiff.util;
 
-import org.pdgdiff.util.SourceCodeMapper;
 import soot.*;
 import soot.tagkit.LineNumberTag;
 
