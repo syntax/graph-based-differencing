@@ -30,4 +30,8 @@ public class SourceCodeMapper {
     public String getCodeLine(int lineNumber) {
         return lineNumberToCodeMap.getOrDefault(lineNumber, "");
     }
+
+    public int getTotalLines() {
+        return lineNumberToCodeMap.size();
+    }
 }

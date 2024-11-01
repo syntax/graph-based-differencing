@@ -1,6 +1,9 @@
 package org.pdgdiff.testclasses;
 
 public class TestAdder2 {
+
+    private int another;
+
     public static void main(String[] args) {
         TestAdder2 test = new TestAdder2();
         int number1 = 5;

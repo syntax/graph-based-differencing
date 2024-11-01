@@ -1,11 +1,13 @@
 package org.pdgdiff.matching;
 
 import com.google.gson.JsonObject;
+import org.pdgdiff.edit.ClassMetadataDiffGenerator;
 import org.pdgdiff.edit.EditDistanceCalculator;
 import org.pdgdiff.edit.EditScriptGenerator;
 import org.pdgdiff.edit.model.EditOperation;
 import org.pdgdiff.io.JsonOperationSerializer;
 import org.pdgdiff.io.OperationSerializer;
+import soot.SootClass;
 import soot.toolkits.graph.pdg.HashMutablePDG;
 
 
@@ -22,7 +24,7 @@ import java.util.stream.Collectors;
 public class PDGComparator {
 
     public static void compareAndPrintGraphSimilarity(List<HashMutablePDG> pdgList1, List<HashMutablePDG> pdgList2,
-                                                      String strategy, String srcSourceFilePath, String dstSourceFilePath) {
+                                                      String strategy, String srcSourceFilePath, String dstSourceFilePath) throws IOException {
 
         GraphMatcher matcher = GraphMatcherFactory.createMatcher(strategy, pdgList1, pdgList2);
 
@@ -68,6 +70,12 @@ public class PDGComparator {
                 }
             }
         });
+
+        // build edit script for class mappings at this point
+        SootClass srcClass = pdgList1.get(0).getCFG().getBody().getMethod().getDeclaringClass();
+        SootClass dstClass = pdgList2.get(0).getCFG().getBody().getMethod().getDeclaringClass();
+
+        ClassMetadataDiffGenerator.generateClassMetadataDiff(srcClass, dstClass, srcSourceFilePath, dstSourceFilePath, "out/metadata_diff.json");
 
         writeAggregatedEditScript();
     }

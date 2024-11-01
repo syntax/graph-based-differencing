@@ -69,7 +69,7 @@ public class JsonOperationFormatter implements OperationFormatter {
             writer.name("newJimple").value(diff.getNewJimpleCode());
             writer.endObject();
         } else {
-            writer.name("difference").value("signature change");
+            writer.name("difference").value("signature or class metadata change");
         }
 
         writer.endObject();

@@ -63,6 +63,17 @@
     gap: 20px;
 }
 
+.deleted-line {
+    text-decoration: line-through;
+    background-color: #ffccf2;
+    color: red;
+}
+
+.inserted-line {
+    background-color: #d4fcbc;
+    color: green;
+}
+
 .file-content {
     width: 45%;
     padding: 10px;

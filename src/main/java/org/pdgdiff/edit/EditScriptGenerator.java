@@ -3,10 +3,9 @@ package org.pdgdiff.edit;
 import org.pdgdiff.edit.model.*;
 import org.pdgdiff.matching.GraphMapping;
 import org.pdgdiff.matching.NodeMapping;
+import org.pdgdiff.util.CodeAnalysisUtils;
 import org.pdgdiff.util.SourceCodeMapper;
-import soot.SootMethod;
-import soot.Type;
-import soot.Unit;
+import soot.*;
 import soot.tagkit.LineNumberTag;
 import soot.toolkits.graph.Block;
 import soot.toolkits.graph.pdg.HashMutablePDG;
@@ -15,8 +14,6 @@ import soot.toolkits.graph.pdg.PDGNode;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Generates edit scripts based on PDG node mappings.
@@ -99,8 +96,8 @@ public class EditScriptGenerator {
         String newMethodSignature = destMethod.getDeclaration();
 
         if (!oldMethodSignature.equals(newMethodSignature)) {
-            int oldMethodLineNumber = getMethodLineNumber(srcMethod, srcCodeMapper);
-            int newMethodLineNumber = getMethodLineNumber(destMethod, dstCodeMapper);
+            int oldMethodLineNumber = CodeAnalysisUtils.getMethodLineNumber(srcMethod, srcCodeMapper);
+            int newMethodLineNumber = CodeAnalysisUtils.getMethodLineNumber(destMethod, dstCodeMapper);
 
             Update signatureUpdate = new Update(
                     null, // no specific PDGNode associated for signature update
@@ -114,8 +111,6 @@ public class EditScriptGenerator {
 
             editScriptSet.add(signatureUpdate);
         }
-
-        // TODO: use SootClass to collect things like fields and difference those as well. This might have to happen in a different class.
 
         return new ArrayList<>(editScriptSet);
     }
@@ -136,60 +131,6 @@ public class EditScriptGenerator {
             this.isMove = isMove;
             this.syntaxDifferences = syntaxDifferences;
         }
-    }
-
-    public static int getMethodLineNumber(SootMethod method, SourceCodeMapper srcCodeMapper) throws IOException {
-        int currentLine = method.getJavaSourceStartLineNumber();
-
-        String methodName = method.getName();
-        String returnType = method.getReturnType().toString();
-        List<Type> parameterTypes = method.getParameterTypes();
-
-        // regex pattern to match the method declaration
-        String methodPattern = buildMethodPattern(returnType, methodName, parameterTypes);
-        Pattern pattern = Pattern.compile(methodPattern);
-        StringBuilder accumulatedLines = new StringBuilder();
-        int methodDeclarationLine = -1;
-
-        for (int i = 0; i < 20 && currentLine > 0; currentLine--) {
-            String line = srcCodeMapper.getCodeLine(currentLine).trim();
-            if (line.isEmpty()) {
-                continue;
-            }
-
-            accumulatedLines.insert(0, line + " ");
-
-            // checking if these match the regex per that method. (this is a Java.Regex matcher, not one of mine
-            // naming a big confusing
-            Matcher regexMatcher = pattern.matcher(accumulatedLines.toString());
-            if (regexMatcher.find()) {
-                methodDeclarationLine = currentLine;
-                break;
-            }
-        }
-
-        return methodDeclarationLine != -1 ? methodDeclarationLine : currentLine;
-    }
-
-    // TODO: refactor all the method stuff into its own class, cos this si getting huge
-    private static String buildMethodPattern(String returnType, String methodName, List<Type> parameterTypes) {
-        StringBuilder paramsPattern = new StringBuilder();
-        paramsPattern.append("\\(");
-        for (int i = 0; i < parameterTypes.size(); i++) {
-            paramsPattern.append(".*");
-            if (i < parameterTypes.size() - 1) {
-                paramsPattern.append(",");
-            }
-        }
-        paramsPattern.append("\\)");
-
-        String methodPattern = String.format(
-                ".*\\b%s\\b\\s+\\b%s\\b\\s*%s.*",
-                Pattern.quote(returnType),
-                Pattern.quote(methodName),
-                paramsPattern
-        );
-        return methodPattern;
     }
 
 
