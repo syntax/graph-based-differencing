@@ -3,6 +3,7 @@ package org.pdgdiff.edit;
 import org.pdgdiff.edit.model.*;
 import org.pdgdiff.graph.model.MyPDG;
 import org.pdgdiff.graph.model.MyPDGNode;
+import org.pdgdiff.graph.model.MyPDGNodeType;
 import org.pdgdiff.matching.GraphMapping;
 import org.pdgdiff.matching.NodeMapping;
 import org.pdgdiff.util.CodeAnalysisUtils;
@@ -136,12 +137,12 @@ public class EditScriptGenerator {
     }
 
 
-    public static int getNodeLineNumber(PDGNode node) {
-        if (node.getType() == PDGNode.Type.CFGNODE) {
+    public static int getNodeLineNumber(MyPDGNode node) {
+        if (node.getType() == MyPDGNodeType.CFGNODE) {
             Block block = (Block) node.getNode();
             Unit headUnit = block.getHead();
             return getLineNumber(headUnit);
-        } else if (node.getType() == PDGNode.Type.REGION) {
+        } else if (node.getType() == MyPDGNodeType.REGION) {
             IRegion region = (IRegion) node.getNode();
             Unit firstUnit = region.getFirst();
             return getLineNumber(firstUnit);
@@ -162,16 +163,16 @@ public class EditScriptGenerator {
             return new ComparisonResult(false);
         }
 
-        if (n1.getType() == PDGNode.Type.CFGNODE) {
+        if (n1.getType() == MyPDGNodeType.CFGNODE) {
             return compareCFGNodes(n1, n2, srcCodeMapper, dstCodeMapper);
-        } else if (n1.getType() == PDGNode.Type.REGION) {
+        } else if (n1.getType() == MyPDGNodeType.REGION) {
             return compareRegionNodes(n1, n2, visitedNodes, srcCodeMapper, dstCodeMapper, nodeMapping);
         }
 
         return new ComparisonResult(true);
     }
 
-    private static ComparisonResult compareRegionNodes(PDGNode n1, PDGNode n2, Set<PDGNode> visitedNodes,
+    private static ComparisonResult compareRegionNodes(MyPDGNode n1, MyPDGNode n2, Set<MyPDGNode> visitedNodes,
                                                        SourceCodeMapper srcCodeMapper, SourceCodeMapper dstCodeMapper,
                                                        NodeMapping nodeMapping) {
         IRegion region1 = (IRegion) n1.getNode();

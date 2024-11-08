@@ -73,8 +73,8 @@ public class PDGComparator {
         });
 
         // build edit script for class mappings at this point
-        SootClass srcClass = pdgList1.get(0).getCFG().getBody().getMethod().getDeclaringClass();
-        SootClass dstClass = pdgList2.get(0).getCFG().getBody().getMethod().getDeclaringClass();
+        SootClass srcClass = pdgList1.get(0).getMethod().getDeclaringClass();
+        SootClass dstClass = pdgList2.get(0).getMethod().getDeclaringClass();
 
         ClassMetadataDiffGenerator.generateClassMetadataDiff(srcClass, dstClass, srcSourceFilePath, dstSourceFilePath, "out/metadata_diff.json");
 
