@@ -45,6 +45,14 @@ public class Update extends EditOperation {
         return syntaxDifference;
     }
 
+    public void setNewCodeSnippet(String newCodeSnippet) {
+        this.newCodeSnippet = newCodeSnippet;
+    }
+
+    public void setNewLineNumber(int newLineNumber) {
+        this.newLineNumber = newLineNumber;
+    }
+
     @Override
     public String getName() {
         return "Update";

@@ -4,6 +4,7 @@ import com.google.gson.JsonObject;
 import org.pdgdiff.edit.ClassMetadataDiffGenerator;
 import org.pdgdiff.edit.EditDistanceCalculator;
 import org.pdgdiff.edit.EditScriptGenerator;
+import org.pdgdiff.edit.RecoveryProcessor;
 import org.pdgdiff.edit.model.EditOperation;
 import org.pdgdiff.io.JsonOperationSerializer;
 import org.pdgdiff.io.OperationSerializer;
@@ -54,17 +55,19 @@ public class PDGComparator {
                     List<EditOperation> editScript = EditScriptGenerator.generateEditScript(srcPDG, dstPDG, graphMapping,
                             srcSourceFilePath, dstSourceFilePath, srcObj, destObj);
 
-                    int editDistance = EditDistanceCalculator.calculateEditDistance(editScript);
+                    List<EditOperation> recoveredEditScript = RecoveryProcessor.recoverMappings(editScript);
+
+                    int editDistance = EditDistanceCalculator.calculateEditDistance(recoveredEditScript);
                     System.out.println("--- Edit information ---");
                     System.out.println("-- Edit Distance: " + editDistance);
 
                     System.out.println("-- Edit Script:");
-                    for (EditOperation op : editScript) {
+                    for (EditOperation op : recoveredEditScript) {
                         System.out.println(op);
                     }
 
                     // serialise and export
-                    exportEditScript(editScript, method1, method2);
+                    exportEditScript(recoveredEditScript, method1, method2);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
