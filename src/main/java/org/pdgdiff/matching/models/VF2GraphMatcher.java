@@ -1,35 +1,36 @@
 package org.pdgdiff.matching.models;
 
 import org.pdgdiff.graph.GraphTraversal;
+import org.pdgdiff.graph.model.MyPDG;
 import org.pdgdiff.matching.GraphMapping;
 import org.pdgdiff.matching.GraphMatcher;
 import org.pdgdiff.matching.NodeMapping;
 import org.pdgdiff.matching.models.vf2.VF2Matcher;
-import soot.toolkits.graph.pdg.HashMutablePDG;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class VF2GraphMatcher extends GraphMatcher {
-    public VF2GraphMatcher(List<HashMutablePDG> list1, List<HashMutablePDG> list2) {
+    public VF2GraphMatcher(List<MyPDG> list1, List<MyPDG> list2) {
+        // TODO: rename these legacy names 'pdglist1' to be more informative i.e. src and dest
         super(list1, list2);
     }
 
     @Override
     public GraphMapping matchPDGLists() {
-        // TODO: rename these legacy names 'pdglist1' to be more informative i.e. src and dest
-        List<HashMutablePDG> unmappedPDGs1 = new ArrayList<>(pdgList1);
-        List<HashMutablePDG> unmappedPDGs2 = new ArrayList<>(pdgList2);
+
+        List<MyPDG> unmappedPDGs1 = new ArrayList<>(pdgList1);
+        List<MyPDG> unmappedPDGs2 = new ArrayList<>(pdgList2);
 
         while (!unmappedPDGs1.isEmpty() && !unmappedPDGs2.isEmpty()) {
             double maxScore = Double.NEGATIVE_INFINITY;
-            HashMutablePDG bestPdg1 = null;
-            HashMutablePDG bestPdg2 = null;
+            MyPDG bestPdg1 = null;
+            MyPDG bestPdg2 = null;
             NodeMapping bestNodeMapping = null;
 
             // for each pair of unmapped PDGs, compute similarity score
-            for (HashMutablePDG pdg1 : unmappedPDGs1) {
-                for (HashMutablePDG pdg2 : unmappedPDGs2) {
+            for (MyPDG pdg1 : unmappedPDGs1) {
+                for (MyPDG pdg2 : unmappedPDGs2) {
                     VF2Matcher vf2Matcher = new VF2Matcher(pdg1, pdg2);
                     NodeMapping nodeMapping = vf2Matcher.match();
 
@@ -63,8 +64,8 @@ public class VF2GraphMatcher extends GraphMatcher {
         }
 
         // handling PDGs in src that were not matched
-        for (HashMutablePDG pdg1 : unmappedPDGs1) {
-            System.out.println("No matching PDG found for: " + pdg1.getCFG().getBody().getMethod().getSignature());
+        for (MyPDG pdg1 : unmappedPDGs1) {
+            System.out.println("No matching PDG found for PDG: " + pdg1);
         }
 
         return graphMapping;

@@ -1,6 +1,8 @@
 package org.pdgdiff.matching.models.ullmann;
 
 import org.pdgdiff.graph.GraphTraversal;
+import org.pdgdiff.graph.model.MyPDG;
+import org.pdgdiff.graph.model.MyPDGNode;
 import org.pdgdiff.matching.NodeMapping;
 import soot.toolkits.graph.pdg.HashMutablePDG;
 import soot.toolkits.graph.pdg.PDGNode;
@@ -12,18 +14,18 @@ import java.util.*;
  * This class contains methods to match two PDGs and return the node mappings between them.
  */
 public class UllmannMatcher {
-    private HashMutablePDG pdg1;
-    private HashMutablePDG pdg2;
+    private MyPDG pdg1;
+    private MyPDG pdg2;
     private NodeMapping nodeMapping;
 
-    private List<PDGNode> nodes1;
-    private List<PDGNode> nodes2;
+    private List<MyPDGNode> nodes1;
+    private List<MyPDGNode> nodes2;
     private int n;
     private int m;
     private int[][] M; // Compatibility matrix
     private Stack<int[][]> MStack;
 
-    public UllmannMatcher(HashMutablePDG pdg1, HashMutablePDG pdg2) {
+    public UllmannMatcher(MyPDG pdg1, MyPDG pdg2) {
         this.pdg1 = pdg1;
         this.pdg2 = pdg2;
         this.nodeMapping = new NodeMapping();
@@ -55,9 +57,9 @@ public class UllmannMatcher {
 
     private void initializeM() {
         for (int i = 0; i < n; i++) {
-            PDGNode node1 = nodes1.get(i);
+            MyPDGNode node1 = nodes1.get(i);
             for (int j = 0; j < m; j++) {
-                PDGNode node2 = nodes2.get(j);
+                MyPDGNode node2 = nodes2.get(j);
                 M[i][j] = nodesAreCompatible(node1, node2) ? 1 : 0;
             }
         }
@@ -99,8 +101,8 @@ public class UllmannMatcher {
     private boolean isFeasible(int i, int j) {
         // TODO: build more domain specific into thsi
         // Check adjacency compatibility
-        PDGNode node1 = nodes1.get(i);
-        PDGNode node2 = nodes2.get(j);
+        MyPDGNode node1 = nodes1.get(i);
+        MyPDGNode node2 = nodes2.get(j);
 
         // For all previously mapped nodes
         for (int k = 0; k < i; k++) {
@@ -113,8 +115,8 @@ public class UllmannMatcher {
                 }
             }
             if (mappedIndex != -1) {
-                PDGNode mappedNode1 = nodes1.get(k);
-                PDGNode mappedNode2 = nodes2.get(mappedIndex);
+                MyPDGNode mappedNode1 = nodes1.get(k);
+                MyPDGNode mappedNode2 = nodes2.get(mappedIndex);
 
                 // check if adjacency is preserved
                 boolean adjInPDG1 = areAdjacent(node1, mappedNode1);
@@ -128,7 +130,7 @@ public class UllmannMatcher {
         return true;
     }
 
-    private boolean areAdjacent(PDGNode n1, PDGNode n2) {
+    private boolean areAdjacent(MyPDGNode n1, MyPDGNode n2) {
         // Check if n1 and n2 are adjacent in the PDG
         return n1.getDependents().contains(n2) || n1.getBackDependets().contains(n2)
                 || n2.getDependents().contains(n1) || n2.getBackDependets().contains(n1);
@@ -145,7 +147,7 @@ public class UllmannMatcher {
         }
     }
 
-    private boolean nodesAreCompatible(PDGNode n1, PDGNode n2) {
+    private boolean nodesAreCompatible(MyPDGNode n1, MyPDGNode n2) {
         // TODO: add more like VF2
         // compare node types and attributes
         return n1.getType().equals(n2.getType()) && n1.getAttrib().equals(n2.getAttrib());

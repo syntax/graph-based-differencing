@@ -1,5 +1,6 @@
 package org.pdgdiff.edit.model;
 
+import org.pdgdiff.graph.model.MyPDGNode;
 import soot.toolkits.graph.pdg.PDGNode;
 
 import java.util.Objects;
@@ -14,7 +15,7 @@ public class Update extends EditOperation {
     private String newCodeSnippet;
     private SyntaxDifference syntaxDifference;
 
-    public Update(PDGNode node, int oldLineNumber, int newLineNumber,
+    public Update(MyPDGNode node, int oldLineNumber, int newLineNumber,
                   String oldCodeSnippet, String newCodeSnippet,
                   SyntaxDifference syntaxDifference) {
         super(node);

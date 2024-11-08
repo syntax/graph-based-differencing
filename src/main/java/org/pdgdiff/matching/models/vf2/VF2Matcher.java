@@ -1,9 +1,8 @@
 package org.pdgdiff.matching.models.vf2;
 
+import org.pdgdiff.graph.model.MyPDG;
+import org.pdgdiff.graph.model.MyPDGNode;
 import org.pdgdiff.matching.NodeMapping;
-import soot.toolkits.graph.pdg.HashMutablePDG;
-import soot.toolkits.graph.pdg.PDGNode;
-
 import java.util.Map;
 
 /**
@@ -12,11 +11,11 @@ import java.util.Map;
  * TODO: Check I have done this correctly, quite tired at time of implementation (its 11pm :( )
  */
 public class VF2Matcher {
-    private HashMutablePDG pdg1;
-    private HashMutablePDG pdg2;
+    private MyPDG pdg1;
+    private MyPDG pdg2;
     private NodeMapping nodeMapping;
 
-    public VF2Matcher(HashMutablePDG pdg1, HashMutablePDG pdg2) {
+    public VF2Matcher(MyPDG pdg1, MyPDG pdg2) {
         this.pdg1 = pdg1;
         this.pdg2 = pdg2;
         this.nodeMapping = new NodeMapping();
@@ -40,7 +39,7 @@ public class VF2Matcher {
     private boolean matchRecursive(VF2State state) {
         if (state.isComplete()) {
             // Mapping is complete, transfer mappings to nodeMapping
-            for (Map.Entry<PDGNode, PDGNode> entry : state.getMapping().entrySet()) {
+            for (Map.Entry<MyPDGNode, MyPDGNode> entry : state.getMapping().entrySet()) {
                 nodeMapping.addMapping(entry.getKey(), entry.getValue());
             }
             return true;

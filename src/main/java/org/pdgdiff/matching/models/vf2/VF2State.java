@@ -1,8 +1,9 @@
 package org.pdgdiff.matching.models.vf2;
 
 import org.pdgdiff.graph.GraphTraversal;
-import soot.toolkits.graph.pdg.HashMutablePDG;
-import soot.toolkits.graph.pdg.PDGNode;
+import org.pdgdiff.graph.model.MyPDG;
+import org.pdgdiff.graph.model.MyPDGNode;
+
 
 import java.util.*;
 
@@ -11,17 +12,17 @@ import java.util.*;
  * of the VF2 algorithm and perform operations on the state.
  */
 class VF2State {
-    private HashMutablePDG pdg1;
-    private HashMutablePDG pdg2;
-    private Map<PDGNode, PDGNode> mapping;  // The current partial mapping
+    private MyPDG pdg1;
+    private MyPDG pdg2;
+    private Map<MyPDGNode, MyPDGNode> mapping;  // The current partial mapping
 
-    private Set<PDGNode> T1;  // Nodes in PDG1 that are in the mapping or adjacent to mapped nodes
-    private Set<PDGNode> T2;  // Same for PDG2
+    private Set<MyPDGNode> T1;  // Nodes in PDG1 that are in the mapping or adjacent to mapped nodes
+    private Set<MyPDGNode> T2;  // Same for PDG2
 
-    private Set<PDGNode> unmapped1;  // Unmapped nodes in PDG1
-    private Set<PDGNode> unmapped2;  // Unmapped nodes in PDG2
+    private Set<MyPDGNode> unmapped1;  // Unmapped nodes in PDG1
+    private Set<MyPDGNode> unmapped2;  // Unmapped nodes in PDG2
 
-    public VF2State(HashMutablePDG pdg1, HashMutablePDG pdg2) {
+    public VF2State(MyPDG pdg1, MyPDG pdg2) {
         this.pdg1 = pdg1;
         this.pdg2 = pdg2;
         this.mapping = new LinkedHashMap<>();
@@ -38,7 +39,7 @@ class VF2State {
         return mapping.size() >= Math.min(GraphTraversal.getNodeCount(pdg1), GraphTraversal.getNodeCount(pdg2));
     }
 
-    public Map<PDGNode, PDGNode> getMapping() {
+    public Map<MyPDGNode, MyPDGNode> getMapping() {
         return mapping;
     }
 
@@ -50,16 +51,16 @@ class VF2State {
 
         if (!T1.isEmpty() && !T2.isEmpty()) {
             // Pick nodes from T1 and T2
-            PDGNode n1 = selectNode(T1);
-            for (PDGNode n2 : T2) {
+            MyPDGNode n1 = selectNode(T1);
+            for (MyPDGNode n2 : T2) {
                 if (nodesAreCompatible(n1, n2)) {
                     candidates.add(new CandidatePair(n1, n2));
                 }
             }
         } else {
             // If T1 and T2 are empty, pick any unmapped nodes
-            PDGNode n1 = selectNode(unmapped1);
-            for (PDGNode n2 : unmapped2) {
+            MyPDGNode n1 = selectNode(unmapped1);
+            for (MyPDGNode n2 : unmapped2) {
                 if (nodesAreCompatible(n1, n2)) {
                     candidates.add(new CandidatePair(n1, n2));
                 }
@@ -96,7 +97,7 @@ class VF2State {
 
     // Helper methods...
 
-    private boolean nodesAreCompatible(PDGNode n1, PDGNode n2) {
+    private boolean nodesAreCompatible(MyPDGNode n1, MyPDGNode n2) {
         // Compare node types, labels, attributes
         return n1.getType().equals(n2.getType()) && n1.getAttrib().equals(n2.getAttrib());
     }
@@ -113,8 +114,8 @@ class VF2State {
 
         // For all edges (n1', n1) in pdg1
         // NB getBackDependets typo exists in original soot code
-        for (PDGNode n1Prime : pair.n1.getBackDependets()) {
-            PDGNode mappedN1Prime = mapping.get(n1Prime);
+        for (MyPDGNode n1Prime : pair.n1.getBackDependets()) {
+            MyPDGNode mappedN1Prime = mapping.get(n1Prime);
             if (mappedN1Prime != null) {
                 // There should be an edge (mappedN1Prime, n2) in pdg2
                 if (!mappedN1Prime.getDependents().contains(pair.n2)) {
@@ -124,8 +125,8 @@ class VF2State {
         }
 
         // For all edges (n1, n1'') in pdg1
-        for (PDGNode n1DoublePrime : pair.n1.getDependents()) {
-            PDGNode mappedN1DoublePrime = mapping.get(n1DoublePrime);
+        for (MyPDGNode n1DoublePrime : pair.n1.getDependents()) {
+            MyPDGNode mappedN1DoublePrime = mapping.get(n1DoublePrime);
             if (mappedN1DoublePrime != null) {
                 // There should be an edge (n2, mappedN1DoublePrime) in pdg2
                 if (!pair.n2.getDependents().contains(mappedN1DoublePrime)) {
@@ -135,9 +136,9 @@ class VF2State {
         }
 
         // Ensure no conflicting mappings exist
-        for (Map.Entry<PDGNode, PDGNode> entry : mapping.entrySet()) {
-            PDGNode mappedN1 = entry.getKey();
-            PDGNode mappedN2 = entry.getValue();
+        for (Map.Entry<MyPDGNode, MyPDGNode> entry : mapping.entrySet()) {
+            MyPDGNode mappedN1 = entry.getKey();
+            MyPDGNode mappedN2 = entry.getValue();
 
             // Check if there is an edge between pair.n1 and mappedN1 in pdg1
             boolean edgeInPDG1 = pair.n1.getDependents().contains(mappedN1) || pair.n1.getBackDependets().contains(mappedN1);
@@ -151,26 +152,26 @@ class VF2State {
         return true;
     }
 
-    private void updateTerminalSets(PDGNode n1, PDGNode n2) {
+    private void updateTerminalSets(MyPDGNode n1, MyPDGNode n2) {
         // Add neighbors of n1 to T1 if they are not mapped
-        for (PDGNode neighbor : n1.getDependents()) {
+        for (MyPDGNode neighbor : n1.getDependents()) {
             if (!mapping.containsKey(neighbor)) {
                 T1.add(neighbor);
             }
         }
-        for (PDGNode neighbor : n1.getBackDependets()) {
+        for (MyPDGNode neighbor : n1.getBackDependets()) {
             if (!mapping.containsKey(neighbor)) {
                 T1.add(neighbor);
             }
         }
 
         // Same for n2
-        for (PDGNode neighbor : n2.getDependents()) {
+        for (MyPDGNode neighbor : n2.getDependents()) {
             if (!mapping.containsValue(neighbor)) {
                 T2.add(neighbor);
             }
         }
-        for (PDGNode neighbor : n2.getBackDependets()) {
+        for (MyPDGNode neighbor : n2.getBackDependets()) {
             if (!mapping.containsValue(neighbor)) {
                 T2.add(neighbor);
             }
@@ -184,25 +185,25 @@ class VF2State {
     private void recalculateTerminalSets() {
         T1.clear();
         T2.clear();
-        for (PDGNode mappedNode1 : mapping.keySet()) {
-            for (PDGNode neighbor : mappedNode1.getDependents()) {
+        for (MyPDGNode mappedNode1 : mapping.keySet()) {
+            for (MyPDGNode neighbor : mappedNode1.getDependents()) {
                 if (!mapping.containsKey(neighbor)) {
                     T1.add(neighbor);
                 }
             }
-            for (PDGNode neighbor : mappedNode1.getBackDependets()) {
+            for (MyPDGNode neighbor : mappedNode1.getBackDependets()) {
                 if (!mapping.containsKey(neighbor)) {
                     T1.add(neighbor);
                 }
             }
         }
-        for (PDGNode mappedNode2 : mapping.values()) {
-            for (PDGNode neighbor : mappedNode2.getDependents()) {
+        for (MyPDGNode mappedNode2 : mapping.values()) {
+            for (MyPDGNode neighbor : mappedNode2.getDependents()) {
                 if (!mapping.containsValue(neighbor)) {
                     T2.add(neighbor);
                 }
             }
-            for (PDGNode neighbor : mappedNode2.getBackDependets()) {
+            for (MyPDGNode neighbor : mappedNode2.getBackDependets()) {
                 if (!mapping.containsValue(neighbor)) {
                     T2.add(neighbor);
                 }
@@ -210,7 +211,7 @@ class VF2State {
         }
     }
 
-    private PDGNode selectNode(Set<PDGNode> nodeSet) {
+    private MyPDGNode selectNode(Set<MyPDGNode> nodeSet) {
         // TODO: implement a more sophisticated node selection strategy here
         // ATM return any node from the set
         return nodeSet.iterator().next();

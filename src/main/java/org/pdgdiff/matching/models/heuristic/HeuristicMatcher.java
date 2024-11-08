@@ -1,5 +1,7 @@
 package org.pdgdiff.matching.models.heuristic;
 
+import org.pdgdiff.graph.model.MyPDG;
+import org.pdgdiff.graph.model.MyPDGNode;
 import org.pdgdiff.matching.NodeMapping;
 import org.pdgdiff.graph.GraphTraversal;
 import soot.toolkits.graph.pdg.HashMutablePDG;
@@ -10,17 +12,17 @@ import java.util.List;
 
 public class HeuristicMatcher {
     // Compare two individual PDGs
-    public double comparePDGs(HashMutablePDG pdg1, HashMutablePDG pdg2, NodeMapping nodeMapping) {
+    public double comparePDGs(MyPDG pdg1, MyPDG pdg2, NodeMapping nodeMapping) {
         double totalScore = 0.0;
 
         // Get nodes from the PDGs
-        List<PDGNode> nodes1 = getPDGNodes(pdg1);
-        List<PDGNode> nodes2 = getPDGNodes(pdg2);
+        List<MyPDGNode> nodes1 = getPDGNodes(pdg1);
+        List<MyPDGNode> nodes2 = getPDGNodes(pdg2);
 
         // Match nodes between the two PDGs
         for (int i = 0; i < Math.min(nodes1.size(), nodes2.size()); i++) {
-            PDGNode node1 = nodes1.get(i);
-            PDGNode node2 = nodes2.get(i);
+            MyPDGNode node1 = nodes1.get(i);
+            MyPDGNode node2 = nodes2.get(i);
 
             double nodeScore = similarityScore(node1, node2);
 
@@ -35,8 +37,8 @@ public class HeuristicMatcher {
         totalScore = totalScore / Math.max(nodes1.size(), nodes2.size());
 
         // Include method name similarity
-        String methodName1 = pdg1.getCFG().getBody().getMethod().getName();
-        String methodName2 = pdg2.getCFG().getBody().getMethod().getName();
+        String methodName1 = pdg1.getMethod().getName();
+        String methodName2 = pdg2.getMethod().getName();
         double nameSimilarity = JaroWinklerSimilarity.JaroWinklerSimilarity(methodName1, methodName2);
 
         totalScore += nameSimilarity * 2;
@@ -45,12 +47,12 @@ public class HeuristicMatcher {
     }
 
     // Use GraphTraversal to get all nodes in a PDG
-    private List<PDGNode> getPDGNodes(HashMutablePDG pdg) {
+    private List<MyPDGNode> getPDGNodes(MyPDG pdg) {
         return GraphTraversal.collectNodesBFS(pdg);
     }
 
     // Calculate a similarity score between two PDG nodes
-    private double similarityScore(PDGNode node1, PDGNode node2) {
+    private double similarityScore(MyPDGNode node1, MyPDGNode node2) {
         double score = 0.0;
 
         // Compare node types
@@ -83,7 +85,7 @@ public class HeuristicMatcher {
     }
 
     // Extract the actual code or detailed label from the PDGNode's m_node field
-    private String extractCodeOrLabel(PDGNode node) {
+    private String extractCodeOrLabel(MyPDGNode node) {
         Object m_node = node.getNode();
 
         if (m_node instanceof soot.toolkits.graph.Block) {

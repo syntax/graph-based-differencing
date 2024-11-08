@@ -1,6 +1,6 @@
 package org.pdgdiff.matching;
 
-import soot.toolkits.graph.pdg.HashMutablePDG;
+import org.pdgdiff.graph.model.MyPDG;
 
 import java.util.HashSet;
 import java.util.List;
@@ -11,12 +11,12 @@ import java.util.List;
  * This class uses a custom similarity score to compare PDG nodes and labels. WIP.
  */
 public abstract class GraphMatcher {
-    protected final HashSet<HashMutablePDG> matchedPDGs;
-    protected List<HashMutablePDG> pdgList1;
-    protected List<HashMutablePDG> pdgList2;
+    protected final HashSet<MyPDG> matchedPDGs;
+    protected List<MyPDG> pdgList1;
+    protected List<MyPDG> pdgList2;
     protected GraphMapping graphMapping; // To store graph-level and node-level mappings
 
-    public GraphMatcher(List<HashMutablePDG> list1, List<HashMutablePDG> list2) {
+    public GraphMatcher(List<MyPDG> list1, List<MyPDG> list2) {
         this.pdgList1 = list1;
         this.pdgList2 = list2;
         this.graphMapping = new GraphMapping();

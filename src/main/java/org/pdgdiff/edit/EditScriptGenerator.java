@@ -1,6 +1,8 @@
 package org.pdgdiff.edit;
 
 import org.pdgdiff.edit.model.*;
+import org.pdgdiff.graph.model.MyPDG;
+import org.pdgdiff.graph.model.MyPDGNode;
 import org.pdgdiff.matching.GraphMapping;
 import org.pdgdiff.matching.NodeMapping;
 import org.pdgdiff.util.CodeAnalysisUtils;
@@ -21,8 +23,8 @@ import java.util.*;
 public class EditScriptGenerator {
 
     public static List<EditOperation> generateEditScript(
-            HashMutablePDG srcPDG,
-            HashMutablePDG dstPDG,
+            MyPDG srcPDG,
+            MyPDG dstPDG,
             GraphMapping graphMapping,
             String srcSourceFilePath,
             String dstSourceFilePath,
@@ -38,15 +40,15 @@ public class EditScriptGenerator {
 
         NodeMapping nodeMapping = graphMapping.getNodeMapping(srcPDG);
 
-        Map<PDGNode, PDGNode> mappings = nodeMapping.getNodeMapping();
-        Set<PDGNode> srcNodesMapped = mappings.keySet();
-        Set<PDGNode> dstNodesMapped = new HashSet<>(mappings.values());
+        Map<MyPDGNode, MyPDGNode> mappings = nodeMapping.getNodeMapping();
+        Set<MyPDGNode> srcNodesMapped = mappings.keySet();
+        Set<MyPDGNode> dstNodesMapped = new HashSet<>(mappings.values());
 
-        Set<PDGNode> visitedNodes = new HashSet<>();
+        Set<MyPDGNode> visitedNodes = new HashSet<>();
 
         // process mapped nodes for updates or moves
-        for (PDGNode srcNode : srcNodesMapped) {
-            PDGNode dstNode = mappings.get(srcNode);
+        for (MyPDGNode srcNode : srcNodesMapped) {
+            MyPDGNode dstNode = mappings.get(srcNode);
 
             if (!visitedNodes.contains(srcNode)) {
                 ComparisonResult compResult = nodesAreEqual(srcNode, dstNode, visitedNodes, srcCodeMapper, dstCodeMapper, nodeMapping);
@@ -63,7 +65,7 @@ public class EditScriptGenerator {
                             int newLineNumber = syntaxDiff.getNewLineNumber();
                             String oldCodeSnippet = syntaxDiff.getOldCodeSnippet();
                             String newCodeSnippet = syntaxDiff.getNewCodeSnippet();
-                            PDGNode node = srcNode;
+                            MyPDGNode node = srcNode;
                             Update update = new Update(node, oldLineNumber, newLineNumber, oldCodeSnippet, newCodeSnippet, syntaxDiff);
                             editScriptSet.add(update);
                         }
@@ -73,7 +75,7 @@ public class EditScriptGenerator {
         }
 
         // handle deletions
-        for (PDGNode srcNode : srcPDG) {
+        for (MyPDGNode srcNode : srcPDG) {
             if (!srcNodesMapped.contains(srcNode) && !visitedNodes.contains(srcNode)) {
                 int lineNumber = getNodeLineNumber(srcNode);
                 String codeSnippet = srcCodeMapper.getCodeLine(lineNumber);
@@ -82,7 +84,7 @@ public class EditScriptGenerator {
         }
 
         // handle insertions
-        for (PDGNode dstNode : dstPDG) {
+        for (MyPDGNode dstNode : dstPDG) {
             if (!dstNodesMapped.contains(dstNode) && !visitedNodes.contains(dstNode)) {
                 int lineNumber = getNodeLineNumber(dstNode);
                 String codeSnippet = dstCodeMapper.getCodeLine(lineNumber);
@@ -147,7 +149,7 @@ public class EditScriptGenerator {
         return -1;
     }
 
-    private static ComparisonResult nodesAreEqual(PDGNode n1, PDGNode n2, Set<PDGNode> visitedNodes,
+    private static ComparisonResult nodesAreEqual(MyPDGNode n1, MyPDGNode n2, Set<MyPDGNode> visitedNodes,
                                                   SourceCodeMapper srcCodeMapper, SourceCodeMapper dstCodeMapper,
                                                   NodeMapping nodeMapping) {
         if (visitedNodes.contains(n1)) {
@@ -181,11 +183,11 @@ public class EditScriptGenerator {
         Set<SyntaxDifference> differences = compareUnitLists(units1, units2, srcCodeMapper, dstCodeMapper);
 
         // recurively compare child regions
-        List<PDGNode> childNodes1 = getRegionChildNodes(n1);
-        List<PDGNode> childNodes2 = getRegionChildNodes(n2);
+        List<MyPDGNode> childNodes1 = getRegionChildNodes(n1);
+        List<MyPDGNode> childNodes2 = getRegionChildNodes(n2);
 
-        for (PDGNode child1 : childNodes1) {
-            PDGNode child2 = nodeMapping.getMappedNode(child1);
+        for (MyPDGNode child1 : childNodes1) {
+            MyPDGNode child2 = nodeMapping.getMappedNode(child1);
             if (child2 != null) {
                 ComparisonResult compResult = nodesAreEqual(child1, child2, visitedNodes, srcCodeMapper, dstCodeMapper, nodeMapping);
                 if (!compResult.isEqual) {
@@ -197,8 +199,8 @@ public class EditScriptGenerator {
             }
         }
 
-        for (PDGNode child2 : childNodes2) {
-            PDGNode child1 = nodeMapping.getReverseMappedNode(child2);
+        for (MyPDGNode child2 : childNodes2) {
+            MyPDGNode child1 = nodeMapping.getReverseMappedNode(child2);
             if (child1 == null) {
                 // node has been inserted
                 differences.add(new SyntaxDifference(null, child2, srcCodeMapper, dstCodeMapper));
@@ -214,15 +216,15 @@ public class EditScriptGenerator {
 
 
     // helper class cos soot classes is not modifiable
-    private static List<PDGNode> getRegionChildNodes(PDGNode regionNode) {
-        List<PDGNode> childNodes = new ArrayList<>();
-        for (PDGNode dependent : regionNode.getDependents()) {
+    private static List<MyPDGNode> getRegionChildNodes(MyPDGNode regionNode) {
+        List<MyPDGNode> childNodes = new ArrayList<>();
+        for (MyPDGNode dependent : regionNode.getDependents()) {
             childNodes.add(dependent);
         }
         return childNodes;
     }
 
-    private static ComparisonResult compareCFGNodes(PDGNode n1, PDGNode n2,
+    private static ComparisonResult compareCFGNodes(MyPDGNode n1, MyPDGNode n2,
                                                     SourceCodeMapper srcCodeMapper, SourceCodeMapper dstCodeMapper) {
         Block block1 = (Block) n1.getNode();
         Block block2 = (Block) n2.getNode();

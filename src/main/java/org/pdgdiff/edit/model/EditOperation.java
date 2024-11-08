@@ -1,15 +1,16 @@
 package org.pdgdiff.edit.model;
 
+import org.pdgdiff.graph.model.MyPDGNode;
 import soot.toolkits.graph.pdg.PDGNode;
 
 public abstract class EditOperation {
-    protected PDGNode node;
+    protected MyPDGNode node;
 
-    public EditOperation(PDGNode node) {
+    public EditOperation(MyPDGNode node) {
         this.node = node;
     }
 
-    public PDGNode getNode() {
+    public MyPDGNode getNode() {
         return node;
     }
 
