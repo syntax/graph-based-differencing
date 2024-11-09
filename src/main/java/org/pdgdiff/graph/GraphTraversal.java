@@ -1,7 +1,8 @@
 package org.pdgdiff.graph;
 
-import soot.toolkits.graph.pdg.HashMutablePDG;
-import soot.toolkits.graph.pdg.PDGNode;
+
+import org.pdgdiff.graph.model.MyPDG;
+import org.pdgdiff.graph.model.MyPDGNode;
 
 import java.util.*;
 
@@ -18,32 +19,32 @@ public class GraphTraversal {
     }
 
     // Method to traverse the graph using a breadth-first search and collect all nodes
-    public static List<PDGNode> collectNodesBFS(HashMutablePDG pdg) {
+    public static List<MyPDGNode> collectNodesBFS(MyPDG pdg) {
         if (debug) System.out.println("[BFS] Traversing graph");
 
-        PDGNode start_node = pdg.GetStartNode();
-        List<PDGNode> nodeList = new ArrayList<>();
+        MyPDGNode startNode = pdg.getStartNode();
+        List<MyPDGNode> nodeList = new ArrayList<>();
 
-        if (start_node == null) {
+        if (startNode == null) {
             if (debug) System.out.println("[BFS] No start node found in the PDG.");
             return nodeList;
         }
 
-        Queue<PDGNode> queue = new LinkedList<>();
-        Set<PDGNode> visited = new HashSet<>();
+        Queue<MyPDGNode> queue = new LinkedList<>();
+        Set<MyPDGNode> visited = new HashSet<>();
 
-        queue.add(start_node);
-        visited.add(start_node);
-        nodeList.add(start_node);
+        queue.add(startNode);
+        visited.add(startNode);
+        nodeList.add(startNode);
 
         // Begin BFS
         while (!queue.isEmpty()) {
-            PDGNode current_node = queue.poll();
-            if (debug) System.out.println("[BFS] Visiting node: " + current_node.toShortString());
+            MyPDGNode currentNode = queue.poll();
+            if (debug) System.out.println("[BFS] Visiting node: " + currentNode.toShortString());
 
             // Add dependents to the queue
-            List<PDGNode> dependents = current_node.getDependents();
-            for (PDGNode dependent : dependents) {
+            List<MyPDGNode> dependents = currentNode.getDependents();
+            for (MyPDGNode dependent : dependents) {
                 if (!visited.contains(dependent)) {
                     queue.add(dependent);
                     visited.add(dependent);
@@ -57,32 +58,32 @@ public class GraphTraversal {
     }
 
     // Method to traverse the graph using a depth-first search and collect all nodes
-    public static List<PDGNode> collectNodesDFS(HashMutablePDG pdg) {
+    public static List<MyPDGNode> collectNodesDFS(MyPDG pdg) {
         if (debug) System.out.println("[DFS] Traversing graph");
 
-        PDGNode start_node = pdg.GetStartNode();
-        List<PDGNode> nodeList = new ArrayList<>();
+        MyPDGNode startNode = pdg.getStartNode();
+        List<MyPDGNode> nodeList = new ArrayList<>();
 
-        if (start_node == null) {
+        if (startNode == null) {
             if (debug) System.out.println("[DFS] No start node found in the PDG.");
             return nodeList;
         }
 
-        Stack<PDGNode> stack = new Stack<>();
-        Set<PDGNode> visited = new HashSet<>();
+        Stack<MyPDGNode> stack = new Stack<>();
+        Set<MyPDGNode> visited = new HashSet<>();
 
-        stack.push(start_node);
-        visited.add(start_node);
-        nodeList.add(start_node);
+        stack.push(startNode);
+        visited.add(startNode);
+        nodeList.add(startNode);
 
         // Begin DFS
         while (!stack.isEmpty()) {
-            PDGNode current_node = stack.pop();
-            if (debug) System.out.println("[DFS] Visiting node: " + current_node.toShortString());
+            MyPDGNode currentNode = stack.pop();
+            if (debug) System.out.println("[DFS] Visiting node: " + currentNode.toShortString());
 
             // Add dependents to the stack
-            List<PDGNode> dependents = current_node.getDependents();
-            for (PDGNode dependent : dependents) {
+            List<MyPDGNode> dependents = currentNode.getDependents();
+            for (MyPDGNode dependent : dependents) {
                 if (!visited.contains(dependent)) {
                     stack.push(dependent);
                     visited.add(dependent);
@@ -95,14 +96,10 @@ public class GraphTraversal {
         return nodeList;
     }
 
-    public static int getNodeCount(HashMutablePDG pdg) {
-        List<PDGNode> nodeList = collectNodesBFS(pdg);
+    public static int getNodeCount(MyPDG pdg) {
+        List<MyPDGNode> nodeList = collectNodesBFS(pdg);
         return nodeList.size();
     }
 
-    // Optionally, if you have already collected nodes and want to avoid traversal:
-    public static int getNodeCount(List<PDGNode> nodeList) {
-        return nodeList.size();
-    }
-
+    public static int getNodeCount(List<MyPDGNode> nodeList) { return nodeList.size(); }
 }

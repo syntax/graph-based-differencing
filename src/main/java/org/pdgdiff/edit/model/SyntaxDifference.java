@@ -1,10 +1,10 @@
 package org.pdgdiff.edit.model;
 
 import org.pdgdiff.edit.EditScriptGenerator;
+import org.pdgdiff.graph.model.MyPDGNode;
 import org.pdgdiff.util.SourceCodeMapper;
 import soot.Unit;
 import soot.tagkit.LineNumberTag;
-import soot.toolkits.graph.pdg.PDGNode;
 
 import java.util.Objects;
 
@@ -14,8 +14,8 @@ import java.util.Objects;
 public class SyntaxDifference {
     private Unit oldUnit;
     private Unit newUnit;
-    private PDGNode oldNode;
-    private PDGNode newNode;
+    private MyPDGNode oldNode;
+    private MyPDGNode newNode;
     private String message;
 
     private int oldLineNumber;
@@ -38,7 +38,7 @@ public class SyntaxDifference {
         this.newJimpleCode = newUnit != null ? newUnit.toString() : null;
     }
 
-    public SyntaxDifference(PDGNode oldNode, PDGNode newNode,
+    public SyntaxDifference(MyPDGNode oldNode, MyPDGNode newNode,
                             SourceCodeMapper oldSourceMapper, SourceCodeMapper newSourceMapper) {
         this.oldNode = oldNode;
         this.newNode = newNode;
@@ -62,11 +62,11 @@ public class SyntaxDifference {
         return newUnit;
     }
 
-    public PDGNode getOldNode() {
+    public MyPDGNode getOldNode() {
         return oldNode;
     }
 
-    public PDGNode getNewNode() {
+    public MyPDGNode getNewNode() {
         return newNode;
     }
 
@@ -133,14 +133,14 @@ public class SyntaxDifference {
         return -1;
     }
 
-    private int getNodeLineNumber(PDGNode node) {
+    private int getNodeLineNumber(MyPDGNode node) {
         if (node == null) {
             return -1;
         }
         return EditScriptGenerator.getNodeLineNumber(node);
     }
 
-    private String getNodeCodeSnippet(PDGNode node, SourceCodeMapper codeMapper) {
+    private String getNodeCodeSnippet(MyPDGNode node, SourceCodeMapper codeMapper) {
         int lineNumber = getNodeLineNumber(node);
         if (lineNumber != -1) {
             return codeMapper.getCodeLine(lineNumber);

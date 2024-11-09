@@ -1,5 +1,6 @@
 package org.pdgdiff.edit.model;
 
+import org.pdgdiff.graph.model.MyPDGNode;
 import soot.toolkits.graph.pdg.PDGNode;
 
 import java.util.Objects;
@@ -8,7 +9,7 @@ public class Insert extends EditOperation {
     private int lineNumber;
     private String codeSnippet;
 
-    public Insert(PDGNode node, int lineNumber, String codeSnippet) {
+    public Insert(MyPDGNode node, int lineNumber, String codeSnippet) {
         super(node);
         this.lineNumber = lineNumber;
         this.codeSnippet = codeSnippet;

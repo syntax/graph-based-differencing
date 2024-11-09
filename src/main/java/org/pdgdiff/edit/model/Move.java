@@ -1,5 +1,6 @@
 package org.pdgdiff.edit.model;
 
+import org.pdgdiff.graph.model.MyPDGNode;
 import soot.toolkits.graph.pdg.PDGNode;
 
 import java.util.Objects;
@@ -13,7 +14,7 @@ public class Move extends EditOperation {
     private int newLineNumber;
     private String codeSnippet;
 
-    public Move(PDGNode node, int oldLineNumber, int newLineNumber, String codeSnippet) {
+    public Move(MyPDGNode node, int oldLineNumber, int newLineNumber, String codeSnippet) {
         super(node);
         this.oldLineNumber = oldLineNumber;
         this.newLineNumber = newLineNumber;

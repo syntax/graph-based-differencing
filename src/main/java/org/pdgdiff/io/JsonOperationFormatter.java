@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.Writer;
 
 public class JsonOperationFormatter implements OperationFormatter {
+    // TODO: remove Soot specific terms from here, e.g. no longer Jimple instead should read 'IR'
     private final JsonWriter writer;
 
     public JsonOperationFormatter(Writer writer) {

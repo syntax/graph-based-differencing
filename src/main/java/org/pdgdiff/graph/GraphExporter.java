@@ -1,6 +1,7 @@
 package org.pdgdiff.graph;
 
 import org.pdgdiff.client.PDGDotVisualizer;
+import org.pdgdiff.graph.model.MyPDG;
 import soot.SootMethod;
 import soot.toolkits.graph.pdg.HashMutablePDG;
 
@@ -36,9 +37,9 @@ public class GraphExporter {
      * @param dotFileName The filename for the DOT file
      * @param txtFileName The filename for the text file
      */
-    public static void exportPDG(HashMutablePDG pdg, String dotFileName, String txtFileName) throws IOException {
+    public static void exportPDG(MyPDG pdg, String dotFileName, String txtFileName) throws IOException {
         // Get the method associated with the PDG via the UnitGraph in HashMutablePDG
-        SootMethod method = pdg.getCFG().getBody().getMethod();
+        SootMethod method = pdg.getMethod();
 
         // Export the PDG to a DOT file
         exportPDGToDot(method, dotFileName);
@@ -49,7 +50,7 @@ public class GraphExporter {
 
 
     // Method to export PDG to a file for each class
-    public static void exportPDGToFile(HashMutablePDG pdg, String fileName, String methodName) throws IOException {
+    public static void exportPDGToFile(MyPDG pdg, String fileName, String methodName) throws IOException {
         PrintWriter writer = null;
         try {
             writer = new PrintWriter(new FileWriter(fileName, true));
