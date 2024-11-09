@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 public class PDGComparator {
 
     public static void compareAndPrintGraphSimilarity(List<HashMutablePDG> pdgList1, List<HashMutablePDG> pdgList2,
-                                                      String strategy, String srcSourceFilePath, String dstSourceFilePath) throws IOException {
+                                                      GraphMatcherFactory.MatchingStrategy strategy, String srcSourceFilePath, String dstSourceFilePath) throws IOException {
 
         GraphMatcher matcher = GraphMatcherFactory.createMatcher(strategy, pdgList1, pdgList2);
 
@@ -55,7 +55,7 @@ public class PDGComparator {
                     List<EditOperation> editScript = EditScriptGenerator.generateEditScript(srcPDG, dstPDG, graphMapping,
                             srcSourceFilePath, dstSourceFilePath, srcObj, destObj);
 
-                    List<EditOperation> recoveredEditScript = RecoveryProcessor.recoverMappings(editScript);
+                    List<EditOperation> recoveredEditScript = RecoveryProcessor.recoverMappings(editScript, RecoveryProcessor.RecoveryStrategy.NONE);
 
                     int editDistance = EditDistanceCalculator.calculateEditDistance(recoveredEditScript);
                     System.out.println("--- Edit information ---");

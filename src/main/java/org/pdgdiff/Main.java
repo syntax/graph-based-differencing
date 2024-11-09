@@ -2,6 +2,7 @@ package org.pdgdiff;
 
 import org.pdgdiff.graph.GraphExporter;
 import org.pdgdiff.graph.GraphGenerator;
+import org.pdgdiff.matching.GraphMatcherFactory;
 import org.pdgdiff.matching.PDGComparator;
 import org.pdgdiff.util.SootInitializer;
 import soot.Scene;
@@ -13,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Main {
+
     public static void main(String[] args) {
         System.out.println("Starting PDG Diff...");
         // Clear out folder
@@ -44,7 +46,7 @@ public class Main {
             System.out.println("PDGs generated for " + testAdder2.getName() + ": " + pdgsClass2.size());
 
             if (!pdgsClass1.isEmpty() && !pdgsClass2.isEmpty()) {
-                PDGComparator.compareAndPrintGraphSimilarity(pdgsClass1, pdgsClass2, "vf2", srcSourceFilePath, dstSourceFilePath);
+                PDGComparator.compareAndPrintGraphSimilarity(pdgsClass1, pdgsClass2, GraphMatcherFactory.MatchingStrategy.VF2, srcSourceFilePath, dstSourceFilePath);
             }
 
         } catch (Exception e) {

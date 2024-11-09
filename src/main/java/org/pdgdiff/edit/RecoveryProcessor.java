@@ -7,9 +7,28 @@ import java.util.stream.Collectors;
 
 public class RecoveryProcessor {
 
+    public enum RecoveryStrategy {
+        GLOBAL_SIMILARITY,
+        GRAPH_CENTRALITY,
+        NONE
+    }
+
+    public static List<EditOperation> recoverMappings(List<EditOperation> editScript, RecoveryStrategy strategy) {
+        switch (strategy) {
+            case GLOBAL_SIMILARITY:
+                return recoverMappingsGlobalSimilarity(editScript);
+            case GRAPH_CENTRALITY:
+                return recoverMappingsGraphCentrality(editScript);
+            case NONE:
+                return editScript;
+            default:
+                throw new IllegalArgumentException("Unknown recovery strategy: " + strategy);
+        }
+    }
+
     // TODO: some wierd behaviour around adds/deletes, but it's a start. Need to investigate the fact this has removed an insert
     // TODO: and replaced a update with a insert/delete when it shouldnt be.
-    public static List<EditOperation> recoverMappings(List<EditOperation> editScript) {
+    public static List<EditOperation> recoverMappingsGlobalSimilarity(List<EditOperation> editScript) {
         // collect all Update operations
         List<Update> updateOperations = editScript.stream()
                 .filter(op -> op instanceof Update)
@@ -101,7 +120,6 @@ public class RecoveryProcessor {
             }
         }
 
-        // clean up duplicates
         cleanUpDuplicates(newEditScript);
 
         return newEditScript;
@@ -119,6 +137,14 @@ public class RecoveryProcessor {
             this.similarity = similarity;
         }
     }
+
+    private static List<EditOperation> recoverMappingsGraphCentrality(List<EditOperation> editScript) {
+        // TODO: implement this
+
+        return editScript;
+    }
+
+    // Helper functions
 
 
     private static void cleanUpDuplicates(List<EditOperation> editScript) {
