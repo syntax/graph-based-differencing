@@ -1,7 +1,6 @@
 package org.pdgdiff.matching.models.vf2;
 
 import org.pdgdiff.graph.model.MyPDGNode;
-import soot.toolkits.graph.pdg.PDGNode;
 
 class CandidatePair {
     MyPDGNode n1;

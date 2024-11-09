@@ -9,7 +9,6 @@ import org.pdgdiff.graph.model.MyPDG;
 import org.pdgdiff.io.JsonOperationSerializer;
 import org.pdgdiff.io.OperationSerializer;
 import soot.SootClass;
-import soot.toolkits.graph.pdg.HashMutablePDG;
 
 
 import com.google.gson.JsonArray;

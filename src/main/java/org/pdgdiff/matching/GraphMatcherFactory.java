@@ -1,11 +1,9 @@
 package org.pdgdiff.matching;
 
 import org.pdgdiff.graph.model.MyPDG;
-import org.pdgdiff.graph.model.MyPDGNode;
 import org.pdgdiff.matching.models.HeuristicGraphMatcher;
 import org.pdgdiff.matching.models.UllmannGraphMatcher;
 import org.pdgdiff.matching.models.VF2GraphMatcher;
-import soot.toolkits.graph.pdg.HashMutablePDG;
 
 import java.util.List;
 

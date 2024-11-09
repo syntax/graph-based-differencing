@@ -5,7 +5,6 @@ import org.pdgdiff.matching.GraphMapping;
 import org.pdgdiff.matching.GraphMatcher;
 import org.pdgdiff.matching.NodeMapping;
 import org.pdgdiff.matching.models.heuristic.HeuristicMatcher;
-import soot.toolkits.graph.pdg.HashMutablePDG;
 
 import java.util.List;
 

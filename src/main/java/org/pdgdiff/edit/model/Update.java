@@ -1,7 +1,6 @@
 package org.pdgdiff.edit.model;
 
 import org.pdgdiff.graph.model.MyPDGNode;
-import soot.toolkits.graph.pdg.PDGNode;
 
 import java.util.Objects;
 

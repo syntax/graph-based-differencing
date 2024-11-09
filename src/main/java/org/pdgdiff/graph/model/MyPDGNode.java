@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Objects;
 
 public class MyPDGNode {
-    private Object node;
+    private Object node;        // this will either by block or region
     private MyPDGNodeType type;
     private String attrib;
     private List<MyPDGNode> dependents;

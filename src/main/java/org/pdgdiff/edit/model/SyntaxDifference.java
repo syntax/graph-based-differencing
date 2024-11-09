@@ -5,7 +5,6 @@ import org.pdgdiff.graph.model.MyPDGNode;
 import org.pdgdiff.util.SourceCodeMapper;
 import soot.Unit;
 import soot.tagkit.LineNumberTag;
-import soot.toolkits.graph.pdg.PDGNode;
 
 import java.util.Objects;
 

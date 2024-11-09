@@ -4,8 +4,6 @@ import org.pdgdiff.graph.GraphTraversal;
 import org.pdgdiff.graph.model.MyPDG;
 import org.pdgdiff.graph.model.MyPDGNode;
 import org.pdgdiff.matching.NodeMapping;
-import soot.toolkits.graph.pdg.HashMutablePDG;
-import soot.toolkits.graph.pdg.PDGNode;
 
 import java.util.*;
 
