@@ -1,6 +1,5 @@
 package org.pdgdiff.edit;
 
-import javafx.util.Pair;
 import org.pdgdiff.edit.model.*;
 
 import java.util.*;
@@ -30,10 +29,10 @@ public class RecoveryProcessor {
         }
     }
 
-    // TODO: some wierd behaviour around adds/deletes, but it's a start. Need to investigate the fact this has removed an insert
-    // TODO: and replaced a update with a insert/delete when it shouldnt be.
     public static List<EditOperation> recoverMappingsGlobalSimilarity(List<EditOperation> editScript) {
-        // collect all Update operations
+        cleanUpDuplicates(editScript);
+
+        // Collect all Update operations
         List<Update> updateOperations = editScript.stream()
                 .filter(op -> op instanceof Update)
                 .map(op -> (Update) op)
@@ -43,6 +42,8 @@ public class RecoveryProcessor {
         Map<String, List<Update>> oldCodeToUpdates = new HashMap<>();
         Map<String, List<Update>> newCodeToUpdates = new HashMap<>();
 
+
+        // Lowk not sure this is the best way, to effectively hash an udpdate into a string, but works somewhat
         for (Update update : updateOperations) {
             String oldKey = update.getOldCodeSnippet() + "||" + update.getOldLineNumber();
             String newKey = update.getNewCodeSnippet() + "||" + update.getNewLineNumber();
@@ -51,28 +52,24 @@ public class RecoveryProcessor {
             newCodeToUpdates.computeIfAbsent(newKey, k -> new ArrayList<>()).add(update);
         }
 
-        List<String> oldCodeKeys = new ArrayList<>(oldCodeToUpdates.keySet());
-        List<String> newCodeKeys = new ArrayList<>(newCodeToUpdates.keySet());
+        // calc similarities between all pairs of old and new code snippets
 
-        // cmp similarities between all pairs of old and new code snippets
         List<Assignment> possibleAssignments = new ArrayList<>();
-        for (String oldKey : oldCodeKeys) {
+        for (String oldKey : oldCodeToUpdates.keySet()) {
             String oldCode = oldKey.split("\\|\\|")[0];
-            for (String newKey : newCodeKeys) {
+            for (String newKey : newCodeToUpdates.keySet()) {
                 String newCode = newKey.split("\\|\\|")[0];
                 double similarity = computeSimilarity(oldCode, newCode);
                 possibleAssignments.add(new Assignment(oldKey, newKey, similarity));
             }
         }
 
-        // sort assignments by decreasing similarity
         possibleAssignments.sort((a1, a2) -> Double.compare(a2.similarity, a1.similarity));
 
-        double similarityThreshold = 0.7; // TODO play with this but 0.3 seems ok
+        double similarityThreshold = 0.7;   // investiage more
 
         Set<String> assignedOldKeys = new HashSet<>();
         Set<String> assignedNewKeys = new HashSet<>();
-
         List<Assignment> assignments = new ArrayList<>();
 
         for (Assignment assignment : possibleAssignments) {
@@ -86,10 +83,9 @@ public class RecoveryProcessor {
             }
         }
 
-        // update the Update operations based on the new assignments
-        List<EditOperation> newEditScript = new ArrayList<>();
+        List<EditOperation> resolvedEdits = new ArrayList<>();
 
-        // for assigned pairs, update the Update operations
+        // update operations based on resolved assignments
         for (Assignment assignment : assignments) {
             List<Update> updates = oldCodeToUpdates.get(assignment.oldKey);
             String newCode = assignment.newKey.split("\\|\\|")[0];
@@ -98,36 +94,25 @@ public class RecoveryProcessor {
             for (Update update : updates) {
                 update.setNewCodeSnippet(newCode);
                 update.setNewLineNumber(newLineNumber);
-                newEditScript.add(update);
+                resolvedEdits.add(update);
             }
         }
 
-        // for unmatched old code snippets, convert to Delete operations TODO : THINK THIS IS TOO HASTY
-        for (String oldKey : oldCodeKeys) {
+        // retain unmatched updates without modification
+        for (String oldKey : oldCodeToUpdates.keySet()) {
             if (!assignedOldKeys.contains(oldKey)) {
-                List<Update> updates = oldCodeToUpdates.get(oldKey);
-                for (Update update : updates) {
-                    Delete deleteOp = new Delete(update.getNode(),
-                            update.getOldLineNumber(), update.getOldCodeSnippet());
-                    newEditScript.add(deleteOp);
-                }
+                resolvedEdits.addAll(oldCodeToUpdates.get(oldKey));
             }
         }
-
-        // for unmatched new code snippets, create Insert operations TODO : THINK THIS IS TOO HASTY
-        for (String newKey : newCodeKeys) {
+        for (String newKey : newCodeToUpdates.keySet()) {
             if (!assignedNewKeys.contains(newKey)) {
-                String newCode = newKey.split("\\|\\|")[0];
-                int newLineNumber = Integer.parseInt(newKey.split("\\|\\|")[1]);
-                Insert insertOp = new Insert(null, newLineNumber, newCode);
-                newEditScript.add(insertOp);
+                resolvedEdits.addAll(newCodeToUpdates.get(newKey));
             }
         }
 
-        cleanUpDuplicates(newEditScript);
-
-        return newEditScript;
+        return resolvedEdits;
     }
+
 
 
     private static class Assignment {
@@ -257,6 +242,8 @@ public class RecoveryProcessor {
         }
     }
 
+
+    // consider using .hashCode on this one ...
     private static String generateOperationKey(EditOperation op) {
         if (op instanceof Update) {
             Update update = (Update) op;
@@ -293,8 +280,8 @@ public class RecoveryProcessor {
     }
 
 
-    // Pretty boring algorithm for string similarity, but works
     private static int levenshteinDistance(String s, String t) {
+        // TODO: refactor into Similartiy file alongside JaroWinkely
         int m = s.length();
         int n = t.length();
 
