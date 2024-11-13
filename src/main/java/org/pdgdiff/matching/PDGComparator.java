@@ -5,6 +5,7 @@ import org.pdgdiff.edit.ClassMetadataDiffGenerator;
 import org.pdgdiff.edit.EditDistanceCalculator;
 import org.pdgdiff.edit.EditScriptGenerator;
 import org.pdgdiff.edit.model.EditOperation;
+import org.pdgdiff.graph.CycleDetection;
 import org.pdgdiff.io.JsonOperationSerializer;
 import org.pdgdiff.io.OperationSerializer;
 import soot.SootClass;
@@ -38,6 +39,8 @@ public class PDGComparator {
             String method1 = srcPDG.getCFG().getBody().getMethod().getSignature();
             String method2 = dstPDG.getCFG().getBody().getMethod().getSignature();
             System.out.println("---\n> PDG from class 1: " + method1 + " is matched with PDG from class 2: " + method2);
+            CycleDetection.hasCycle(srcPDG);
+            CycleDetection.hasCycle(dstPDG);
             NodeMapping nodeMapping = graphMapping.getNodeMapping(srcPDG);
             if (nodeMapping != null) {
                 System.out.println("--- Node Mapping:");
