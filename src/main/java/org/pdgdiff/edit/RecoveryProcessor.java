@@ -24,7 +24,7 @@ public class RecoveryProcessor {
                 return recoverMappingsNoDuplicates(editScript);
             case NONE:
                 return editScript;
-            default:
+                default:
                 throw new IllegalArgumentException("Unknown recovery strategy: " + strategy);
         }
     }
@@ -167,15 +167,97 @@ public class RecoveryProcessor {
 
         // process each component to resolve conflicts
         List<EditOperation> newEditScript = new ArrayList<>();
-        Set<Update> squashedUpdates = new HashSet<>();
+        Set<Update> processedUpdates = new HashSet<>();
 
         // TODO: bulk of the logic...
         // Per each connected component, I want to extract the most central nodes of the graph (I assume those with the
         // most edges). To be honest, I have no idea if this will generealise to many cases.
 
-        // Add any remaining operations not processed
+        // BELOW is an implementation of the Global similarity algorithm, but only on the subset of connected components found.
+
+        for (Set<Update> component : connectedComponents) {
+            // collect old and new code snippets within the component
+            Map<String, List<Update>> oldCodeToUpdates = new HashMap<>();
+            Map<String, List<Update>> newCodeToUpdates = new HashMap<>();
+
+            for (Update update : component) {
+                String oldKey = update.getOldCodeSnippet() + "||" + update.getOldLineNumber();
+                String newKey = update.getNewCodeSnippet() + "||" + update.getNewLineNumber();
+
+                oldCodeToUpdates.computeIfAbsent(oldKey, k -> new ArrayList<>()).add(update);
+                newCodeToUpdates.computeIfAbsent(newKey, k -> new ArrayList<>()).add(update);
+            }
+
+            // calc similarities between all pairs of old and new code snippets within the component
+            List<Assignment> possibleAssignments = new ArrayList<>();
+            for (String oldKey : oldCodeToUpdates.keySet()) {
+                String oldCode = oldKey.split("\\|\\|")[0];
+                for (String newKey : newCodeToUpdates.keySet()) {
+                    String newCode = newKey.split("\\|\\|")[0];
+                    double similarity = computeSimilarity(oldCode, newCode);
+                    possibleAssignments.add(new Assignment(oldKey, newKey, similarity));
+                }
+            }
+
+            // sortin assignments by similarity in decreasing order
+            possibleAssignments.sort((a1, a2) -> Double.compare(a2.similarity, a1.similarity));
+
+            double similarityThreshold = 0.7; // TODO investigate more
+
+            Set<String> assignedOldKeys = new HashSet<>();
+            Set<String> assignedNewKeys = new HashSet<>();
+            List<Assignment> assignments = new ArrayList<>();
+
+            // assn updates based on highest similarity scores
+            for (Assignment assignment : possibleAssignments) {
+                if (assignment.similarity < similarityThreshold) {
+                    break;
+                }
+                if (!assignedOldKeys.contains(assignment.oldKey) && !assignedNewKeys.contains(assignment.newKey)) {
+                    assignedOldKeys.add(assignment.oldKey);
+                    assignedNewKeys.add(assignment.newKey);
+                    assignments.add(assignment);
+                }
+            }
+
+            // update operations based on resolved assignments
+            for (Assignment assignment : assignments) {
+                List<Update> updates = oldCodeToUpdates.get(assignment.oldKey);
+                String newCode = assignment.newKey.split("\\|\\|")[0];
+                int newLineNumber = Integer.parseInt(assignment.newKey.split("\\|\\|")[1]);
+
+                for (Update update : updates) {
+                    update.setNewCodeSnippet(newCode);
+                    update.setNewLineNumber(newLineNumber);
+                    newEditScript.add(update);
+                    processedUpdates.add(update);
+                }
+            }
+
+            // retain unmatched updates within the component without modification
+            for (String oldKey : oldCodeToUpdates.keySet()) {
+                if (!assignedOldKeys.contains(oldKey)) {
+                    for (Update update : oldCodeToUpdates.get(oldKey)) {
+                        newEditScript.add(update);
+                        processedUpdates.add(update);
+                    }
+                }
+            }
+            for (String newKey : newCodeToUpdates.keySet()) {
+                if (!assignedNewKeys.contains(newKey)) {
+                    for (Update update : newCodeToUpdates.get(newKey)) {
+                        if (!processedUpdates.contains(update)) {
+                            newEditScript.add(update);
+                            processedUpdates.add(update);
+                        }
+                    }
+                }
+            }
+        }
+
+        // add any remaining operations not processed (non-conflicting updates and other operations)
         for (EditOperation op : editScript) {
-            if (!(op instanceof Update) || !squashedUpdates.contains(op)) {
+            if (!(op instanceof Update) || !processedUpdates.contains(op)) {
                 newEditScript.add(op);
             }
         }
