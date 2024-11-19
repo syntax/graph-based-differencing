@@ -6,6 +6,8 @@ import soot.tagkit.Tag;
 import soot.toolkits.graph.Block;
 import soot.toolkits.graph.pdg.HashMutablePDG;
 import soot.toolkits.graph.pdg.PDGNode;
+import soot.toolkits.graph.pdg.PDGRegion;
+import soot.toolkits.graph.pdg.Region;
 
 import java.util.*;
 
@@ -98,33 +100,64 @@ public class CycleDetection {
 
     // gather SCCs
     private static void strongConnect(PDGNode node, HashMutablePDG pdg) {
-        // set the depth index for node to the smallest unused index
         indices.put(node, index);
         lowLinks.put(node, index);
         index++;
         stack.push(node);
 
-        for (PDGNode dependent : pdg.getSuccsOf(node)) {
+        List<PDGNode> successors;
+
+        if (node.getType() == PDGNode.Type.REGION) {
+            if (node.getNode() instanceof PDGRegion) {
+                if (debug) System.out.println("Node of type REGION is an instance of PDGRegion");
+                PDGRegion region = (PDGRegion) node.getNode();
+                successors = getInternalSuccessors(region);
+            } else if (node.getNode() instanceof Region) {
+                if (debug) System.out.println("Node of type REGION is an instance of Region");
+                Region region = (Region) node.getNode();
+                successors = pdg.getSuccsOf(node);
+            } else {
+                if (debug) System.out.println("unkown type for region: " + node.getNode().getClass().getName());
+                successors = pdg.getSuccsOf(node);
+            }
+        } else {
+            // non region e.g. cfg nodes
+            successors = pdg.getSuccsOf(node);
+        }
+
+        for (PDGNode dependent : successors) {
             if (!indices.containsKey(dependent)) {
-                // succ has not yet been visited; recurse on it
                 strongConnect(dependent, pdg);
                 lowLinks.put(node, Math.min(lowLinks.get(node), lowLinks.get(dependent)));
             } else if (stack.contains(dependent)) {
-                // succ is in stack and hence in the current SCC
                 lowLinks.put(node, Math.min(lowLinks.get(node), indices.get(dependent)));
             }
         }
 
         // if node is a root node, pop the stack and generate an SCC
         if (lowLinks.get(node).equals(indices.get(node))) {
-            Set<PDGNode> scc = Collections.newSetFromMap(new IdentityHashMap<>());
+            Set<PDGNode> scc = new HashSet<>();
             PDGNode w;
             do {
                 w = stack.pop();
                 scc.add(w);
-            } while (w != node); // Should be identiy comparison
+            } while (w != node);
             stronglyConnectedComponents.add(scc);
         }
+    }
+
+    // expanding PDGREGION nodes into individual Units
+    private static List<PDGNode> getInternalSuccessors(PDGRegion region) {
+        List<PDGNode> expandedSuccessors = new ArrayList<>();
+
+        // add each Unit in the Region as a PDGNode in the expanded graph
+        for (Unit unit : region.getUnits()) {
+            PDGNode unitNode = region.unit2PDGNode(unit);
+            if (unitNode != null) {
+                expandedSuccessors.add(unitNode);
+            }
+        }
+        return expandedSuccessors;
     }
 
     private static boolean hasSelfLoop(Set<PDGNode> scc, HashMutablePDG pdg) {
@@ -138,7 +171,7 @@ public class CycleDetection {
         return false;
     }
 
-    // method  to extract the line number from a PDGNode, prob alr got this lol
+    // method  to extract the line number from a PDGNode
     private static int getLineNumberFromPDGNode(PDGNode node) {
         if (node.getType() == PDGNode.Type.CFGNODE) {
             Block block = (Block) node.getNode();
