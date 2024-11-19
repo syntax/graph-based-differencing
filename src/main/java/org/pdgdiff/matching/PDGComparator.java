@@ -4,6 +4,7 @@ import com.google.gson.JsonObject;
 import org.pdgdiff.edit.ClassMetadataDiffGenerator;
 import org.pdgdiff.edit.EditDistanceCalculator;
 import org.pdgdiff.edit.EditScriptGenerator;
+import org.pdgdiff.edit.RecoveryProcessor;
 import org.pdgdiff.edit.model.EditOperation;
 import org.pdgdiff.graph.CycleDetection;
 import org.pdgdiff.io.JsonOperationSerializer;
@@ -25,7 +26,7 @@ import java.util.stream.Collectors;
 public class PDGComparator {
 
     public static void compareAndPrintGraphSimilarity(List<HashMutablePDG> pdgList1, List<HashMutablePDG> pdgList2,
-                                                      String strategy, String srcSourceFilePath, String dstSourceFilePath) throws IOException {
+                                                      GraphMatcherFactory.MatchingStrategy strategy, String srcSourceFilePath, String dstSourceFilePath) throws IOException {
 
         GraphMatcher matcher = GraphMatcherFactory.createMatcher(strategy, pdgList1, pdgList2);
 
@@ -57,17 +58,19 @@ public class PDGComparator {
                     List<EditOperation> editScript = EditScriptGenerator.generateEditScript(srcPDG, dstPDG, graphMapping,
                             srcSourceFilePath, dstSourceFilePath, srcObj, destObj);
 
-                    int editDistance = EditDistanceCalculator.calculateEditDistance(editScript);
+                    List<EditOperation> recoveredEditScript = RecoveryProcessor.recoverMappings(editScript, RecoveryProcessor.RecoveryStrategy.CONFLICT_GRAPH);
+
+                    int editDistance = EditDistanceCalculator.calculateEditDistance(recoveredEditScript);
                     System.out.println("--- Edit information ---");
                     System.out.println("-- Edit Distance: " + editDistance);
 
                     System.out.println("-- Edit Script:");
-                    for (EditOperation op : editScript) {
+                    for (EditOperation op : recoveredEditScript) {
                         System.out.println(op);
                     }
 
                     // serialise and export
-                    exportEditScript(editScript, method1, method2);
+                    exportEditScript(recoveredEditScript, method1, method2);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
