@@ -5,11 +5,16 @@ import org.pdgdiff.edit.model.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
+// Notes on this implementation:
+// Initial idea of graph centrality heuristic: (doesn't actually make all that much sense,)
+// Per each connected component, I want to extract the most central nodes of the graph (I assume those with the
+// most edges). To be honest, I have no idea if this will generalise to many cases.
+
 public class RecoveryProcessor {
 
     public enum RecoveryStrategy {
         GLOBAL_SIMILARITY,
-        GRAPH_CENTRALITY,
+        CONFLICT_GRAPH,
         DUPLICATE_CLEANUP,
         NONE
     }
@@ -18,32 +23,30 @@ public class RecoveryProcessor {
         switch (strategy) {
             case GLOBAL_SIMILARITY:
                 return recoverMappingsGlobalSimilarity(editScript);
-            case GRAPH_CENTRALITY:
-                return recoverMappingsGraphCentrality(editScript);
+            case CONFLICT_GRAPH:
+                return recoverMappingsConflictGraphSimilarity(editScript);
             case DUPLICATE_CLEANUP:
                 return recoverMappingsNoDuplicates(editScript);
             case NONE:
                 return editScript;
-                default:
+            default:
                 throw new IllegalArgumentException("Unknown recovery strategy: " + strategy);
         }
     }
 
     public static List<EditOperation> recoverMappingsGlobalSimilarity(List<EditOperation> editScript) {
+        // TODO: Probably want to get rid of this method, it is pretty much inferior in all ways to conflict graph method.
         cleanUpDuplicates(editScript);
 
-        // Collect all Update operations
         List<Update> updateOperations = editScript.stream()
                 .filter(op -> op instanceof Update)
                 .map(op -> (Update) op)
                 .collect(Collectors.toList());
 
-        // gen lists of unique old and new code snippets with their corresponding updates
         Map<String, List<Update>> oldCodeToUpdates = new HashMap<>();
         Map<String, List<Update>> newCodeToUpdates = new HashMap<>();
 
 
-        // Lowk not sure this is the best way, to effectively hash an udpdate into a string, but works somewhat
         for (Update update : updateOperations) {
             String oldKey = update.getOldCodeSnippet() + "||" + update.getOldLineNumber();
             String newKey = update.getNewCodeSnippet() + "||" + update.getNewLineNumber();
@@ -53,7 +56,6 @@ public class RecoveryProcessor {
         }
 
         // calc similarities between all pairs of old and new code snippets
-
         List<Assignment> possibleAssignments = new ArrayList<>();
         for (String oldKey : oldCodeToUpdates.keySet()) {
             String oldCode = oldKey.split("\\|\\|")[0];
@@ -85,7 +87,6 @@ public class RecoveryProcessor {
 
         List<EditOperation> resolvedEdits = new ArrayList<>();
 
-        // update operations based on resolved assignments
         for (Assignment assignment : assignments) {
             List<Update> updates = oldCodeToUpdates.get(assignment.oldKey);
             String newCode = assignment.newKey.split("\\|\\|")[0];
@@ -132,7 +133,7 @@ public class RecoveryProcessor {
         return editScript;
     }
 
-    private static List<EditOperation> recoverMappingsGraphCentrality(List<EditOperation> editScript) {
+    private static List<EditOperation> recoverMappingsConflictGraphSimilarity(List<EditOperation> editScript) {
         cleanUpDuplicates(editScript);
 
         List<Update> updateOperations = editScript.stream()
@@ -151,7 +152,7 @@ public class RecoveryProcessor {
             for (int j = i + 1; j < updateOperations.size(); j++) {
                 Update op2 = updateOperations.get(j);
                 if (op1 != op2) {
-                    // Check for conflicts on old or new line numbers
+                    // Check for conflicts on old or new line numbers, add an edge where two updates conflict on a line number
                     if (op1.getOldLineNumber() == op2.getOldLineNumber() || op1.getNewLineNumber() == op2.getNewLineNumber()) {
                         conflictGraph.get(op1).add(op2);
                         conflictGraph.get(op2).add(op1);
@@ -160,18 +161,13 @@ public class RecoveryProcessor {
             }
         }
 
-        printConflictGraph(conflictGraph);
+//        printConflictGraph(conflictGraph);
 
-        // Find connected components in the conflict graph
         List<Set<Update>> connectedComponents = findConnectedComponents(conflictGraph);
 
         // process each component to resolve conflicts
         List<EditOperation> newEditScript = new ArrayList<>();
         Set<Update> processedUpdates = new HashSet<>();
-
-        // TODO: bulk of the logic...
-        // Per each connected component, I want to extract the most central nodes of the graph (I assume those with the
-        // most edges). To be honest, I have no idea if this will generealise to many cases.
 
         // BELOW is an implementation of the Global similarity algorithm, but only on the subset of connected components found.
 
@@ -293,21 +289,6 @@ public class RecoveryProcessor {
         return components;
     }
 
-    private static void printConflictGraph(Map<Update, Set<Update>> conflictGraph) {
-        System.out.println("Conflict Graph:");
-        for (Map.Entry<Update, Set<Update>> entry : conflictGraph.entrySet()) {
-            Update node = entry.getKey();
-            Set<Update> neighbors = entry.getValue();
-
-            System.out.print("Node " + node.getOldLineNumber() + "->" + node.getNewLineNumber() + " is connected to: ");
-            if (neighbors.isEmpty()) {
-                System.out.println("No conflicts");
-            } else {
-                neighbors.forEach(neighbor -> System.out.print(neighbor.getOldLineNumber() + "->" + neighbor.getNewLineNumber() + " "));
-                System.out.println();
-            }
-        }
-    }
 
 
     private static void cleanUpDuplicates(List<EditOperation> editScript) {
@@ -389,4 +370,21 @@ public class RecoveryProcessor {
         }
         return d[m][n];
     }
+
+    private static void printConflictGraph(Map<Update, Set<Update>> conflictGraph) {
+        System.out.println("Conflict Graph:");
+        for (Map.Entry<Update, Set<Update>> entry : conflictGraph.entrySet()) {
+            Update node = entry.getKey();
+            Set<Update> neighbors = entry.getValue();
+
+            System.out.print("Node " + node.getOldLineNumber() + "->" + node.getNewLineNumber() + " is connected to: ");
+            if (neighbors.isEmpty()) {
+                System.out.println("No conflicts");
+            } else {
+                neighbors.forEach(neighbor -> System.out.print(neighbor.getOldLineNumber() + "->" + neighbor.getNewLineNumber() + " "));
+                System.out.println();
+            }
+        }
+    }
+
 }
