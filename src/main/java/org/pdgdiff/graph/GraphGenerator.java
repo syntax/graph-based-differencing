@@ -7,9 +7,13 @@ import soot.Unit;
 import soot.toolkits.graph.*;
 import soot.toolkits.graph.pdg.HashMutablePDG;
 import soot.toolkits.graph.pdg.MHGDominatorTree;
+import soot.toolkits.graph.pdg.PDGNode;
 import soot.toolkits.scalar.SimpleLocalDefs;
 import soot.toolkits.scalar.SimpleLocalUses;
 import soot.toolkits.scalar.UnitValueBoxPair;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * GraphGenerator class to generate a Program Dependency Graph (PDG) for a specific method
@@ -40,43 +44,64 @@ public class GraphGenerator {
         }
     }
 
-    public org.pdgdiff.graph.HashMutablePDG constructPdg(ExceptionalUnitGraph eug) {
-        Body body = eug.getBody();
+    public PDG constructPdg(SootClass sootClass, SootMethod method) {
+        Body body = method.retrieveActiveBody();
+        UnitGraph eug = new ExceptionalUnitGraph(body);
 
         //soot's api for creating postdominator tree
         MHGDominatorTree<Unit> postdominatorTree = new MHGDominatorTree(new MHGPostDominatorsFinder(eug));
 
         //get dominance frontiers based on the postdominator tree, equivalent to using it
-        DominanceFrontier<Unit> dominanceFrontier = new CytronDominanceFrontier<Unit>(postdominatorTree);
-        org.pdgdiff.graph.HashMutablePDG pdg = new org.pdgdiff.graph.HashMutablePDG();
+        DominanceFrontier<Unit> dominanceFrontier = new CytronDominanceFrontier<>(postdominatorTree);
+        PDG pdg = new PDG();
         pdg.setCFG(eug);
+
         SimpleLocalDefs definitions = new SimpleLocalDefs(eug);
         SimpleLocalUses uses = new SimpleLocalUses(body, definitions);
 
+        Map<Unit, PDGNode> unitToNodeMap = new HashMap<>();
+
 
         for (Unit unit : body.getUnits()) {
-            addNode(pdg, unit);
+            PDGNode node = addOrGetNode(pdg, unit, unitToNodeMap);
 
+            //add control dependencies based on dominance frontier
             for (DominatorNode<Unit> dode : dominanceFrontier.getDominanceFrontierOf(postdominatorTree.getDode(unit))) {
                 Unit frontier = dode.getGode();
-                addNode(pdg, frontier);
+                PDGNode frontierNode = addOrGetNode(pdg, frontier, unitToNodeMap);
 
-                if (pdg.containsEdge(frontier, unit, DependencyTypes.CONTROL_DEPENDENCY)) {
-                    continue;
+                if (!pdg.containsEdge(frontierNode, node, DependencyTypes.CONTROL_DEPENDENCY)) {
+                    pdg.addEdge(frontierNode, node, DependencyTypes.CONTROL_DEPENDENCY);
                 }
-                pdg.addEdge(frontier, unit, DependencyTypes.CONTROL_DEPENDENCY);
-
             }
-            for (UnitValueBoxPair unitValueBoxPair : uses.getUsesOf(unit)) {
-                Unit useNode = unitValueBoxPair.unit;
-                addNode(pdg, useNode);
-                if (pdg.containsEdge(unit, useNode, DependencyTypes.DATA_DEPENDENCY)) {
-                    continue;
-                }
-                pdg.addEdge(unit, unitValueBoxPair.unit, DependencyTypes.DATA_DEPENDENCY);
 
+            // add data dependencies based on uses
+            for (UnitValueBoxPair unitValueBoxPair : uses.getUsesOf(unit)) {
+                Unit useUnit = unitValueBoxPair.unit;
+                PDGNode useNode = addOrGetNode(pdg, useUnit, unitToNodeMap);
+
+                if (!pdg.containsEdge(node, useNode, DependencyTypes.DATA_DEPENDENCY)) {
+                    pdg.addEdge(node, useNode, DependencyTypes.DATA_DEPENDENCY);
+                }
             }
         }
+
         return pdg;
     }
+
+    private PDGNode addOrGetNode(PDG pdg, Unit unit, Map<Unit, PDGNode> unitToNodeMap) {
+        PDGNode node = unitToNodeMap.get(unit);
+        if (node == null) {
+            // create a new PDGNode for this Unit
+            node = new PDGNode(unit, PDGNode.Type.CFGNODE);
+            unitToNodeMap.put(unit, node);
+
+            // add the node to the PDG if it is not already there
+            if (!pdg.containsNode(node)) {
+                pdg.addNode(node);
+            }
+        }
+        return node;
+    }
+
 }
