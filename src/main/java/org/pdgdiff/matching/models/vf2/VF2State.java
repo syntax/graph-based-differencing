@@ -1,7 +1,7 @@
 package org.pdgdiff.matching.models.vf2;
 
 import org.pdgdiff.graph.GraphTraversal;
-import soot.toolkits.graph.pdg.HashMutablePDG;
+import org.pdgdiff.graph.PDG;
 import soot.toolkits.graph.pdg.PDGNode;
 
 import java.util.*;
@@ -11,8 +11,8 @@ import java.util.*;
  * of the VF2 algorithm and perform operations on the state.
  */
 class VF2State {
-    private HashMutablePDG pdg1;
-    private HashMutablePDG pdg2;
+    private PDG pdg1;
+    private PDG pdg2;
     private Map<PDGNode, PDGNode> mapping;  // The current partial mapping
 
     private Set<PDGNode> T1;  // Nodes in PDG1 that are in the mapping or adjacent to mapped nodes
@@ -21,7 +21,7 @@ class VF2State {
     private Set<PDGNode> unmapped1;  // Unmapped nodes in PDG1
     private Set<PDGNode> unmapped2;  // Unmapped nodes in PDG2
 
-    public VF2State(HashMutablePDG pdg1, HashMutablePDG pdg2) {
+    public VF2State(PDG pdg1, PDG pdg2) {
         this.pdg1 = pdg1;
         this.pdg2 = pdg2;
         this.mapping = new LinkedHashMap<>();

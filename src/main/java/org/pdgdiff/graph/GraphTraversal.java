@@ -18,10 +18,10 @@ public class GraphTraversal {
     }
 
     // Method to traverse the graph using a breadth-first search and collect all nodes
-    public static List<PDGNode> collectNodesBFS(HashMutablePDG pdg) {
+    public static List<PDGNode> collectNodesBFS(PDG pdg) {
         if (debug) System.out.println("[BFS] Traversing graph");
 
-        PDGNode start_node = pdg.GetStartNode();
+        PDGNode start_node = pdg.getStartNode();
         List<PDGNode> nodeList = new ArrayList<>();
 
         if (start_node == null) {
@@ -57,10 +57,10 @@ public class GraphTraversal {
     }
 
     // Method to traverse the graph using a depth-first search and collect all nodes
-    public static List<PDGNode> collectNodesDFS(HashMutablePDG pdg) {
+    public static List<PDGNode> collectNodesDFS(PDG pdg) {
         if (debug) System.out.println("[DFS] Traversing graph");
 
-        PDGNode start_node = pdg.GetStartNode();
+        PDGNode start_node = pdg.getStartNode();
         List<PDGNode> nodeList = new ArrayList<>();
 
         if (start_node == null) {
@@ -95,7 +95,7 @@ public class GraphTraversal {
         return nodeList;
     }
 
-    public static int getNodeCount(HashMutablePDG pdg) {
+    public static int getNodeCount(PDG pdg) {
         List<PDGNode> nodeList = collectNodesBFS(pdg);
         return nodeList.size();
     }

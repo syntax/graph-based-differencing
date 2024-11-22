@@ -4,7 +4,6 @@ import soot.Unit;
 import soot.tagkit.LineNumberTag;
 import soot.tagkit.Tag;
 import soot.toolkits.graph.Block;
-import soot.toolkits.graph.pdg.HashMutablePDG;
 import soot.toolkits.graph.pdg.PDGNode;
 import soot.toolkits.graph.pdg.PDGRegion;
 import soot.toolkits.graph.pdg.Region;
@@ -26,7 +25,7 @@ public class CycleDetection {
         debug = enable;
     }
 
-    public static boolean hasCycle(HashMutablePDG pdg) {
+    public static boolean hasCycle(PDG pdg) {
         if (debug) System.out.println("[CycleDetection] Detecting cycles using Tarjan's Algorithm");
 
         index = 0;
@@ -67,9 +66,9 @@ public class CycleDetection {
                     for (PDGNode node : scc) {
                         int lineNumber = getLineNumberFromPDGNode(node);
                         if (lineNumber != -1) {
-                            System.out.println("  Node: " + node.toShortString() + " at line " + lineNumber);
+                            System.out.println("  Node: " + node + " at line " + lineNumber);
                         } else {
-                            System.out.println("  Node: " + node.toShortString() + " (line number not available)");
+                            System.out.println("  Node: " + node + " (line number not available)");
                         }
                     }
                 }
@@ -83,9 +82,9 @@ public class CycleDetection {
                 for (PDGNode node : scc) {
                     int lineNumber = getLineNumberFromPDGNode(node);
                     if (lineNumber != -1) {
-                        System.out.println("  Node: " + node.toShortString() + " at line " + lineNumber);
+                        System.out.println("  Node: " + node + " at line " + lineNumber);
                     } else {
-                        System.out.println("  Node: " + node.toShortString() + " (line number not available)");
+                        System.out.println("  Node: " + node + " (line number not available)");
                     }
                 }
             }
@@ -99,7 +98,7 @@ public class CycleDetection {
     }
 
     // gather SCCs
-    private static void strongConnect(PDGNode node, HashMutablePDG pdg) {
+    private static void strongConnect(PDGNode node, PDG pdg) {
         indices.put(node, index);
         lowLinks.put(node, index);
         index++;
@@ -160,7 +159,7 @@ public class CycleDetection {
         return expandedSuccessors;
     }
 
-    private static boolean hasSelfLoop(Set<PDGNode> scc, HashMutablePDG pdg) {
+    private static boolean hasSelfLoop(Set<PDGNode> scc, PDG pdg) {
         for (PDGNode node : scc) {
             for (PDGNode succ : pdg.getSuccsOf(node)) {
                 if (node == succ) { // should be identity comparison
@@ -174,8 +173,7 @@ public class CycleDetection {
     // method  to extract the line number from a PDGNode
     private static int getLineNumberFromPDGNode(PDGNode node) {
         if (node.getType() == PDGNode.Type.CFGNODE) {
-            Block block = (Block) node.getNode();
-            Unit headUnit = block.getHead();
+            Unit headUnit = (Unit) node.getNode();
             if (headUnit != null) {
                 Tag tag = headUnit.getTag("LineNumberTag");
                 if (tag instanceof LineNumberTag) {

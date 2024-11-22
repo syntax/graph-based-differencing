@@ -2,6 +2,7 @@ package org.pdgdiff;
 
 import org.pdgdiff.graph.GraphExporter;
 import org.pdgdiff.graph.GraphGenerator;
+import org.pdgdiff.graph.PDG;
 import org.pdgdiff.matching.GraphMatcherFactory;
 import org.pdgdiff.matching.PDGComparator;
 import org.pdgdiff.util.SootInitializer;
@@ -38,8 +39,8 @@ public class Main {
             SootClass testAdder2 = Scene.v().getSootClass(class2Name);
 
             // Generate PDGs for all methods in both classes and store in lists
-            List<HashMutablePDG> pdgsClass1 = generatePDGsForClass(testAdder1);
-            List<HashMutablePDG> pdgsClass2 = generatePDGsForClass(testAdder2);
+            List<PDG> pdgsClass1 = generatePDGsForClass(testAdder1);
+            List<PDG> pdgsClass2 = generatePDGsForClass(testAdder2);
 
             // Print the number of PDGs generated for each class
             System.out.println("PDGs generated for " + testAdder1.getName() + ": " + pdgsClass1.size());
@@ -59,8 +60,8 @@ public class Main {
     }
 
     // Method to generate PDGs for all methods in a given class and store them in a list
-    private static List<HashMutablePDG> generatePDGsForClass(SootClass sootClass) {
-        List<HashMutablePDG> pdgList = new ArrayList<>();
+    private static List<PDG> generatePDGsForClass(SootClass sootClass) {
+        List<PDG> pdgList = new ArrayList<>();
         System.out.println("Generating PDGs for class: " + sootClass.getName());
         // TODO investigate getting metadata from here.
         // Iterate over each method in the class
@@ -72,7 +73,7 @@ public class Main {
                     System.out.println("Successfully retrieved active body for: " + method.getName() + " in " + sootClass.getName());
 
                     // Generate the PDG for the method
-                    HashMutablePDG pdg = GraphGenerator.generatePDG(sootClass, method);
+                    PDG pdg = GraphGenerator.constructPdg(sootClass, method);
                     if (pdg != null) {
                         pdgList.add(pdg);
                         System.out.println("PDG generated for method: " + method.getName());

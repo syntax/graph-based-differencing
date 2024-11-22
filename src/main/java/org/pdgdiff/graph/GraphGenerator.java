@@ -13,6 +13,7 @@ import soot.toolkits.scalar.SimpleLocalUses;
 import soot.toolkits.scalar.UnitValueBoxPair;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -44,8 +45,9 @@ public class GraphGenerator {
         }
     }
 
-    public PDG constructPdg(SootClass sootClass, SootMethod method) {
+    public static PDG constructPdg(SootClass sootClass, SootMethod method) {
         Body body = method.retrieveActiveBody();
+        System.out.println("Generating PDG for method: " + method.getName());
         UnitGraph eug = new ExceptionalUnitGraph(body);
 
         //soot's api for creating postdominator tree
@@ -61,6 +63,28 @@ public class GraphGenerator {
 
         Map<Unit, PDGNode> unitToNodeMap = new HashMap<>();
 
+        // retrieve the start node of the PDG, which is the entry node of the CFG
+//        List<Unit> heads = eug.getHeads();
+        PDGNode startNode = null;
+//        if (heads.size() == 1) {
+//            startNode = addOrGetNode(pdg, heads.get(0), unitToNodeMap);
+//            pdg.startNode = startNode;
+//        } else {
+//            // create a new start node if there are multiple entry nodes
+//            startNode = new PDGNode(null, PDGNode.Type.CFGNODE);
+//            pdg.addNode(startNode);
+//            pdg.startNode = startNode;
+//            for (Unit head : heads) {
+//                PDGNode headNode = addOrGetNode(pdg, head, unitToNodeMap);
+//                if (!pdg.containsEdge(startNode, headNode, DependencyTypes.CONTROL_DEPENDENCY)) {
+//                    pdg.addEdge(startNode, headNode, DependencyTypes.CONTROL_DEPENDENCY);
+//                    startNode.addDependent(headNode);
+//                }
+//            }
+//        }
+
+//        System.out.println("Start Node: " + startNode);
+
 
         for (Unit unit : body.getUnits()) {
             PDGNode node = addOrGetNode(pdg, unit, unitToNodeMap);
@@ -71,7 +95,15 @@ public class GraphGenerator {
                 PDGNode frontierNode = addOrGetNode(pdg, frontier, unitToNodeMap);
 
                 if (!pdg.containsEdge(frontierNode, node, DependencyTypes.CONTROL_DEPENDENCY)) {
+                    // TODO: this isnt probably bang on, but need some 'start node' to be set. taking the first unit often leads to disconnected graphs
+                    if (startNode == null) {
+                        startNode = frontierNode;
+                        pdg.startNode = startNode;
+                    }
                     pdg.addEdge(frontierNode, node, DependencyTypes.CONTROL_DEPENDENCY);
+                    frontierNode.addDependent(node);
+                    System.out.println("Control Dependency: " + frontierNode + " -> " + node);
+
                 }
             }
 
@@ -81,15 +113,29 @@ public class GraphGenerator {
                 PDGNode useNode = addOrGetNode(pdg, useUnit, unitToNodeMap);
 
                 if (!pdg.containsEdge(node, useNode, DependencyTypes.DATA_DEPENDENCY)) {
+                    if (startNode == null) {
+                        startNode = node;
+                        pdg.startNode = startNode;
+                    }
                     pdg.addEdge(node, useNode, DependencyTypes.DATA_DEPENDENCY);
+                    node.addDependent(useNode);
+                    System.out.println("Data Dependency: " + node + " -> " + useNode);
+
                 }
             }
         }
 
+//        for (PDGNode node : pdg.getNodes()) {
+//            System.out.println("Node: " + node);
+//            for (PDGNode dependent : node.getDependents()) {
+//                System.out.println("  Dependent: " + dependent);
+//            }
+//        }
+
         return pdg;
     }
 
-    private PDGNode addOrGetNode(PDG pdg, Unit unit, Map<Unit, PDGNode> unitToNodeMap) {
+    private static PDGNode addOrGetNode(PDG pdg, Unit unit, Map<Unit, PDGNode> unitToNodeMap) {
         PDGNode node = unitToNodeMap.get(unit);
         if (node == null) {
             // create a new PDGNode for this Unit

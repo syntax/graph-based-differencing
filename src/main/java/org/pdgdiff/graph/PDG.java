@@ -4,11 +4,13 @@ import soot.toolkits.graph.HashMutableEdgeLabelledDirectedGraph;
 import soot.toolkits.graph.UnitGraph;
 import soot.toolkits.graph.pdg.PDGNode;
 
+import java.util.List;
 
 // TODO: this class will be my own version of the HashMutuablePDG that Soot presents, hopefully made slightly more accurate to
 // TODO: the original literature.
 public class PDG extends HashMutableEdgeLabelledDirectedGraph<PDGNode, GraphGenerator.DependencyTypes> {
     private UnitGraph cfg = null;
+    protected PDGNode startNode = null;
 
     public PDG() {
         super();
@@ -22,4 +24,11 @@ public class PDG extends HashMutableEdgeLabelledDirectedGraph<PDGNode, GraphGene
         return cfg;
     }
 
+    public PDGNode getStartNode() {
+        return startNode;
+    }
+
+//    public List<PDGNode> getNodes() {
+//        return super.getNodes();
+//    }
 }

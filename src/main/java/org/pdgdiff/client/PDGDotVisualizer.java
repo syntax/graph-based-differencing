@@ -10,7 +10,6 @@ import soot.util.cfgcmd.CFGToDotGraph;
 public class PDGDotVisualizer {
     private String fileName;
 
-    // Constructor for PDGDotVisualizer
     public PDGDotVisualizer(String fileName) {
         if (fileName == null || fileName.isEmpty()) {
             throw new IllegalArgumentException("Please provide a valid filename.");

@@ -36,7 +36,7 @@ public class GraphExporter {
      * @param dotFileName The filename for the DOT file
      * @param txtFileName The filename for the text file
      */
-    public static void exportPDG(HashMutablePDG pdg, String dotFileName, String txtFileName) throws IOException {
+    public static void exportPDG(PDG pdg, String dotFileName, String txtFileName) throws IOException {
         // Get the method associated with the PDG via the UnitGraph in PDG
         SootMethod method = pdg.getCFG().getBody().getMethod();
 
@@ -49,7 +49,7 @@ public class GraphExporter {
 
 
     // Method to export PDG to a file for each class
-    public static void exportPDGToFile(HashMutablePDG pdg, String fileName, String methodName) throws IOException {
+    public static void exportPDGToFile(PDG pdg, String fileName, String methodName) throws IOException {
         PrintWriter writer = null;
         try {
             writer = new PrintWriter(new FileWriter(fileName, true));

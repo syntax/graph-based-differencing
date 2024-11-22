@@ -7,6 +7,8 @@ import org.pdgdiff.edit.EditScriptGenerator;
 import org.pdgdiff.edit.RecoveryProcessor;
 import org.pdgdiff.edit.model.EditOperation;
 import org.pdgdiff.graph.CycleDetection;
+import org.pdgdiff.graph.GraphTraversal;
+import org.pdgdiff.graph.PDG;
 import org.pdgdiff.io.JsonOperationSerializer;
 import org.pdgdiff.io.OperationSerializer;
 import soot.SootClass;
@@ -25,12 +27,19 @@ import java.util.stream.Collectors;
 
 public class PDGComparator {
 
-    public static void compareAndPrintGraphSimilarity(List<HashMutablePDG> pdgList1, List<HashMutablePDG> pdgList2,
+    public static void compareAndPrintGraphSimilarity(List<PDG> pdgList1, List<PDG> pdgList2,
                                                       GraphMatcherFactory.MatchingStrategy strategy, String srcSourceFilePath, String dstSourceFilePath) throws IOException {
 
         GraphMatcher matcher = GraphMatcherFactory.createMatcher(strategy, pdgList1, pdgList2);
-
+        // for each graph print the size of its nodes and if it has a cycle
+        pdgList1.forEach(pdg -> {
+            System.out.println("------");
+            System.out.println(pdg.getCFG().getBody().getMethod().getSignature());
+            System.out.println(GraphTraversal.getNodeCount(pdg));
+            CycleDetection.hasCycle(pdg);
+        });
         // perform the actual graph matching
+        System.out.println("-> Beginning matching PDGs using strategy: " + strategy);
         GraphMapping graphMapping = matcher.matchPDGLists();
 
         // TODO: clean up debug print stmts
@@ -40,7 +49,9 @@ public class PDGComparator {
             String method1 = srcPDG.getCFG().getBody().getMethod().getSignature();
             String method2 = dstPDG.getCFG().getBody().getMethod().getSignature();
             System.out.println("---\n> PDG from class 1: " + method1 + " is matched with PDG from class 2: " + method2);
+            System.out.println(GraphTraversal.getNodeCount(srcPDG));
             CycleDetection.hasCycle(srcPDG);
+            System.out.println(GraphTraversal.getNodeCount(dstPDG));
             CycleDetection.hasCycle(dstPDG);
             NodeMapping nodeMapping = graphMapping.getNodeMapping(srcPDG);
             if (nodeMapping != null) {
@@ -58,7 +69,7 @@ public class PDGComparator {
                     List<EditOperation> editScript = EditScriptGenerator.generateEditScript(srcPDG, dstPDG, graphMapping,
                             srcSourceFilePath, dstSourceFilePath, srcObj, destObj);
 
-                    List<EditOperation> recoveredEditScript = RecoveryProcessor.recoverMappings(editScript, RecoveryProcessor.RecoveryStrategy.CONFLICT_GRAPH);
+                    List<EditOperation> recoveredEditScript = RecoveryProcessor.recoverMappings(editScript, RecoveryProcessor.RecoveryStrategy.NONE);
 
                     int editDistance = EditDistanceCalculator.calculateEditDistance(recoveredEditScript);
                     System.out.println("--- Edit information ---");
