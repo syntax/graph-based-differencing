@@ -54,6 +54,7 @@ public class GraphTraversal {
 
         if (debug) System.out.println("[BFS] BFS Graph traversal complete.");
         return nodeList;
+//        return pdg.getNodes();
     }
 
     // Method to traverse the graph using a depth-first search and collect all nodes
@@ -96,8 +97,9 @@ public class GraphTraversal {
     }
 
     public static int getNodeCount(PDG pdg) {
-        List<PDGNode> nodeList = collectNodesBFS(pdg);
-        return nodeList.size();
+//        List<PDGNode> nodeList = collectNodesBFS(pdg);
+//        return nodeList.size();
+        return pdg.getNodes().size();
     }
 
     // Optionally, if you have already collected nodes and want to avoid traversal:

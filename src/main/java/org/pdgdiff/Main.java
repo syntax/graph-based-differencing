@@ -2,6 +2,7 @@ package org.pdgdiff;
 
 import org.pdgdiff.graph.GraphExporter;
 import org.pdgdiff.graph.GraphGenerator;
+import org.pdgdiff.graph.GraphTraversal;
 import org.pdgdiff.graph.PDG;
 import org.pdgdiff.matching.GraphMatcherFactory;
 import org.pdgdiff.matching.PDGComparator;
@@ -10,9 +11,11 @@ import soot.Scene;
 import soot.SootClass;
 import soot.SootMethod;
 import soot.toolkits.graph.pdg.HashMutablePDG;
+import soot.toolkits.graph.pdg.PDGNode;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 public class Main {
 
@@ -70,10 +73,47 @@ public class Main {
                 try {
                     // Retrieve the active body and generate the PDG
                     method.retrieveActiveBody();
-                    System.out.println("Successfully retrieved active body for: " + method.getName() + " in " + sootClass.getName());
+                    System.out.println("\n\nSuccessfully retrieved active body for: " + method.getName() + " in " + sootClass.getName());
+
+                    // print jimple body
+                    System.out.println("Jimple body for function" + method.getName());
+                    System.out.println(method.getActiveBody().toString());
 
                     // Generate the PDG for the method
                     PDG pdg = GraphGenerator.constructPdg(sootClass, method);
+
+                    List<Set<PDGNode>> connectedComponents = pdg.getConnectedComponents();
+                    int numComponents = connectedComponents.size();
+                    System.out.println("Number of connected components in method " + method.getName() + ": " + numComponents);
+                    int componentIndex = 1;
+                    for (Set<PDGNode> component : connectedComponents) {
+                        System.out.println("  Component " + componentIndex + " size: " + component.size());
+                        componentIndex++;
+                    }
+                    List<PDGNode> isolatedNodes = pdg.getIsolatedNodes();
+                    if (!isolatedNodes.isEmpty()) {
+                        System.out.println("Isolated nodes in method " + method.getName() + ":");
+                        for (PDGNode node : isolatedNodes) {
+                            System.out.println("  " + node);
+                        }
+                    } else {
+                        System.out.println("No isolated nodes in method " + method.getName());
+                    }
+
+                    connectedComponents.sort((c1, c2) -> Integer.compare(c2.size(), c1.size()));
+                    Set<PDGNode> largestComponent = connectedComponents.get(0);
+                    System.out.println("Largest component size: " + largestComponent.size());
+
+//
+//                    List<PDGNode> eg = GraphTraversal.collectNodesBFS(pdg);
+//                    List<PDGNode> eg2 = pdg.getNodes();
+//                    // find differences
+//                    System.out.println("\npdg: Checking differences between entire graph and connected component for method " + pdg.getCFG().getBody().getMethod().getSignature() + ". BFS:" + eg.size() + "entire:" + eg2.size() );
+//                    for (PDGNode pdgNode : eg2) {
+//                        if (!eg.contains(pdgNode)) {
+//                            System.out.println("Node not found in BFS: " + pdgNode);
+//                        }
+//                    }
                     if (pdg != null) {
                         pdgList.add(pdg);
                         System.out.println("PDG generated for method: " + method.getName());
