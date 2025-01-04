@@ -1,6 +1,7 @@
 package org.pdgdiff.edit;
 
 import org.pdgdiff.edit.model.*;
+import org.pdgdiff.graph.PDG;
 import org.pdgdiff.matching.GraphMapping;
 import org.pdgdiff.matching.NodeMapping;
 import org.pdgdiff.util.CodeAnalysisUtils;
@@ -21,8 +22,8 @@ import java.util.*;
 public class EditScriptGenerator {
 
     public static List<EditOperation> generateEditScript(
-            HashMutablePDG srcPDG,
-            HashMutablePDG dstPDG,
+            PDG srcPDG,
+            PDG dstPDG,
             GraphMapping graphMapping,
             String srcSourceFilePath,
             String dstSourceFilePath,
@@ -136,8 +137,9 @@ public class EditScriptGenerator {
 
     public static int getNodeLineNumber(PDGNode node) {
         if (node.getType() == PDGNode.Type.CFGNODE) {
-            Block block = (Block) node.getNode();
-            Unit headUnit = block.getHead();
+//            Block block = (Block) node.getNode();
+//            Unit headUnit = block.getHead();
+            Unit headUnit = (Unit) node.getNode();
             return getLineNumber(headUnit);
         } else if (node.getType() == PDGNode.Type.REGION) {
             IRegion region = (IRegion) node.getNode();
@@ -224,11 +226,18 @@ public class EditScriptGenerator {
 
     private static ComparisonResult compareCFGNodes(PDGNode n1, PDGNode n2,
                                                     SourceCodeMapper srcCodeMapper, SourceCodeMapper dstCodeMapper) {
-        Block block1 = (Block) n1.getNode();
-        Block block2 = (Block) n2.getNode();
+//        Block block1 = (Block) n1.getNode();
+//        Block block2 = (Block) n2.getNode();
 
-        List<Unit> units1 = collectUnits(block1);
-        List<Unit> units2 = collectUnits(block2);
+        Unit unit1 = (Unit) n1.getNode();
+        Unit unit2 = (Unit) n2.getNode();
+
+//        List<Unit> units1 = collectUnits(block1);
+//        List<Unit> units2 = collectUnits(block2);
+        List<Unit> units1 = new ArrayList<>();
+        units1.add(unit1);
+        List<Unit> units2 = new ArrayList<>();
+        units2.add(unit2);
 
         Set<SyntaxDifference> differences = compareUnitLists(units1, units2, srcCodeMapper, dstCodeMapper);
 

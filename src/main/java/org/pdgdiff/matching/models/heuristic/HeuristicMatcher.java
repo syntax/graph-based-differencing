@@ -1,8 +1,8 @@
 package org.pdgdiff.matching.models.heuristic;
 
+import org.pdgdiff.graph.PDG;
 import org.pdgdiff.matching.NodeMapping;
 import org.pdgdiff.graph.GraphTraversal;
-import soot.toolkits.graph.pdg.HashMutablePDG;
 import soot.toolkits.graph.pdg.PDGNode;
 
 import java.util.List;
@@ -10,7 +10,7 @@ import java.util.List;
 
 public class HeuristicMatcher {
     // Compare two individual PDGs
-    public double comparePDGs(HashMutablePDG pdg1, HashMutablePDG pdg2, NodeMapping nodeMapping) {
+    public double comparePDGs(PDG pdg1, PDG pdg2, NodeMapping nodeMapping) {
         double totalScore = 0.0;
 
         // Get nodes from the PDGs
@@ -45,7 +45,7 @@ public class HeuristicMatcher {
     }
 
     // Use GraphTraversal to get all nodes in a PDG
-    private List<PDGNode> getPDGNodes(HashMutablePDG pdg) {
+    private List<PDGNode> getPDGNodes(PDG pdg) {
         return GraphTraversal.collectNodesBFS(pdg);
     }
 

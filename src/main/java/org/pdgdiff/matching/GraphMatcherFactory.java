@@ -1,5 +1,6 @@
 package org.pdgdiff.matching;
 
+import org.pdgdiff.graph.PDG;
 import org.pdgdiff.matching.models.HeuristicGraphMatcher;
 import org.pdgdiff.matching.models.UllmannGraphMatcher;
 import org.pdgdiff.matching.models.VF2GraphMatcher;
@@ -15,7 +16,7 @@ public class GraphMatcherFactory {
         ULLMANN
     }
 
-    public static GraphMatcher createMatcher(MatchingStrategy strategy, List<HashMutablePDG> srcPDGs, List<HashMutablePDG> destPDGs) {
+    public static GraphMatcher createMatcher(MatchingStrategy strategy, List<PDG> srcPDGs, List<PDG> destPDGs) {
         switch (strategy) {
             case VF2:
                 return new VF2GraphMatcher(srcPDGs, destPDGs);

@@ -1,7 +1,7 @@
 package org.pdgdiff.matching.models.vf2;
 
 import org.pdgdiff.matching.NodeMapping;
-import soot.toolkits.graph.pdg.HashMutablePDG;
+import org.pdgdiff.graph.PDG;
 import soot.toolkits.graph.pdg.PDGNode;
 
 import java.util.Map;
@@ -12,11 +12,11 @@ import java.util.Map;
  * TODO: Check I have done this correctly, quite tired at time of implementation (its 11pm :( )
  */
 public class VF2Matcher {
-    private HashMutablePDG pdg1;
-    private HashMutablePDG pdg2;
+    private PDG pdg1;
+    private PDG pdg2;
     private NodeMapping nodeMapping;
 
-    public VF2Matcher(HashMutablePDG pdg1, HashMutablePDG pdg2) {
+    public VF2Matcher(PDG pdg1, PDG pdg2) {
         this.pdg1 = pdg1;
         this.pdg2 = pdg2;
         this.nodeMapping = new NodeMapping();
