@@ -102,6 +102,8 @@ public class GraphGenerator {
                     }
                     pdg.addEdge(frontierNode, node, DependencyTypes.CONTROL_DEPENDENCY);
                     frontierNode.addDependent(node);
+                    // TODO: Invenstigate how the following reduces search space but leads to a less good differencing result.
+//                    node.addBackDependent(frontierNode);
                     System.out.println("Control Dependency: " + frontierNode + " -> " + node);
 
                 }
@@ -119,6 +121,8 @@ public class GraphGenerator {
                     }
                     pdg.addEdge(node, useNode, DependencyTypes.DATA_DEPENDENCY);
                     node.addDependent(useNode);
+                    // TODO: Invenstigate how the following reduces search space but leads to a less good differencing result.
+//                    useNode.addBackDependent(node);
                     System.out.println("Data Dependency: " + node + " -> " + useNode);
 
                 }
