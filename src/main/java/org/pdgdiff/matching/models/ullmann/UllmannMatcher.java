@@ -1,6 +1,5 @@
 package org.pdgdiff.matching.models.ullmann;
 
-import org.pdgdiff.graph.GraphTraversal;
 import org.pdgdiff.graph.PDG;
 import org.pdgdiff.matching.NodeMapping;
 import soot.toolkits.graph.pdg.HashMutablePDG;
@@ -29,8 +28,9 @@ public class UllmannMatcher {
         this.pdg2 = pdg2;
         this.nodeMapping = new NodeMapping();
 
-        this.nodes1 = new ArrayList<>(GraphTraversal.collectNodesBFS(pdg1));
-        this.nodes2 = new ArrayList<>(GraphTraversal.collectNodesBFS(pdg2));
+        this.nodes1 = new ArrayList<>(pdg1.getNodes());
+        this.nodes2 = new ArrayList<>(pdg2.getNodes());
+
         this.n = nodes1.size();
         this.m = nodes2.size();
         this.M = new int[n][m];

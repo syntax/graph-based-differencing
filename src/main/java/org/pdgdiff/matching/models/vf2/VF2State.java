@@ -20,14 +20,24 @@ class VF2State {
 
     private Set<PDGNode> unmapped1;  // Unmapped nodes in PDG1
     private Set<PDGNode> unmapped2;  // Unmapped nodes in PDG2
+    private int pdg1Size;
+    private int pdg2Size;
+
 
     public VF2State(PDG pdg1, PDG pdg2) {
         this.pdg1 = pdg1;
         this.pdg2 = pdg2;
         this.mapping = new LinkedHashMap<>();
 
-        this.unmapped1 = new LinkedHashSet<>(GraphTraversal.collectNodesBFS(pdg1));
-        this.unmapped2 = new LinkedHashSet<>(GraphTraversal.collectNodesBFS(pdg2));
+        this.unmapped1 = new LinkedHashSet<>(pdg1.getNodes());
+        this.unmapped2 = new LinkedHashSet<>(pdg2.getNodes());
+        this.pdg1Size = pdg1.getNodes().size();
+        this.pdg2Size = pdg2.getNodes().size();
+
+//        this.unmapped1 = new LinkedHashSet<>(GraphTraversal.collectNodesBFS(pdg1));
+//        this.unmapped2 = new LinkedHashSet<>(GraphTraversal.collectNodesBFS(pdg2));
+//        this.pdg1Size = unmapped1.size();
+//        this.pdg2Size = unmapped2.size();
 
         this.T1 = new LinkedHashSet<>();
         this.T2 = new LinkedHashSet<>();
@@ -35,7 +45,7 @@ class VF2State {
 
     public boolean isComplete() {
         // once one of the graphs is fully matched (hence this is subgraph isomorphism)
-        return mapping.size() >= Math.min(GraphTraversal.getNodeCount(pdg1), GraphTraversal.getNodeCount(pdg2));
+        return mapping.size() >= Math.min(this.pdg1Size, this.pdg2Size);
     }
 
     public Map<PDGNode, PDGNode> getMapping() {
@@ -43,8 +53,6 @@ class VF2State {
     }
 
     public List<CandidatePair> generateCandidates() {
-        // TODO: If non determinism prevails, consider implementing a sort on these candidates
-        // TODO: probably need to sort by id e.g. CFGNODE 1 sorta thing. should hopefully work,
         // If not implementing this here, possibly need to implement it in the matchRecursvie function.
         List<CandidatePair> candidates = new ArrayList<>();
 

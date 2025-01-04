@@ -30,10 +30,12 @@ public class VF2GraphMatcher extends GraphMatcher {
             // for each pair of unmapped PDGs, compute similarity score
             for (PDG pdg1 : unmappedPDGs1) {
                 for (PDG pdg2 : unmappedPDGs2) {
+                    System.out.println("Matching PDG1: " + pdg1.getCFG().getBody().getMethod().getSignature() + ", PDG2: " + pdg2.getCFG().getBody().getMethod().getSignature());
                     VF2Matcher vf2Matcher = new VF2Matcher(pdg1, pdg2);
                     NodeMapping nodeMapping = vf2Matcher.match();
-
+                    System.out.println(nodeMapping);
                     if (nodeMapping != null && !nodeMapping.isEmpty()) {
+                        System.out.println(" >> Produced a mapping for " + pdg1.getCFG().getBody().getMethod().getSignature() + " and " + pdg2.getCFG().getBody().getMethod().getSignature());
                         int mappedNodes = nodeMapping.size();
                         int unmappedNodes1 = GraphTraversal.getNodeCount(pdg1) - mappedNodes;
                         int unmappedNodes2 = GraphTraversal.getNodeCount(pdg2) - mappedNodes;
@@ -42,8 +44,9 @@ public class VF2GraphMatcher extends GraphMatcher {
                         // this might be to be improved. TODO look into other metrics/ measures.
                         // TODO might want to add a threshold. possibly not all graphs should be mapped to all graphs!
                         double score = (double) mappedNodes / (mappedNodes + unmappedNodes1 + unmappedNodes2);
-
+                        System.out.println(" >> Score: " + score + " for " + pdg1.getCFG().getBody().getMethod().getSignature() + " and " + pdg2.getCFG().getBody().getMethod().getSignature());
                         if (score > maxScore) {
+                            System.out.println("!!!! >> New best score: " + score);
                             maxScore = score;
                             bestPdg1 = pdg1;
                             bestPdg2 = pdg2;

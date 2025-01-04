@@ -12,6 +12,7 @@ import soot.toolkits.scalar.SimpleLocalDefs;
 import soot.toolkits.scalar.SimpleLocalUses;
 import soot.toolkits.scalar.UnitValueBoxPair;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,7 +48,7 @@ public class GraphGenerator {
 
     public static PDG constructPdg(SootClass sootClass, SootMethod method) {
         Body body = method.retrieveActiveBody();
-        System.out.println("Generating PDG for method: " + method.getName());
+        System.out.println("\n\nGenerating PDG for method: " + method.getName());
         UnitGraph eug = new ExceptionalUnitGraph(body);
 
         //soot's api for creating postdominator tree
@@ -62,6 +63,7 @@ public class GraphGenerator {
         SimpleLocalUses uses = new SimpleLocalUses(body, definitions);
 
         Map<Unit, PDGNode> unitToNodeMap = new HashMap<>();
+        List<PDGNode> orderedNodes = new ArrayList<>();
 
         // retrieve the start node of the PDG, which is the entry node of the CFG
 //        List<Unit> heads = eug.getHeads();
@@ -87,7 +89,9 @@ public class GraphGenerator {
 
 
         for (Unit unit : body.getUnits()) {
+            boolean connected = false;
             PDGNode node = addOrGetNode(pdg, unit, unitToNodeMap);
+            orderedNodes.add(node);
 
             //add control dependencies based on dominance frontier
             for (DominatorNode<Unit> dode : dominanceFrontier.getDominanceFrontierOf(postdominatorTree.getDode(unit))) {
@@ -101,7 +105,9 @@ public class GraphGenerator {
                         pdg.startNode = startNode;
                     }
                     pdg.addEdge(frontierNode, node, DependencyTypes.CONTROL_DEPENDENCY);
+                    connected = true;
                     frontierNode.addDependent(node);
+                    node.addBackDependent(frontierNode);
                     System.out.println("Control Dependency: " + frontierNode + " -> " + node);
 
                 }
@@ -118,10 +124,16 @@ public class GraphGenerator {
                         pdg.startNode = startNode;
                     }
                     pdg.addEdge(node, useNode, DependencyTypes.DATA_DEPENDENCY);
+                    connected = true;
                     node.addDependent(useNode);
+                    useNode.addBackDependent(node);
                     System.out.println("Data Dependency: " + node + " -> " + useNode);
 
                 }
+            }
+
+            if (!connected) {
+                System.out.println("> No outgoing edges from: " + node);
             }
         }
 
@@ -131,6 +143,7 @@ public class GraphGenerator {
 //                System.out.println("  Dependent: " + dependent);
 //            }
 //        }
+        pdg.setOrderedNodes(orderedNodes);
 
         return pdg;
     }

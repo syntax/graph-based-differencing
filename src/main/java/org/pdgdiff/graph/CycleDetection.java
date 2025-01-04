@@ -34,7 +34,7 @@ public class CycleDetection {
         stack.clear();
         stronglyConnectedComponents.clear();
 
-        List<PDGNode> allNodes = GraphTraversal.collectNodesBFS(pdg);
+        List<PDGNode> allNodes = new ArrayList<>(pdg.getNodes());
 
         // Tarjan's algorithm starting from each node
         for (PDGNode node : allNodes) {

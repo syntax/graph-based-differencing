@@ -33,7 +33,13 @@ public class PDGComparator {
         GraphMatcher matcher = GraphMatcherFactory.createMatcher(strategy, pdgList1, pdgList2);
         // for each graph print the size of its nodes and if it has a cycle
         pdgList1.forEach(pdg -> {
-            System.out.println("------");
+            System.out.println("FILE1 ------");
+            System.out.println(pdg.getCFG().getBody().getMethod().getSignature());
+            System.out.println(GraphTraversal.getNodeCount(pdg));
+            CycleDetection.hasCycle(pdg);
+        });
+        pdgList2.forEach(pdg -> {
+            System.out.println("FILE2 ------");
             System.out.println(pdg.getCFG().getBody().getMethod().getSignature());
             System.out.println(GraphTraversal.getNodeCount(pdg));
             CycleDetection.hasCycle(pdg);
@@ -49,10 +55,6 @@ public class PDGComparator {
             String method1 = srcPDG.getCFG().getBody().getMethod().getSignature();
             String method2 = dstPDG.getCFG().getBody().getMethod().getSignature();
             System.out.println("---\n> PDG from class 1: " + method1 + " is matched with PDG from class 2: " + method2);
-            System.out.println(GraphTraversal.getNodeCount(srcPDG));
-            CycleDetection.hasCycle(srcPDG);
-            System.out.println(GraphTraversal.getNodeCount(dstPDG));
-            CycleDetection.hasCycle(dstPDG);
             NodeMapping nodeMapping = graphMapping.getNodeMapping(srcPDG);
             if (nodeMapping != null) {
                 System.out.println("--- Node Mapping:");

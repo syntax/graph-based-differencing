@@ -50,7 +50,7 @@ public class TestAdder2 {
             if (result % 2 == 0) {
                 result /= 2;
             } else {
-                result *= 3;
+                result += 3;
             }
         }
 
