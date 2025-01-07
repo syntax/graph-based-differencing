@@ -97,8 +97,61 @@ class VF2State {
     // Helper methods...
 
     private boolean nodesAreCompatible(PDGNode n1, PDGNode n2) {
-        // Compare node types, labels, attributes
-        return n1.getType().equals(n2.getType()) && n1.getAttrib().equals(n2.getAttrib());
+        // check if node types match - following new graph update think this might be useless
+        if (!n1.getType().equals(n2.getType())) {
+            return false;
+        }
+
+        // check if the nodes are of the same semantic category (Stmt, Decl, etc.), todo should move this into semantic check section.
+        if (!isSameNodeCategory(n1, n2)) {
+            return false;
+        }
+
+        // check additional attributes (labels, identifiers, etc.)
+        if (!n1.getAttrib().equals(n2.getAttrib())) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private boolean isSameNodeCategory(PDGNode n1, PDGNode n2) {
+        // get unit
+        Object node1 = n1.getNode();
+        Object node2 = n2.getNode();
+
+        // check for specific categories
+        return (isStatement(node1) && isStatement(node2)) ||
+                (isDeclaration(node1) && isDeclaration(node2)) ||
+                (isControlFlowNode(node1) && isControlFlowNode(node2)) ||
+                (isDataNode(node1) && isDataNode(node2));
+    }
+
+    private boolean isStatement(Object node) {
+        return node instanceof soot.jimple.Stmt;
+    }
+
+    private boolean isDeclaration(Object node) {
+        if (node instanceof soot.Value) {
+            soot.Value value = (soot.Value) node;
+
+            // check for local variables
+            if (value instanceof soot.jimple.internal.JimpleLocal) {
+                return true;
+            }
+
+            // check for field references
+            return value instanceof soot.jimple.InstanceFieldRef || value instanceof soot.jimple.StaticFieldRef;
+        }
+        return false;
+    }
+
+    private boolean isControlFlowNode(Object node) {
+        return node instanceof soot.jimple.IfStmt || node instanceof soot.jimple.SwitchStmt;
+    }
+
+    private boolean isDataNode(Object node) {
+        return node instanceof soot.jimple.AssignStmt || node instanceof soot.jimple.ArrayRef;
     }
 
     private boolean checkSyntacticFeasibility(CandidatePair pair) {
