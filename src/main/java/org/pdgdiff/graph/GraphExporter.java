@@ -1,21 +1,16 @@
 package org.pdgdiff.graph;
 
-import org.pdgdiff.client.PDGDotVisualizer;
 import soot.SootMethod;
-import soot.toolkits.graph.pdg.HashMutablePDG;
+import soot.toolkits.graph.UnitGraph;
+import soot.toolkits.graph.pdg.PDGNode;
 
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.File;
+import java.util.List;
 
-
-/**
- * GraphExporter class to export the PDG to both DOT and text formats. This class contains methods to export the PDG
- * to a DOT file and a text file for each class.
- */
 public class GraphExporter {
-
 
     public static void clearOutputFolder(String folderPath) {
         File outputFolder = new File(folderPath);
@@ -27,55 +22,72 @@ public class GraphExporter {
                 }
             }
         }
-
     }
 
-    /**
-     * Export the PDG to both DOT format and text format
-     * @param pdg The PDG to export
-     * @param dotFileName The filename for the DOT file
-     * @param txtFileName The filename for the text file
-     */
+
     public static void exportPDG(PDG pdg, String dotFileName, String txtFileName) throws IOException {
-        // Get the method associated with the PDG via the UnitGraph in PDG
-        SootMethod method = pdg.getCFG().getBody().getMethod();
+        UnitGraph cfg = pdg.getCFG();
+        SootMethod method = (cfg != null) ? cfg.getBody().getMethod() : null;
 
-        // Export the PDG to a DOT file
-        exportPDGToDot(method, dotFileName);
+        exportPDGToDot(pdg, dotFileName);
 
-        // Export the PDG to a text file
         exportPDGToFile(pdg, txtFileName, method.getName());
     }
 
-
-    // Method to export PDG to a file for each class
     public static void exportPDGToFile(PDG pdg, String fileName, String methodName) throws IOException {
-        PrintWriter writer = null;
-        try {
-            writer = new PrintWriter(new FileWriter(fileName, true));
+        try (PrintWriter writer = new PrintWriter(new FileWriter(fileName, true))) {
             writer.println("\n\n---------> Method: " + methodName);
-
-            // Write the raw .toString() output of each PDGNode to the file
-            writer.println(pdg.toString());  // Output the raw toString() of the PDGNode
-
+            // dump text repr, toString might be overridden in PDG need to check
+            writer.println(pdg.toString());
             writer.println("---------> End of PDG for method: " + methodName + "\n\n");
-        } finally {
-            if (writer != null) {
-                writer.close();
-            }
         }
     }
 
-    // Method to export PDG to a DOT file using PDGDotVisualizer for a given method
-    public static void exportPDGToDot(SootMethod method, String fileName) {
-        if (method == null) {
-            System.out.println("Method is null, cannot export.");
-            return;
-        }
+    public static void exportPDGToDot(PDG pdg, String fileName) {
+        try (PrintWriter writer = new PrintWriter(new FileWriter(fileName))) {
+            writer.println("digraph PDG {");
 
-        // Use the PDGDotVisualizer class to export the PDG to a DOT file
-        PDGDotVisualizer visualizer = new PDGDotVisualizer(fileName);
-        visualizer.exportToDot(method);  // Pass the method to export the PDG as DOT
-        System.out.println("PDG for method " + method.getName() + " exported to " + fileName);
+            // print all pdg nodes
+            for (PDGNode node : pdg) {
+                // todo; as of right now this will print every nodes type which is a CFGNode, this is same for all so usless info
+                String nodeId = getNodeId(node);
+                String label = escapeSpecialCharacters(node.toString());
+                writer.printf("  %s [label=\"%s\"];\n", nodeId, label);
+            }
+
+           // for each node, print out edges to its successors
+            for (PDGNode src : pdg) {
+                List<PDGNode> successors = pdg.getSuccsOf(src);
+                for (PDGNode tgt : successors) {
+                    // todo getLabelsForEdges(...) returns a List<DependencyTypes> which can contain multiple edge labels
+                    List<GraphGenerator.DependencyTypes> labels = pdg.getLabelsForEdges(src, tgt);
+                    if (labels != null) {
+                        for (GraphGenerator.DependencyTypes depType : labels) {
+                            writer.printf("  %s -> %s [label=\"%s\"];\n",
+                                    getNodeId(src),
+                                    getNodeId(tgt),
+                                    depType);
+                        }
+                    }
+                }
+            }
+
+            writer.println("}");
+            System.out.println("PDG exported to DOT file: " + fileName);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // helper methods
+
+    private static String getNodeId(PDGNode node) {
+        return "node_" + System.identityHashCode(node);
+    }
+
+    // to avoid parse errors, otherwise print("") could ruin some things
+    private static String escapeSpecialCharacters(String label) {
+        return label.replace("\"", "\\\"");
     }
 }
