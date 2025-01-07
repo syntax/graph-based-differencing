@@ -97,17 +97,11 @@ class VF2State {
     // Helper methods...
 
     private boolean nodesAreCompatible(PDGNode n1, PDGNode n2) {
-        // check if node types match - following new graph update think this might be useless
-        if (!n1.getType().equals(n2.getType())) {
-            return false;
-        }
-
         // check if the nodes are of the same semantic category (Stmt, Decl, etc.), todo should move this into semantic check section.
         if (!isSameNodeCategory(n1, n2)) {
             return false;
         }
-
-        // check additional attributes (labels, identifiers, etc.)
+        // checks from teh following attributes; NORMAL, ENTRY, CONDHEADER, LOOPHEADER
         if (!n1.getAttrib().equals(n2.getAttrib())) {
             return false;
         }
