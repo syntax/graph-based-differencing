@@ -13,9 +13,10 @@ import java.util.stream.Collectors;
 public class RecoveryProcessor {
 
     public enum RecoveryStrategy {
-        GLOBAL_SIMILARITY,
-        CONFLICT_GRAPH,
+        GLOBAL_SIMILARITY,  // not recommended
+        CONFLICT_GRAPH,   // not recommended
         DUPLICATE_CLEANUP,
+        CLEANUP_AND_FLATTERN,
         NONE
     }
 
@@ -27,11 +28,55 @@ public class RecoveryProcessor {
                 return recoverMappingsConflictGraphSimilarity(editScript);
             case DUPLICATE_CLEANUP:
                 return recoverMappingsNoDuplicates(editScript);
+            case CLEANUP_AND_FLATTERN:
+                return recoverMappingsCleanUpAndFlattern(editScript);
             case NONE:
                 return editScript;
             default:
                 throw new IllegalArgumentException("Unknown recovery strategy: " + strategy);
         }
+    }
+
+    private static List<EditOperation> recoverMappingsCleanUpAndFlattern(List<EditOperation> editScript) {
+//        cleanUpDuplicates(editScript);
+
+        List<EditOperation> flattenedScript = new ArrayList<>(editScript); // not inplace, think this is better design choice, todo change cleanupduplciates to be same
+
+        // logic to 'flattern' conflicts in the edit script
+
+        // if an update operation is described over two lines,
+        // and either a delete operations conflicts with a update operation on the old line number, or an insert operation conflicts with an update operation on the new line number,
+        // then remove the delete and insert operations, and change the update operation to a move operation
+        // todo: to be honest could prob rewrite something in teh edit script generator to avoid this behaviour. but this will do for now.
+        Set<Integer> oldLineNumbers = new HashSet<>();
+        Set<Integer> newLineNumbers = new HashSet<>();
+        for (EditOperation op : flattenedScript) {
+            if (op instanceof Update) {
+                Update update = (Update) op;
+                oldLineNumbers.add(update.getOldLineNumber());
+                newLineNumbers.add(update.getNewLineNumber());
+            }
+        }
+
+        Iterator<EditOperation> it = flattenedScript.iterator();
+        while (it.hasNext()) {
+            EditOperation op = it.next();
+            if (op instanceof Delete) {
+                Delete del = (Delete) op;
+                if (oldLineNumbers.contains(del.getLineNumber())) {
+                    it.remove();
+                }
+            }
+            if (op instanceof Insert) {
+                Insert ins = (Insert) op;
+                if (newLineNumbers.contains(ins.getLineNumber())) {
+                    it.remove();
+                }
+            }
+        }
+
+        // if an insertion and a deletion are near each other in line number, and have very similar code snippets, instead change a insertion and deletion pair to a update
+        return flattenedScript;
     }
 
     public static List<EditOperation> recoverMappingsGlobalSimilarity(List<EditOperation> editScript) {
@@ -292,6 +337,7 @@ public class RecoveryProcessor {
 
 
     private static void cleanUpDuplicates(List<EditOperation> editScript) {
+        // todo: think better convert this into a function as opposed to a procedure
         Set<String> uniqueOperations = new HashSet<>();
         Iterator<EditOperation> iterator = editScript.iterator();
         while (iterator.hasNext()) {
