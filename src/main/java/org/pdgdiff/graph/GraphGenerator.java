@@ -102,6 +102,7 @@ public class GraphGenerator {
                 PDGNode frontierNode = addOrGetNode(pdg, frontier, unitToNodeMap);
 
                 if (!pdg.containsEdge(frontierNode, node, DependencyTypes.CONTROL_DEPENDENCY)) {
+                    // TODO: this isnt probably bang on, but need some 'start node' to be set. taking the first unit often leads to disconnected graphs
                     if (startNode == null) {
                         startNode = frontierNode;
                         pdg.startNode = startNode;
@@ -125,6 +126,7 @@ public class GraphGenerator {
                 PDGNode useNode = addOrGetNode(pdg, useUnit, unitToNodeMap);
 
                 if (!pdg.containsEdge(node, useNode, DependencyTypes.DATA_DEPENDENCY)) {
+                    // TODO: this isnt probably bang on, but need some 'start node' to be set. taking the first unit often leads to disconnected graphs
                     if (startNode == null) {
                         startNode = node;
                         pdg.startNode = startNode;
