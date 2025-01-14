@@ -45,6 +45,9 @@ public class GraphExporter {
     public static void exportPDGToDot(PDG pdg, String fileName) {
         try (PrintWriter writer = new PrintWriter(new FileWriter(fileName))) {
             writer.println("digraph PDG {");
+            writer.println("  graph [ranksep=2, nodesep=0.1];");
+            writer.println("  node [shape=ellipse, style=filled, fillcolor=lightgrey, fontname=Arial, fontsize=12];");
+            writer.println("  edge [fontname=Arial, fontsize=10];");
 
             Set<PDGNode> connectedNodes = new HashSet<>();
 
@@ -65,15 +68,18 @@ public class GraphExporter {
                     List<GraphGenerator.DependencyTypes> labels = pdg.getLabelsForEdges(src, tgt);
                     for (GraphGenerator.DependencyTypes depType : labels) {
                         String colour = "black";
+                        String depLabel = "UNKNOWN";
                         if (depType == GraphGenerator.DependencyTypes.CONTROL_DEPENDENCY) {
                             colour = "red";
+                            depLabel = "CTRL_DEP";
                         } else if (depType == GraphGenerator.DependencyTypes.DATA_DEPENDENCY) {
                             colour = "blue";
+                            depLabel = "DATA_DEP";
                         }
                         writer.printf("  %s -> %s [label=\"%s\", color=\"%s\"];\n",
                                 getNodeId(src),
                                 getNodeId(tgt),
-                                depType,
+                                depLabel,
                                 colour);
                         connectedNodes.add(src);
                         connectedNodes.add(tgt);
