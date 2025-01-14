@@ -14,6 +14,8 @@ public class Delete extends EditOperation {
         this.codeSnippet = codeSnippet;
     }
 
+    public PDGNode getNode() { return node; }
+
     public int getLineNumber() {
         return lineNumber;
     }

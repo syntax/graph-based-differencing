@@ -16,7 +16,10 @@ public class RecoveryProcessor {
         GLOBAL_SIMILARITY,  // not recommended
         CONFLICT_GRAPH,   // not recommended
         DUPLICATE_CLEANUP,
-        CLEANUP_AND_FLATTERN,
+        CLEANUP,
+        FLATTEN,
+        CLEANUP_AND_FLATTEN,
+        FLATTEN_AND_CLEANUP,
         NONE
     }
 
@@ -28,8 +31,15 @@ public class RecoveryProcessor {
                 return recoverMappingsConflictGraphSimilarity(editScript);
             case DUPLICATE_CLEANUP:
                 return recoverMappingsNoDuplicates(editScript);
-            case CLEANUP_AND_FLATTERN:
-                return recoverMappingsCleanUpAndFlattern(editScript);
+            case CLEANUP:
+                return recoverMappingsCleanup(editScript);
+            case FLATTEN:
+                return recoverMappingsFlatten(editScript);
+            // TODO: investigate which of these is better and refactor this file, I believe flatten and cleanup is better based on one tests (minimal edit script)
+            case CLEANUP_AND_FLATTEN:
+                return recoverMappingsCleanupAndFlattern(editScript);
+            case FLATTEN_AND_CLEANUP:
+                return recoverMappingsFlattenAndCleanup(editScript);
             case NONE:
                 return editScript;
             default:
@@ -37,12 +47,116 @@ public class RecoveryProcessor {
         }
     }
 
-    private static List<EditOperation> recoverMappingsCleanUpAndFlattern(List<EditOperation> editScript) {
-//        cleanUpDuplicates(editScript);
+    private static List<EditOperation> recoverMappingsFlattenAndCleanup(List<EditOperation> editScript) {
+        List<EditOperation> flattenScript = recoverMappingsFlatten(editScript);
+        return recoverMappingsCleanup(flattenScript);
+    }
+
+    private static List<EditOperation> recoverMappingsCleanupAndFlattern(List<EditOperation> editScript) {
+        List<EditOperation> cleanedScript = recoverMappingsCleanup(editScript);
+        return recoverMappingsFlatten(cleanedScript);
+    }
+
+    private static List<EditOperation> recoverMappingsFlatten(List<EditOperation> editScript) {
+        // 'flatterning' edit operations involves assessing pairs of insert->delete and delete->insert operations that are similar and can be turned into a update.
+        // if identical, these can be changed to be just a MOVE. if similar, they can be changed to be an UPDATE.
 
         List<EditOperation> flattenedScript = new ArrayList<>(editScript); // not inplace, think this is better design choice, todo change cleanupduplciates to be same
 
-        // logic to 'flattern' conflicts in the edit script
+        List<Insert> inserts = new ArrayList<>();
+        List<Delete> deletes = new ArrayList<>();
+        List<EditOperation> others = new ArrayList<>();
+
+        for (EditOperation op : editScript) {
+            if (op instanceof Insert) {
+                inserts.add((Insert) op);
+            } else if (op instanceof Delete) {
+                deletes.add((Delete) op);
+            } else {
+                others.add(op);
+            }
+        }
+
+        Set<Insert> usedInserts = new HashSet<>();
+        Set<Delete> usedDeletes = new HashSet<>();
+
+        // greedily match each insert with eh best delete.
+
+        for (Insert ins : inserts) {
+            double bestSimilarity = -1.0;
+            Delete bestDelete = null;
+
+            for (Delete del : deletes) {
+                if (usedDeletes.contains(del)) {
+                    continue;
+                }
+
+                // could implement the following BUT can argue that it doesnt matter too much, still provides a good differencing.
+                // if (Math.abs(ins.getLineNumber() - del.getLineNumber()) > 5) continue;
+
+                double similarity = computeSimilarity(ins.getCodeSnippet(), del.getCodeSnippet());
+                if (similarity > bestSimilarity) {
+                    bestSimilarity = similarity;
+                    bestDelete = del;
+                }
+            }
+
+            double threshold = 0.7;
+
+            if (bestDelete != null && bestSimilarity >= threshold) {
+                usedInserts.add(ins);
+                usedDeletes.add(bestDelete);
+//                if (bestSimilarity == 1.0) {
+//                    Move move = new Move(
+//                            bestDelete.getNode(),
+//                            bestDelete.getLineNumber(),
+//                            ins.getLineNumber(),
+//                            ins.getCodeSnippet()
+//                    );
+//                    flattenedScript.add(move);
+//
+//                } else {
+                    // TODO: could properly calculate syntax difference for Update, not sure if that criritical howerver.
+
+                    Update update = new Update(
+                            bestDelete.getNode(),
+                            bestDelete.getLineNumber(),
+                            ins.getLineNumber(),
+                            bestDelete.getCodeSnippet(),
+                            ins.getCodeSnippet(),
+                            null
+                    );
+                    flattenedScript.add(update);
+//                }
+
+            } else {
+                // conditions not met so retain this insert operation. can remove this else but just for clarity at this stage.
+            }
+        }
+
+        // cleanup, add inserts and deletes we haevnt resolved.
+        for (Insert ins : inserts) {
+            if (!usedInserts.contains(ins)) {
+                flattenedScript.add(ins);
+            }
+        }
+
+        for (Delete del : deletes) {
+            if (!usedDeletes.contains(del)) {
+                flattenedScript.add(del);
+            }
+        }
+
+        // retain all other ops
+        flattenedScript.addAll(others);
+
+        return flattenedScript;
+    }
+
+    private static List<EditOperation> recoverMappingsCleanup(List<EditOperation> editScript) {
+//        cleanUpDuplicates(editScript);
+
+        List<EditOperation> flattenedScript = new ArrayList<>(editScript); // not inplace, think this is better design choice, todo change cleanupduplciates to be same
 
         // if an update operation is described over two lines,
         // and either a delete operations conflicts with a update operation on the old line number, or an insert operation conflicts with an update operation on the new line number,

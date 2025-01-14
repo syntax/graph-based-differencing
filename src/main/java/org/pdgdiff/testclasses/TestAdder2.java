@@ -20,6 +20,7 @@ public class TestAdder2 {
         System.out.println("Complex Calculation Result: " + complexResult);
         System.out.println("identical Result: " + meep);
     }
+
     public int addNumbers(int number, int number2) {
         int sum = number + number2;
         return sum;
