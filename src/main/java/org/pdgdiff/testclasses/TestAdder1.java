@@ -30,7 +30,7 @@ public class TestAdder1 {
         } else {
             result = num1 * num2;
         }
-        return  result;
+        return result;
     }
 
     public int addNumbers(int a, int b) {
@@ -44,7 +44,6 @@ public class TestAdder1 {
         int sum = a - b;
         return sum;
     }
-
 
     // added these more complex classes with more intense control flow and non-matching names to try and catch edge cases
     public int detailedComputation(int num1, int num2) {
@@ -66,6 +65,15 @@ public class TestAdder1 {
                 result /= 3;
             } else {
                 result += i * 2;
+            }
+        }
+
+        // Nested conditional inside a loop
+        for (int i = 0; i < 6; i++) {
+            if (i % 2 == 1) {
+                result *= i;
+            } else {
+                result /= (i + 1);
             }
         }
 

@@ -20,9 +20,8 @@ public class TestAdder2 {
         System.out.println("Complex Calculation Result: " + complexResult);
         System.out.println("identical Result: " + meep);
     }
-
     public int addNumbers(int number, int number2) {
-        int sum = number - number2;
+        int sum = number + number2;
         return sum;
     }
 
@@ -51,6 +50,15 @@ public class TestAdder2 {
                 result /= 2;
             } else {
                 result *= 3;
+            }
+        }
+
+        // Nested conditional inside a loop
+        for (int i = 0; i < 5; i++) {
+            if (i % 2 == 0) {
+                result += i;
+            } else {
+                result -= i;
             }
         }
 
