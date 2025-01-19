@@ -15,6 +15,9 @@ import soot.toolkits.graph.pdg.PDGNode;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
+
+import static org.pdgdiff.graph.GraphTraversal.collectNodesBFS;
 
 /**
  * Generates edit scripts based on PDG node mappings.
@@ -115,6 +118,33 @@ public class EditScriptGenerator {
 
         return new ArrayList<>(editScriptSet);
     }
+
+    // TODO; could instead write these by just deleting every line between the first and last line of the method, might be more verbose otherwise
+    // todo; certain lines will not be detected as have no direct jimple representation, e.g. 'else' or comments etc.
+
+    public static List<EditOperation> generateAddScript(PDG pdg, String sourceFilePath) throws IOException {
+        SourceCodeMapper codeMapper = new SourceCodeMapper(sourceFilePath);
+        return collectNodesBFS(pdg).stream()
+                .map(node -> {
+                    int lineNumber = getNodeLineNumber(node);
+                    String codeSnippet = codeMapper.getCodeLine(lineNumber);
+                    return new Insert(node, lineNumber, codeSnippet);
+                })
+                .collect(Collectors.toList());
+    }
+
+
+    public static List<EditOperation> generateDeleteScript(PDG pdg, String sourceFilePath) throws IOException {
+        SourceCodeMapper codeMapper = new SourceCodeMapper(sourceFilePath);
+        return collectNodesBFS(pdg).stream()
+                .map(node -> {
+                    int lineNumber = getNodeLineNumber(node);
+                    String codeSnippet = codeMapper.getCodeLine(lineNumber);
+                    return new Delete(node, lineNumber, codeSnippet);
+                })
+                .collect(Collectors.toList());
+    }
+
 
     private static class ComparisonResult {
         public boolean isEqual;

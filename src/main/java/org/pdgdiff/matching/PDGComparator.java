@@ -50,6 +50,18 @@ public class PDGComparator {
         // TODO: clean up debug print stmts
         System.out.println("--> Graph matching complete using strategy: " + strategy);
 
+        // Handle unmatched graphs, i.e. additions or deletions of methods to the versions
+        List<PDG> unmatchedInList1 = pdgList1.stream()
+                .filter(pdg -> !graphMapping.getGraphMapping().containsKey(pdg))
+                .collect(Collectors.toList());
+
+        List<PDG> unmatchedInList2 = pdgList2.stream()
+                .filter(pdg -> !graphMapping.getGraphMapping().containsValue(pdg))
+                .collect(Collectors.toList());
+
+        // Generate edit scripts for unmatched methods
+        generateEditScriptsForUnmatched(unmatchedInList1, unmatchedInList2, srcSourceFilePath, dstSourceFilePath);
+
         graphMapping.getGraphMapping().forEach((srcPDG, dstPDG) -> {
             String method1 = srcPDG.getCFG().getBody().getMethod().getSignature();
             String method2 = dstPDG.getCFG().getBody().getMethod().getSignature();
@@ -101,6 +113,37 @@ public class PDGComparator {
 
         writeAggregatedEditScript();
     }
+
+    private static void generateEditScriptsForUnmatched(List<PDG> unmatchedInList1, List<PDG> unmatchedInList2,
+                                                        String srcSourceFilePath, String dstSourceFilePath) {
+        unmatchedInList1.forEach(pdg -> {
+            try {
+                String methodSignature = pdg.getCFG().getBody().getMethod().getSignature();
+                System.out.println("Unmatched method in List 1 (to be deleted): " + methodSignature);
+
+                List<EditOperation> editScript = EditScriptGenerator.generateDeleteScript(pdg, srcSourceFilePath);
+                exportEditScript(editScript, methodSignature, "DELETION");
+            } catch (Exception e) {
+                System.err.println("Failed to generate delete script for unmatched method in List 1");
+                e.printStackTrace();
+            }
+        });
+
+        unmatchedInList2.forEach(pdg -> {
+            try {
+                String methodSignature = pdg.getCFG().getBody().getMethod().getSignature();
+                System.out.println("Unmatched method in List 2 (to be added): " + methodSignature);
+
+                List<EditOperation> editScript = EditScriptGenerator.generateAddScript(pdg, dstSourceFilePath);
+                exportEditScript(editScript, "INSERTION", methodSignature);
+            } catch (Exception e) {
+                System.err.println("Failed to generate add script for unmatched method in List 2");
+                e.printStackTrace();
+            }
+        });
+    }
+
+
 
     private static void exportEditScript(List<EditOperation> editScript, String method1Signature, String method2Signature) {
         // Sanitize method names for use in filenames

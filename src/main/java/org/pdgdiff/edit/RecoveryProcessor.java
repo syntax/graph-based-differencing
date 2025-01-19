@@ -49,12 +49,16 @@ public class RecoveryProcessor {
 
     private static List<EditOperation> recoverMappingsFlattenAndCleanup(List<EditOperation> editScript) {
         List<EditOperation> flattenScript = recoverMappingsFlatten(editScript);
-        return recoverMappingsCleanup(flattenScript);
+        List<EditOperation> cleanedAndFlatterened = recoverMappingsCleanup(flattenScript);
+//        cleanUpDuplicates(cleanedAndFlatterened); //  todo investigate how this is having effects on the edit script
+        return cleanedAndFlatterened;
     }
 
     private static List<EditOperation> recoverMappingsCleanupAndFlattern(List<EditOperation> editScript) {
         List<EditOperation> cleanedScript = recoverMappingsCleanup(editScript);
-        return recoverMappingsFlatten(cleanedScript);
+        List<EditOperation> flattenedAndCleanedScript = recoverMappingsFlatten(cleanedScript);
+//        cleanUpDuplicates(flattenedAndCleanedScript); //  todo investigate how this is having effects on the edit script
+        return flattenedAndCleanedScript;
     }
 
     private static List<EditOperation> recoverMappingsFlatten(List<EditOperation> editScript) {
