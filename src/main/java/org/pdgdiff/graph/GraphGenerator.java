@@ -4,6 +4,8 @@ import soot.Body;
 import soot.SootClass;
 import soot.SootMethod;
 import soot.Unit;
+import soot.jimple.GotoStmt;
+import soot.jimple.IfStmt;
 import soot.toolkits.graph.*;
 import soot.toolkits.graph.pdg.HashMutablePDG;
 import soot.toolkits.graph.pdg.MHGDominatorTree;
@@ -45,6 +47,7 @@ public class GraphGenerator {
             return null;
         }
     }
+
 
     public static PDG constructPdg(SootClass sootClass, SootMethod method) {
         Body body = method.retrieveActiveBody();
@@ -94,6 +97,34 @@ public class GraphGenerator {
         }
 
         for (Unit unit : body.getUnits()) {
+//            if (unit instanceof GotoStmt) {
+//                System.out.println("Processing goto unit: " + unit);
+//                GotoStmt gotoStmt = (GotoStmt) unit;
+//                Unit target = gotoStmt.getTarget();
+//                PDGNode targetNode = addOrGetNode(pdg, target, unitToNodeMap);
+//
+//                // Find the controlling `if` statement via the dominator tree
+//                DominatorNode<Unit> domNode = postdominatorTree.getDode(unit);
+//                while (domNode != null) {
+//                    Unit domUnit = domNode.getGode();  // Or getGode(), getNode(), etc.
+//                    if (domUnit instanceof IfStmt) {
+//                        PDGNode ifNode = addOrGetNode(pdg, domUnit, unitToNodeMap);
+//
+//                        // Add a control dependency from the `if` statement to the target
+//                        if (!pdg.containsEdge(ifNode, targetNode, DependencyTypes.CONTROL_DEPENDENCY)) {
+//                            pdg.addEdge(ifNode, targetNode, DependencyTypes.CONTROL_DEPENDENCY);
+//                            ifNode.addDependent(targetNode);
+//                            System.out.println("Control Dependency (If -> Target): " + ifNode + " -> " + targetNode);
+//                        }
+//                        break; // Stop once we've found the controlling `if` statement
+//                    }
+//                    domNode = domNode.getParent();
+//                }
+//
+//                // Skip further processing for the `goto` unit
+//                continue;
+//            }
+
             PDGNode node = addOrGetNode(pdg, unit, unitToNodeMap);
 
             //add control dependencies based on dominance frontier

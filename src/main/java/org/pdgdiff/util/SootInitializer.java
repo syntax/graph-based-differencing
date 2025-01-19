@@ -12,7 +12,7 @@ import java.util.Collections;
 public class SootInitializer {
 
     // Method to initialize Soot configuration
-    public static void initializeSoot() {
+    public static void initializeSoot(String dir) {
         resetSoot();
         // Set Soot options
         Options.v().set_prepend_classpath(true);
@@ -47,9 +47,8 @@ public class SootInitializer {
         disableOptimizations();
 
         // Set the class path to your program's compiled classes
-        String classPath = System.getProperty("user.dir") + "/target/classes";
-        Options.v().set_soot_classpath(classPath);
-        Options.v().set_process_dir(Collections.singletonList(classPath));
+        Options.v().set_soot_classpath(dir);
+        Options.v().set_process_dir(Collections.singletonList(dir));
 
         // Whole program analysis
         Options.v().set_whole_program(false); // Investigating if this stops DCE

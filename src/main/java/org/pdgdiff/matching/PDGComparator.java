@@ -27,6 +27,11 @@ import java.util.stream.Collectors;
 
 public class PDGComparator {
 
+
+    private static final int MAX_FILENAME_LENGTH = 255; // probably max, otherwise sometimes have issues
+    private static final int SAFE_METHOD_NAME_LENGTH = 50; // length of method name to keep when abbreviating
+
+
     public static void compareAndPrintGraphSimilarity(List<PDG> pdgList1, List<PDG> pdgList2,
                                                       GraphMatcherFactory.MatchingStrategy strategy, String srcSourceFilePath, String dstSourceFilePath) throws IOException {
 
@@ -105,6 +110,13 @@ public class PDGComparator {
         String outputDir = "out/";
         String filename = outputDir + "editScript_" + method1Safe + "_to_" + method2Safe + ".json";
 
+        // check if too long, otherwise will fail
+        if (filename.length() > MAX_FILENAME_LENGTH) {
+            String method1Abbrev = abbreviate(method1Safe);
+            String method2Abbrev = abbreviate(method2Safe);
+            filename = outputDir + "editScript_" + method1Abbrev + "_to_" + method2Abbrev + "_concat.json";
+        }
+
         try (Writer writer = new FileWriter(filename)) {
             OperationSerializer serializer = new JsonOperationSerializer(editScript);
             serializer.writeTo(writer);
@@ -114,6 +126,15 @@ public class PDGComparator {
             e.printStackTrace();
         }
     }
+
+    private static String abbreviate(String methodName) {
+        if (methodName.length() <= SAFE_METHOD_NAME_LENGTH) {
+            return methodName;
+        }
+        return methodName.substring(methodName.length() - SAFE_METHOD_NAME_LENGTH);
+    }
+
+
 
 
     // hacky solution for the time being, just iterates across all json files and creates one edit script

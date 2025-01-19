@@ -11,6 +11,11 @@ import soot.SootClass;
 import soot.SootMethod;
 import soot.toolkits.graph.pdg.HashMutablePDG;
 
+import javax.security.sasl.SaslServer;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,35 +25,53 @@ public class Main {
         System.out.println("Starting PDG Diff...");
         // Clear out folder
         GraphExporter.clearOutputFolder("out");
+
+        //  !!!! To run on datasets, use the following !!!!
+        String beforeDir = "./benchmark/datasets/gh-java/before/signal-server/f9d7c1de573fb10559fc5bc69b40f02b25f48769/compiled";
+        String afterDir = "./benchmark/datasets/gh-java/after/signal-server/f9d7c1de573fb10559fc5bc69b40f02b25f48769/compiled";
+        String class1Name = "org.whispersystems.textsecuregcm.storage.StoredMessageManager";
+        String class2Name = "org.whispersystems.textsecuregcm.storage.StoredMessageManager";
+        String srcSourceFilePath = "./benchmark/datasets/gh-java/before/signal-server/f9d7c1de573fb10559fc5bc69b40f02b25f48769/StoredMessageManager.java";
+        String dstSourceFilePath = "./benchmark/datasets/gh-java/after/signal-server/f9d7c1de573fb10559fc5bc69b40f02b25f48769/StoredMessageManager.java";
+
+
+        // !!!! to use on local test classes, use the following !!!!
+//        String class1Name = "org.pdgdiff.testclasses.TestAdder1";
+//        String class2Name = "org.pdgdiff.testclasses.TestAdder2";
+//
+//        String srcSourceFilePath = "src/main/java/org/pdgdiff/testclasses/TestAdder1.java";
+//        String dstSourceFilePath = "src/main/java/org/pdgdiff/testclasses/TestAdder2.java";
+//
+//        String beforeDir = System.getProperty("user.dir") + "/target/classes";
+//        String afterDir = System.getProperty("user.dir") + "/target/classes";
+
         // Initialize Soot
-        SootInitializer.initializeSoot();
+        SootInitializer.initializeSoot(beforeDir);
 
         // Load all classes in the program
         Scene.v().loadNecessaryClasses();
 
-        // Hardcode the classes for TestAdder1 and TestAdder2
-        String class1Name = "org.pdgdiff.testclasses.TestAdder1";
-        String class2Name = "org.pdgdiff.testclasses.TestAdder2";
-
-        String srcSourceFilePath = "src/main/java/org/pdgdiff/testclasses/TestAdder1.java";
-        String dstSourceFilePath = "src/main/java/org/pdgdiff/testclasses/TestAdder2.java";
-
         try {
             // Retrieve the classes from the Soot Scene
-            SootClass testAdder1 = Scene.v().getSootClass(class1Name);
-            SootClass testAdder2 = Scene.v().getSootClass(class2Name);
+            SootInitializer.initializeSoot(beforeDir);
+            Scene.v().loadNecessaryClasses();
+            SootClass beforeFile = Scene.v().getSootClass(class1Name);
+            List<PDG> pdgsClass1 = generatePDGsForClass(beforeFile);
 
-            // Generate PDGs for all methods in both classes and store in lists
-            List<PDG> pdgsClass1 = generatePDGsForClass(testAdder1);
-            List<PDG> pdgsClass2 = generatePDGsForClass(testAdder2);
+            SootInitializer.initializeSoot(afterDir);
+            Scene.v().loadNecessaryClasses();
+            SootClass afterFile = Scene.v().getSootClass(class2Name);
+            List<PDG> pdgsClass2 = generatePDGsForClass(afterFile);
 
             // Print the number of PDGs generated for each class
-            System.out.println("PDGs generated for " + testAdder1.getName() + ": " + pdgsClass1.size());
-            System.out.println("PDGs generated for " + testAdder2.getName() + ": " + pdgsClass2.size());
+            System.out.println("PDGs generated for " + beforeFile.getName() + ": " + pdgsClass1.size());
+            System.out.println("PDGs generated for " + afterFile.getName() + ": " + pdgsClass2.size());
 
             if (!pdgsClass1.isEmpty() && !pdgsClass2.isEmpty()) {
                 PDGComparator.compareAndPrintGraphSimilarity(pdgsClass1, pdgsClass2, GraphMatcherFactory.MatchingStrategy.VF2, srcSourceFilePath, dstSourceFilePath);
             }
+
+            copyResultsToOutput(srcSourceFilePath, dstSourceFilePath);
 
         } catch (Exception e) {
             System.err.println("An error occurred while processing the classes: " + e.getMessage());
@@ -90,5 +113,19 @@ public class Main {
             }
         }
         return pdgList;
+    }
+
+    private static void copyResultsToOutput(String beforeSourceDir, String afterSourceDir) {
+        // Copy the results to the output folder
+        try {
+            Files.copy(Paths.get(beforeSourceDir), Paths.get("py-visualise/testclasses/TestAdder1.java"), StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(Paths.get(afterSourceDir), Paths.get("py-visualise/testclasses/TestAdder2.java"), StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(Paths.get("out/diff.json"), Paths.get("py-visualise/out/diff.json"), StandardCopyOption.REPLACE_EXISTING);
+            System.out.println(" --> results copied to python visualiser");
+        } catch (IOException e) {
+            System.err.println("An error occurred while copying the source files to the output folder: " + e.getMessage());
+            e.printStackTrace();
+
+        }
     }
 }
