@@ -35,10 +35,10 @@ public class RecoveryProcessor {
                 return recoverMappingsCleanup(editScript);
             case FLATTEN:
                 return recoverMappingsFlatten(editScript);
-            // TODO: investigate which of these is better and refactor this file, I believe flatten and cleanup is better based on one tests (minimal edit script)
             case CLEANUP_AND_FLATTEN:
                 return recoverMappingsCleanupAndFlattern(editScript);
-            case FLATTEN_AND_CLEANUP:
+            case FLATTEN_AND_CLEANUP: // this is risky and often leads to creation of conflicts that shouldnt exist. cleanup before flattern.
+                // todo; prob remove
                 return recoverMappingsFlattenAndCleanup(editScript);
             case NONE:
                 return editScript;
@@ -48,16 +48,17 @@ public class RecoveryProcessor {
     }
 
     private static List<EditOperation> recoverMappingsFlattenAndCleanup(List<EditOperation> editScript) {
+        // TODO: remove unless i find new use for this
         List<EditOperation> flattenScript = recoverMappingsFlatten(editScript);
         List<EditOperation> cleanedAndFlatterened = recoverMappingsCleanup(flattenScript);
-//        cleanUpDuplicates(cleanedAndFlatterened); //  todo investigate how this is having effects on the edit script
+        cleanUpDuplicates(cleanedAndFlatterened);
         return cleanedAndFlatterened;
     }
 
     private static List<EditOperation> recoverMappingsCleanupAndFlattern(List<EditOperation> editScript) {
         List<EditOperation> cleanedScript = recoverMappingsCleanup(editScript);
         List<EditOperation> flattenedAndCleanedScript = recoverMappingsFlatten(cleanedScript);
-//        cleanUpDuplicates(flattenedAndCleanedScript); //  todo investigate how this is having effects on the edit script
+        cleanUpDuplicates(flattenedAndCleanedScript);
         return flattenedAndCleanedScript;
     }
 
@@ -128,7 +129,7 @@ public class RecoveryProcessor {
                             ins.getLineNumber(),
                             bestDelete.getCodeSnippet(),
                             ins.getCodeSnippet(),
-                            null
+                            new SyntaxDifference("flatten") // this just provides an indicator that this is a flattened operation
                     );
                     flattenedScript.add(update);
 //                }
