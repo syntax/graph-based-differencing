@@ -20,8 +20,11 @@ import com.google.gson.JsonParser;
 import soot.SootMethod;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -155,8 +158,10 @@ public class PDGComparator {
 
         // check if too long, otherwise will fail
         if (filename.length() > MAX_FILENAME_LENGTH) {
-            String method1Abbrev = abbreviate(method1Safe);
-            String method2Abbrev = abbreviate(method2Safe);
+            String method1Abbrev = generateHash(method1Safe);
+            System.out.println("Method name too big to save to file, hashed;" + method1Safe + " -> " + method1Abbrev);
+            String method2Abbrev = generateHash(method2Safe);
+            System.out.println("Method name too big to save to file, hashed;" + method2Safe + " -> " + method2Abbrev);
             filename = outputDir + "editScript_" + method1Abbrev + "_to_" + method2Abbrev + "_concat.json";
         }
 
@@ -170,14 +175,20 @@ public class PDGComparator {
         }
     }
 
-    private static String abbreviate(String methodName) {
-        if (methodName.length() <= SAFE_METHOD_NAME_LENGTH) {
+    private static String generateHash(String methodName) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hashBytes = digest.digest(methodName.getBytes(StandardCharsets.UTF_8));
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hashBytes) {
+                hexString.append(String.format("%02x", b));
+            }
+            return hexString.toString(); // todo might need to send a concatenated part of the hash, but as of rn this seems to be ok length
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
             return methodName;
         }
-        return methodName.substring(methodName.length() - SAFE_METHOD_NAME_LENGTH);
     }
-
-
 
 
     // hacky solution for the time being, just iterates across all json files and creates one edit script

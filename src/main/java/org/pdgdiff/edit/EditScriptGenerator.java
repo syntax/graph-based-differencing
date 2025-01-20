@@ -109,8 +109,7 @@ public class EditScriptGenerator {
                     newMethodLineNumber,
                     oldMethodSignature,
                     newMethodSignature,
-                    // TODO for the future this probably shouldnt be null.
-                    null
+                    new SyntaxDifference("Method signature differs for" + srcMethod.getName())
             );
 
             editScriptSet.add(signatureUpdate);

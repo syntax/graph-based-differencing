@@ -111,16 +111,24 @@ public class RecoveryProcessor {
             if (bestDelete != null && bestSimilarity >= threshold) {
                 usedInserts.add(ins);
                 usedDeletes.add(bestDelete);
-//                if (bestSimilarity == 1.0) {
-//                    Move move = new Move(
-//                            bestDelete.getNode(),
-//                            bestDelete.getLineNumber(),
-//                            ins.getLineNumber(),
-//                            ins.getCodeSnippet()
-//                    );
-//                    flattenedScript.add(move);
-//
-//                } else {
+                // Write this as a move if identical.
+                if (Objects.equals(ins.getCodeSnippet(), bestDelete.getCodeSnippet())) {
+                    if (ins.getLineNumber() != bestDelete.getLineNumber()) {
+                        Move move = new Move(
+                                bestDelete.getNode(),
+                                bestDelete.getLineNumber(),
+                                ins.getLineNumber(),
+                                ins.getCodeSnippet()
+                        );
+                        flattenedScript.add(move);
+                        flattenedScript.remove(ins);
+                        flattenedScript.remove(bestDelete);
+                    } else {
+                        // dont need a move, literally the same line number.
+                        flattenedScript.remove(ins);
+                        flattenedScript.remove(bestDelete);
+                    }
+                } else {
                     // TODO: could properly calculate syntax difference for Update, not sure if that criritical howerver.
 
                     Update update = new Update(
@@ -132,8 +140,12 @@ public class RecoveryProcessor {
                             new SyntaxDifference("flatten") // this just provides an indicator that this is a flattened operation
                     );
                     flattenedScript.add(update);
-//                }
 
+                    // 'squash' the inserts and delete operations into the new update.
+                    flattenedScript.remove(ins);
+                    flattenedScript.remove(bestDelete);
+//                }
+                }
             } else {
                 // conditions not met so retain this insert operation. can remove this else but just for clarity at this stage.
             }

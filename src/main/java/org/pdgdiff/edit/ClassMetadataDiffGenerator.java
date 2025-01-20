@@ -1,9 +1,6 @@
 package org.pdgdiff.edit;
 
-import org.pdgdiff.edit.model.Delete;
-import org.pdgdiff.edit.model.EditOperation;
-import org.pdgdiff.edit.model.Insert;
-import org.pdgdiff.edit.model.Update;
+import org.pdgdiff.edit.model.*;
 import org.pdgdiff.io.JsonOperationSerializer;
 import org.pdgdiff.io.OperationSerializer;
 import org.pdgdiff.util.CodeAnalysisUtils;
@@ -64,7 +61,7 @@ public class ClassMetadataDiffGenerator {
                     dstClassLineNumber,
                     srcClassDeclaration,
                     dstClassDeclaration,
-                    null
+                    new SyntaxDifference("ClassMetadataDiff: Class modifiers differ")
             );
 
             editScriptSet.add(classUpdate);
@@ -121,7 +118,7 @@ public class ClassMetadataDiffGenerator {
                             newLineNumber,
                             oldCodeSnippet,
                             newCodeSnippet,
-                            null
+                            new SyntaxDifference("ClassMetadataDiff: Field " + fieldName + " differs")
                     );
                     editScriptSet.add(fieldUpdate);
                 }
@@ -158,7 +155,7 @@ public class ClassMetadataDiffGenerator {
                         newLineNumber,
                         oldCodeSnippet,
                         newCodeSnippet,
-                        null
+                        new SyntaxDifference("ClassMetadataDiff: Field " + fieldName + " differs")
                 );
                 editScriptSet.add(fieldUpdate);
             } else {

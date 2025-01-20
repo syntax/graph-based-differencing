@@ -27,27 +27,27 @@ public class Main {
         GraphExporter.clearOutputFolder("out");
 
         //  !!!! To run on datasets, use the following !!!!
-//        String commit = "f9d7c1de573fb10559fc5bc69b40f02b25f48769";
-//        String project = "signal-server";
-//        String filename = "PushSender";
-//
-//        String beforeDir = "./benchmark/datasets/gh-java/before/" + project + "/" + commit + "/compiled";
-//        String afterDir = "./benchmark/datasets/gh-java/after/" + project + "/" + commit + "/compiled";
-//        String class1Name = "org.whispersystems.textsecuregcm.push.PushSender";
-//        String class2Name = "org.whispersystems.textsecuregcm.push.PushSender";
-//        String srcSourceFilePath = "./benchmark/datasets/gh-java/before/" + project + "/" + commit + "/" + filename +".java";
-//        String dstSourceFilePath = "./benchmark/datasets/gh-java/after/" + project + "/" + commit + "/" + filename +".java";
+        String commit = "f9d7c1de573fb10559fc5bc69b40f02b25f48769";
+        String project = "signal-server";
+        String filename = "PushSender";
+
+        String beforeDir = "./benchmark/datasets/gh-java/before/" + project + "/" + commit + "/compiled";
+        String afterDir = "./benchmark/datasets/gh-java/after/" + project + "/" + commit + "/compiled";
+        String class1Name = "org.whispersystems.textsecuregcm.push.PushSender";
+        String class2Name = "org.whispersystems.textsecuregcm.push.PushSender";
+        String srcSourceFilePath = "./benchmark/datasets/gh-java/before/" + project + "/" + commit + "/" + filename +".java";
+        String dstSourceFilePath = "./benchmark/datasets/gh-java/after/" + project + "/" + commit + "/" + filename +".java";
 
 
         // !!!! to use on local test classes, use the following !!!!
-        String class1Name = "org.pdgdiff.testclasses.TestAdder1";
-        String class2Name = "org.pdgdiff.testclasses.TestAdder2";
-
-        String srcSourceFilePath = "src/main/java/org/pdgdiff/testclasses/TestAdder1.java";
-        String dstSourceFilePath = "src/main/java/org/pdgdiff/testclasses/TestAdder2.java";
-
-        String beforeDir = System.getProperty("user.dir") + "/target/classes";
-        String afterDir = System.getProperty("user.dir") + "/target/classes";
+//        String class1Name = "org.pdgdiff.testclasses.TestAdder1";
+//        String class2Name = "org.pdgdiff.testclasses.TestAdder2";
+//
+//        String srcSourceFilePath = "src/main/java/org/pdgdiff/testclasses/TestAdder1.java";
+//        String dstSourceFilePath = "src/main/java/org/pdgdiff/testclasses/TestAdder2.java";
+//
+//        String beforeDir = System.getProperty("user.dir") + "/target/classes";
+//        String afterDir = System.getProperty("user.dir") + "/target/classes";
 
         // Initialize Soot
         SootInitializer.initializeSoot(beforeDir);
