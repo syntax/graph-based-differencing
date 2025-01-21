@@ -121,28 +121,48 @@ public class EditScriptGenerator {
     // TODO; could instead write these by just deleting every line between the first and last line of the method, might be more verbose otherwise
     // todo; certain lines will not be detected as have no direct jimple representation, e.g. 'else' or comments etc.
 
-    public static List<EditOperation> generateAddScript(PDG pdg, String sourceFilePath) throws IOException {
+    public static List<EditOperation> generateAddScript(PDG pdg, String sourceFilePath, SootMethod method) throws IOException {
         SourceCodeMapper codeMapper = new SourceCodeMapper(sourceFilePath);
-        return collectNodesBFS(pdg).stream()
-                .map(node -> {
-                    int lineNumber = getNodeLineNumber(node);
-                    String codeSnippet = codeMapper.getCodeLine(lineNumber);
-                    return new Insert(node, lineNumber, codeSnippet);
-                })
-                .collect(Collectors.toList());
+        List<EditOperation> editOperations = new ArrayList<>();
+
+        String methodSignature = method.getDeclaration();
+        int methodLineNumber = CodeAnalysisUtils.getMethodLineNumber(method, codeMapper);
+        editOperations.add(new Insert(null, methodLineNumber, methodSignature));
+
+        editOperations.addAll(
+                collectNodesBFS(pdg).stream()
+                        .map(node -> {
+                            int lineNumber = getNodeLineNumber(node);
+                            String codeSnippet = codeMapper.getCodeLine(lineNumber);
+                            return new Insert(node, lineNumber, codeSnippet);
+                        })
+                        .collect(Collectors.toList())
+        );
+
+        return editOperations;
     }
 
-
-    public static List<EditOperation> generateDeleteScript(PDG pdg, String sourceFilePath) throws IOException {
+    public static List<EditOperation> generateDeleteScript(PDG pdg, String sourceFilePath, SootMethod method) throws IOException {
         SourceCodeMapper codeMapper = new SourceCodeMapper(sourceFilePath);
-        return collectNodesBFS(pdg).stream()
-                .map(node -> {
-                    int lineNumber = getNodeLineNumber(node);
-                    String codeSnippet = codeMapper.getCodeLine(lineNumber);
-                    return new Delete(node, lineNumber, codeSnippet);
-                })
-                .collect(Collectors.toList());
+        List<EditOperation> editOperations = new ArrayList<>();
+
+        String methodSignature = method.getDeclaration();
+        int methodLineNumber = CodeAnalysisUtils.getMethodLineNumber(method, codeMapper);
+        editOperations.add(new Delete(null, methodLineNumber, methodSignature));
+
+        editOperations.addAll(
+                collectNodesBFS(pdg).stream()
+                        .map(node -> {
+                            int lineNumber = getNodeLineNumber(node);
+                            String codeSnippet = codeMapper.getCodeLine(lineNumber);
+                            return new Delete(node, lineNumber, codeSnippet);
+                        })
+                        .collect(Collectors.toList())
+        );
+
+        return editOperations;
     }
+
 
 
     private static class ComparisonResult {

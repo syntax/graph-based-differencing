@@ -1,5 +1,6 @@
 package org.pdgdiff.matching.models.vf2;
 
+import org.pdgdiff.matching.NodeFeasibility;
 import org.pdgdiff.graph.GraphTraversal;
 import org.pdgdiff.graph.PDG;
 import soot.toolkits.graph.pdg.PDGNode;
@@ -98,7 +99,7 @@ class VF2State {
 
     private boolean nodesAreCompatible(PDGNode n1, PDGNode n2) {
         // check if the nodes are of the same semantic category (Stmt, Decl, etc.), todo should move this into semantic check section.
-        if (!isSameNodeCategory(n1, n2)) {
+        if (!NodeFeasibility.isSameNodeCategory(n1, n2)) {
             return false;
         }
         // checks from teh following attributes; NORMAL, ENTRY, CONDHEADER, LOOPHEADER
@@ -109,44 +110,6 @@ class VF2State {
         return true;
     }
 
-    private boolean isSameNodeCategory(PDGNode n1, PDGNode n2) {
-        // get unit
-        Object node1 = n1.getNode();
-        Object node2 = n2.getNode();
-
-        // check for specific categories
-        return (isStatement(node1) && isStatement(node2)) ||
-                (isDeclaration(node1) && isDeclaration(node2)) ||
-                (isControlFlowNode(node1) && isControlFlowNode(node2)) ||
-                (isDataNode(node1) && isDataNode(node2));
-    }
-
-    private boolean isStatement(Object node) {
-        return node instanceof soot.jimple.Stmt;
-    }
-
-    private boolean isDeclaration(Object node) {
-        if (node instanceof soot.Value) {
-            soot.Value value = (soot.Value) node;
-
-            // check for local variables
-            if (value instanceof soot.jimple.internal.JimpleLocal) {
-                return true;
-            }
-
-            // check for field references
-            return value instanceof soot.jimple.InstanceFieldRef || value instanceof soot.jimple.StaticFieldRef;
-        }
-        return false;
-    }
-
-    private boolean isControlFlowNode(Object node) {
-        return node instanceof soot.jimple.IfStmt || node instanceof soot.jimple.SwitchStmt;
-    }
-
-    private boolean isDataNode(Object node) {
-        return node instanceof soot.jimple.AssignStmt || node instanceof soot.jimple.ArrayRef;
-    }
 
     private boolean checkSyntacticFeasibility(CandidatePair pair) {
         // Ensure that the nodes can be mapped based on their attributes

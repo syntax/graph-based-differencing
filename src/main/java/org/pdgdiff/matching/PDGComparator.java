@@ -64,6 +64,7 @@ public class PDGComparator {
 
         // Generate edit scripts for unmatched methods
         generateEditScriptsForUnmatched(unmatchedInList1, unmatchedInList2, srcSourceFilePath, dstSourceFilePath);
+        exportGraphMappings(graphMapping, pdgList1, pdgList2, "out/");
 
         graphMapping.getGraphMapping().forEach((srcPDG, dstPDG) -> {
             String method1 = srcPDG.getCFG().getBody().getMethod().getSignature();
@@ -121,10 +122,11 @@ public class PDGComparator {
                                                         String srcSourceFilePath, String dstSourceFilePath) {
         unmatchedInList1.forEach(pdg -> {
             try {
+                SootMethod method = pdg.getCFG().getBody().getMethod();
                 String methodSignature = pdg.getCFG().getBody().getMethod().getSignature();
                 System.out.println("Unmatched method in List 1 (to be deleted): " + methodSignature);
 
-                List<EditOperation> editScript = EditScriptGenerator.generateDeleteScript(pdg, srcSourceFilePath);
+                List<EditOperation> editScript = EditScriptGenerator.generateDeleteScript(pdg, srcSourceFilePath, method);
                 exportEditScript(editScript, methodSignature, "DELETION");
             } catch (Exception e) {
                 System.err.println("Failed to generate delete script for unmatched method in List 1");
@@ -134,10 +136,11 @@ public class PDGComparator {
 
         unmatchedInList2.forEach(pdg -> {
             try {
+                SootMethod method = pdg.getCFG().getBody().getMethod();
                 String methodSignature = pdg.getCFG().getBody().getMethod().getSignature();
                 System.out.println("Unmatched method in List 2 (to be added): " + methodSignature);
 
-                List<EditOperation> editScript = EditScriptGenerator.generateAddScript(pdg, dstSourceFilePath);
+                List<EditOperation> editScript = EditScriptGenerator.generateAddScript(pdg, dstSourceFilePath, method);
                 exportEditScript(editScript, "INSERTION", methodSignature);
             } catch (Exception e) {
                 System.err.println("Failed to generate add script for unmatched method in List 2");
@@ -146,6 +149,8 @@ public class PDGComparator {
         });
     }
 
+
+    // these are all a bit hacky, todo refactor to new file maybe called Export
 
 
     private static void exportEditScript(List<EditOperation> editScript, String method1Signature, String method2Signature) {
@@ -174,6 +179,56 @@ public class PDGComparator {
             e.printStackTrace();
         }
     }
+
+
+    private static void exportGraphMappings(GraphMapping graphMapping, List<PDG> pdgList1, List<PDG> pdgList2, String outputDir) {
+        String filename = outputDir + "graphMappings.txt";
+
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filename))) {
+            writer.write("Graph Mappings (Before -> After):\n");
+
+            graphMapping.getGraphMapping().forEach((srcPDG, dstPDG) -> {
+                try {
+                    String srcMethodSignature = srcPDG.getCFG().getBody().getMethod().getSignature();
+                    String dstMethodSignature = dstPDG.getCFG().getBody().getMethod().getSignature();
+                    writer.write(srcMethodSignature + " -> " + dstMethodSignature + "\n");
+                } catch (IOException e) {
+                    System.err.println("Error writing mapping to file: " + e.getMessage());
+                }
+            });
+
+            writer.write("\nUnmatched Graphs in Source:\n");
+            pdgList1.stream()
+                    .filter(pdg -> !graphMapping.getGraphMapping().containsKey(pdg))
+                    .forEach(pdg -> {
+                        try {
+                            String methodSignature = pdg.getCFG().getBody().getMethod().getSignature();
+                            writer.write(methodSignature + "\n");
+                        } catch (IOException e) {
+                            System.err.println("Error writing unmatched source graph to file: " + e.getMessage());
+                        }
+                    });
+
+            writer.write("\nUnmatched Graphs in Destination:\n");
+            pdgList2.stream()
+                    .filter(pdg -> !graphMapping.getGraphMapping().containsValue(pdg))
+                    .forEach(pdg -> {
+                        try {
+                            String methodSignature = pdg.getCFG().getBody().getMethod().getSignature();
+                            writer.write(methodSignature + "\n");
+                        } catch (IOException e) {
+                            System.err.println("Error writing unmatched destination graph to file: " + e.getMessage());
+                        }
+                    });
+
+            System.out.println("Graph mappings exported to: " + filename);
+        } catch (IOException e) {
+            System.err.println("Failed to export graph mappings to " + filename);
+        }
+    }
+
+
+
 
     private static String generateHash(String methodName) {
         try {
