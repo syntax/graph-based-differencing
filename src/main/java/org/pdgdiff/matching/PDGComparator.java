@@ -32,7 +32,6 @@ public class PDGComparator {
 
 
     private static final int MAX_FILENAME_LENGTH = 255; // probably max, otherwise sometimes have issues
-    private static final int SAFE_METHOD_NAME_LENGTH = 50; // length of method name to keep when abbreviating
 
 
     public static void compareAndPrintGraphSimilarity(List<PDG> pdgList1, List<PDG> pdgList2,
@@ -43,7 +42,7 @@ public class PDGComparator {
         pdgList1.forEach(pdg -> {
             System.out.println("------");
             System.out.println(pdg.getCFG().getBody().getMethod().getSignature());
-            System.out.println(GraphTraversal.getNodeCount(pdg));
+            System.out.println("Node count" + GraphTraversal.getNodeCount(pdg));
             CycleDetection.hasCycle(pdg);
         });
         // perform the actual graph matching

@@ -21,33 +21,38 @@ import java.util.List;
 
 public class Main {
 
+    enum FILE_VERSION {
+        SOURCE,
+        DEST
+    }
+
     public static void main(String[] args) {
         System.out.println("Starting PDG Diff...");
         // Clear out folder
         GraphExporter.clearOutputFolder("out");
 
         //  !!!! To run on datasets, use the following !!!!
-//        String commit = "ef1160eda850892a6cdf4eea705cd76058cef8c4";
-//        String project = "signal-server";
-//        String filename = "PushSender";
-//
-//        String beforeDir = "./benchmark/datasets/gh-java/before/" + project + "/" + commit + "/compiled";
-//        String afterDir = "./benchmark/datasets/gh-java/after/" + project + "/" + commit + "/compiled";
-//        String class1Name = "org.whispersystems.textsecuregcm.push.PushSender";
-//        String class2Name = "org.whispersystems.textsecuregcm.push.PushSender";
-//        String srcSourceFilePath = "./benchmark/datasets/gh-java/before/" + project + "/" + commit + "/" + filename +".java";
-//        String dstSourceFilePath = "./benchmark/datasets/gh-java/after/" + project + "/" + commit + "/" + filename +".java";
+        String commit = "ef1160eda850892a6cdf4eea705cd76058cef8c4";
+        String project = "signal-server";
+        String filename = "PushSender";
+
+        String beforeDir = "./benchmark/datasets/gh-java/before/" + project + "/" + commit + "/compiled";
+        String afterDir = "./benchmark/datasets/gh-java/after/" + project + "/" + commit + "/compiled";
+        String class1Name = "org.whispersystems.textsecuregcm.push.PushSender";
+        String class2Name = "org.whispersystems.textsecuregcm.push.PushSender";
+        String srcSourceFilePath = "./benchmark/datasets/gh-java/before/" + project + "/" + commit + "/" + filename +".java";
+        String dstSourceFilePath = "./benchmark/datasets/gh-java/after/" + project + "/" + commit + "/" + filename +".java";
 
 
         // !!!! to use on local test classes, use the following !!!!
-        String class1Name = "org.pdgdiff.testclasses.TestAdder1";
-        String class2Name = "org.pdgdiff.testclasses.TestAdder2";
-
-        String srcSourceFilePath = "src/main/java/org/pdgdiff/testclasses/TestAdder1.java";
-        String dstSourceFilePath = "src/main/java/org/pdgdiff/testclasses/TestAdder2.java";
-
-        String beforeDir = System.getProperty("user.dir") + "/target/classes";
-        String afterDir = System.getProperty("user.dir") + "/target/classes";
+//        String class1Name = "org.pdgdiff.testclasses.TestAdder1";
+//        String class2Name = "org.pdgdiff.testclasses.TestAdder2";
+//
+//        String srcSourceFilePath = "src/main/java/org/pdgdiff/testclasses/TestAdder1.java";
+//        String dstSourceFilePath = "src/main/java/org/pdgdiff/testclasses/TestAdder2.java";
+//
+//        String beforeDir = System.getProperty("user.dir") + "/target/classes";
+//        String afterDir = System.getProperty("user.dir") + "/target/classes";
 
         // Initialize Soot
         SootInitializer.initializeSoot(beforeDir);
@@ -60,12 +65,12 @@ public class Main {
             SootInitializer.initializeSoot(beforeDir);
             Scene.v().loadNecessaryClasses();
             SootClass beforeFile = Scene.v().getSootClass(class1Name);
-            List<PDG> pdgsClass1 = generatePDGsForClass(beforeFile);
+            List<PDG> pdgsClass1 = generatePDGsForClass(beforeFile, FILE_VERSION.SOURCE);
 
             SootInitializer.initializeSoot(afterDir);
             Scene.v().loadNecessaryClasses();
             SootClass afterFile = Scene.v().getSootClass(class2Name);
-            List<PDG> pdgsClass2 = generatePDGsForClass(afterFile);
+            List<PDG> pdgsClass2 = generatePDGsForClass(afterFile, FILE_VERSION.DEST);
 
             // Print the number of PDGs generated for each class
             System.out.println("PDGs generated for " + beforeFile.getName() + ": " + pdgsClass1.size());
@@ -79,7 +84,6 @@ public class Main {
 
         } catch (Exception e) {
             System.err.println("An error occurred while processing the classes: " + e.getMessage());
-            e.printStackTrace();
         }
 
         // Clean up Soot resources
@@ -87,7 +91,7 @@ public class Main {
     }
 
     // Method to generate PDGs for all methods in a given class and store them in a list
-    private static List<PDG> generatePDGsForClass(SootClass sootClass) {
+    private static List<PDG> generatePDGsForClass(SootClass sootClass, FILE_VERSION version) {
         List<PDG> pdgList = new ArrayList<>();
         System.out.println("Generating PDGs for class: " + sootClass.getName());
         // TODO investigate getting metadata from here.
@@ -101,18 +105,19 @@ public class Main {
 
                     // Generate the PDG for the method
                     PDG pdg = GraphGenerator.constructPdg(sootClass, method);
-                    if (pdg != null) {
-                        pdgList.add(pdg);
-                        System.out.println("PDG generated for method: " + method.getName());
+                    pdgList.add(pdg);
+                    System.out.println("PDG generated for method: " + method.getName());
 
-                        // Export the PDG for this method to a .dot and .txt file
-                        String baseFileName = "out/pdg_" + sootClass.getName() + "_" + method.getName();
-                        GraphExporter.exportPDG(pdg, baseFileName + ".dot", baseFileName + ".txt");
-
+                    // likely pdg functions will clash across src/dest of the same file name, so need to specify these.
+                    String baseFileName;
+                    if (version == FILE_VERSION.SOURCE) {
+                        baseFileName = "out/src_pdg" + sootClass.getName() + "_" + method.getName();
+                    } else {
+                        baseFileName = "out/dst_pdg_" + sootClass.getName() + "_" + method.getName();
                     }
+                    GraphExporter.exportPDG(pdg, baseFileName + ".dot", baseFileName + ".txt");
                 } catch (Exception e) {
                     System.err.println("Failed to retrieve body or generate PDG for method: " + method.getName());
-                    e.printStackTrace();
                 }
             }
         }
@@ -120,7 +125,6 @@ public class Main {
     }
 
     private static void copyResultsToOutput(String beforeSourceDir, String afterSourceDir) {
-        // Copy the results to the output folder
         try {
             Files.copy(Paths.get(beforeSourceDir), Paths.get("py-visualise/testclasses/TestAdder1.java"), StandardCopyOption.REPLACE_EXISTING);
             Files.copy(Paths.get(afterSourceDir), Paths.get("py-visualise/testclasses/TestAdder2.java"), StandardCopyOption.REPLACE_EXISTING);
