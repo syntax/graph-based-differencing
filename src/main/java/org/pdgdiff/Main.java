@@ -34,14 +34,15 @@ public class Main {
         //  !!!! To run on datasets, use the following !!!!
         String commit = "ef1160eda850892a6cdf4eea705cd76058cef8c4";
         String project = "signal-server";
-        String filename = "PushSender";
+        String filename = "MessageController";
 
         String beforeDir = "./benchmark/datasets/gh-java/before/" + project + "/" + commit + "/compiled";
         String afterDir = "./benchmark/datasets/gh-java/after/" + project + "/" + commit + "/compiled";
-        String class1Name = "org.whispersystems.textsecuregcm.push.PushSender";
-        String class2Name = "org.whispersystems.textsecuregcm.push.PushSender";
+        String class1Name = "org.whispersystems.textsecuregcm.controllers.MessageController";
+        String class2Name = "org.whispersystems.textsecuregcm.controllers.MessageController";
         String srcSourceFilePath = "./benchmark/datasets/gh-java/before/" + project + "/" + commit + "/" + filename +".java";
         String dstSourceFilePath = "./benchmark/datasets/gh-java/after/" + project + "/" + commit + "/" + filename +".java";
+
 
 
         // !!!! to use on local test classes, use the following !!!!

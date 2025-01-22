@@ -56,6 +56,7 @@ public class EditScriptGenerator {
                 ComparisonResult compResult = nodesAreEqual(srcNode, dstNode, visitedNodes, srcCodeMapper, dstCodeMapper, nodeMapping);
 
                 if (!compResult.isEqual) {
+                    // think this move detetion doesnt work lowk...
                     if (compResult.isMove) {
                         int oldLineNumber = getNodeLineNumber(srcNode);
                         int newLineNumber = getNodeLineNumber(dstNode);
@@ -68,8 +69,13 @@ public class EditScriptGenerator {
                             String oldCodeSnippet = syntaxDiff.getOldCodeSnippet();
                             String newCodeSnippet = syntaxDiff.getNewCodeSnippet();
                             PDGNode node = srcNode;
-                            Update update = new Update(node, oldLineNumber, newLineNumber, oldCodeSnippet, newCodeSnippet, syntaxDiff);
-                            editScriptSet.add(update);
+                            if (oldCodeSnippet.equals(newCodeSnippet)) {
+                                Move move  = new Move(node, oldLineNumber, newLineNumber, oldCodeSnippet);
+                                editScriptSet.add(move);
+                            } else {
+                                Update update = new Update(node, oldLineNumber, newLineNumber, oldCodeSnippet, newCodeSnippet, syntaxDiff);
+                                editScriptSet.add(update);
+                            }
                         }
                     }
                 }
@@ -213,56 +219,10 @@ public class EditScriptGenerator {
 
         if (n1.getType() == PDGNode.Type.CFGNODE) {
             return compareCFGNodes(n1, n2, srcCodeMapper, dstCodeMapper);
-        } else if (n1.getType() == PDGNode.Type.REGION) {
-            return compareRegionNodes(n1, n2, visitedNodes, srcCodeMapper, dstCodeMapper, nodeMapping);
         }
 
         return new ComparisonResult(true);
     }
-
-    private static ComparisonResult compareRegionNodes(PDGNode n1, PDGNode n2, Set<PDGNode> visitedNodes,
-                                                       SourceCodeMapper srcCodeMapper, SourceCodeMapper dstCodeMapper,
-                                                       NodeMapping nodeMapping) {
-        IRegion region1 = (IRegion) n1.getNode();
-        IRegion region2 = (IRegion) n2.getNode();
-
-        List<Unit> units1 = region1.getUnits();
-        List<Unit> units2 = region2.getUnits();
-
-        Set<SyntaxDifference> differences = compareUnitLists(units1, units2, srcCodeMapper, dstCodeMapper);
-
-        // recurively compare child regions
-        List<PDGNode> childNodes1 = getRegionChildNodes(n1);
-        List<PDGNode> childNodes2 = getRegionChildNodes(n2);
-
-        for (PDGNode child1 : childNodes1) {
-            PDGNode child2 = nodeMapping.getMappedNode(child1);
-            if (child2 != null) {
-                ComparisonResult compResult = nodesAreEqual(child1, child2, visitedNodes, srcCodeMapper, dstCodeMapper, nodeMapping);
-                if (!compResult.isEqual) {
-                    differences.addAll(compResult.syntaxDifferences);
-                }
-            } else {
-                // node has been deleted
-                differences.add(new SyntaxDifference(child1, null, srcCodeMapper, dstCodeMapper));
-            }
-        }
-
-        for (PDGNode child2 : childNodes2) {
-            PDGNode child1 = nodeMapping.getReverseMappedNode(child2);
-            if (child1 == null) {
-                // node has been inserted
-                differences.add(new SyntaxDifference(null, child2, srcCodeMapper, dstCodeMapper));
-            }
-        }
-
-        if (!differences.isEmpty()) {
-            return new ComparisonResult(false, false, differences);
-        }
-
-        return new ComparisonResult(true);
-    }
-
 
     // helper class cos soot classes is not modifiable
     private static List<PDGNode> getRegionChildNodes(PDGNode regionNode) {
@@ -304,18 +264,6 @@ public class EditScriptGenerator {
         }
 
         return new ComparisonResult(true);
-    }
-
-    private static List<Unit> collectUnits(Block block) {
-        List<Unit> unitsList = new ArrayList<>();
-        Iterator<Unit> iterator = block.iterator();
-
-        while (iterator.hasNext()) {
-            Unit unit = iterator.next();
-            unitsList.add(unit);
-        }
-
-        return unitsList;
     }
 
     private static Set<SyntaxDifference> compareUnitLists(List<Unit> units1, List<Unit> units2,
