@@ -3,10 +3,12 @@ package org.pdgdiff.util;
 import soot.*;
 import soot.tagkit.LineNumberTag;
 
+import java.io.Console;
 import java.io.IOException;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class CodeAnalysisUtils {
 
@@ -84,8 +86,12 @@ public class CodeAnalysisUtils {
         return "";
     }
 
-    public static int getMethodLineNumber(SootMethod method, SourceCodeMapper srcCodeMapper) throws IOException {
-        int currentLine = method.getJavaSourceStartLineNumber();
+
+    // TODO: this doesnt work for complex signatures with exceptions and annotatoins, might be best to use a AST parser for this :(
+    public static int getMethodLineNumber(SootMethod method, SourceCodeMapper srcCodeMapper) {
+        int firstline = method.getJavaSourceStartLineNumber();
+
+        int currentLine = firstline;
 
         String methodName = method.getName();
         String returnType = method.getReturnType().toString();
@@ -114,10 +120,53 @@ public class CodeAnalysisUtils {
             }
         }
 
-        return methodDeclarationLine != -1 ? methodDeclarationLine : currentLine;
+        return methodDeclarationLine != -1 ? methodDeclarationLine : firstline-1; // first line -1 is just a fall back..
     }
 
+    public static int[] getMethodLineRange(SootMethod method, SourceCodeMapper srcCodeMapper) throws IOException {
+        int currentLine = method.getJavaSourceStartLineNumber();
+        if (currentLine <= 0) {
+            return new int[]{-1, -1}; // not found
+        }
+
+        String methodName = method.getName();
+        String methodPattern = String.format(".*\\b%s\\b\\s*\\(.*", Pattern.quote(methodName));
+        Pattern pattern = Pattern.compile(methodPattern);
+
+        int startLine = -1;
+        int endLine = currentLine;
+        boolean isSignatureFound = false;
+        StringBuilder accumulatedLines = new StringBuilder();
+
+        for (int i = currentLine; i > 0; i--) {
+            String line = srcCodeMapper.getCodeLine(i).trim();
+
+            if (!isSignatureFound) {
+                // acc lines backwards
+                accumulatedLines.insert(0, line + " ");
+
+                // check if the accumulated lines match the method signature pattern
+                Matcher matcher = pattern.matcher(accumulatedLines.toString());
+                if (matcher.matches()) {
+                    startLine = i;
+                    isSignatureFound = true;
+                }
+            }
+
+            // break out at stopping point aka a class
+            if (isSignatureFound && (line.contains(";") || line.contains("{") || line.contains("class "))) {
+                break;
+            }
+        }
+
+        return (startLine > 0) ? new int[]{startLine, endLine} : new int[]{-1, -1};
+    }
+
+
+
     private static String buildMethodPattern(String returnType, String methodName, List<Type> parameterTypes) {
+        // try line number for params
+        // investigate looking for the annotations
         StringBuilder paramsPattern = new StringBuilder();
         paramsPattern.append("\\(");
         for (int i = 0; i < parameterTypes.size(); i++) {

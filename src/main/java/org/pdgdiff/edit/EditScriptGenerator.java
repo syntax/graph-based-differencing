@@ -106,19 +106,57 @@ public class EditScriptGenerator {
         String newMethodSignature = destMethod.getDeclaration();
 
         if (!oldMethodSignature.equals(newMethodSignature)) {
-            int oldMethodLineNumber = CodeAnalysisUtils.getMethodLineNumber(srcMethod, srcCodeMapper);
-            int newMethodLineNumber = CodeAnalysisUtils.getMethodLineNumber(destMethod, dstCodeMapper);
+            // TODO: doent really work as expected, need to tweak
+            int[] oldMethodRange = CodeAnalysisUtils.getMethodLineRange(srcMethod, srcCodeMapper);
+            int[] newMethodRange = CodeAnalysisUtils.getMethodLineRange(destMethod, dstCodeMapper);
 
-            Update signatureUpdate = new Update(
-                    null, // no specific PDGNode associated for signature update
-                    oldMethodLineNumber,
-                    newMethodLineNumber,
-                    oldMethodSignature,
-                    newMethodSignature,
-                    new SyntaxDifference("Method signature differs for" + srcMethod.getName())
-            );
+            if (oldMethodRange[0] > 0 && newMethodRange[0] > 0) {
+                // collect lines for old and new method signatures
+                List<String> oldMethodLines = new ArrayList<>();
+                for (int i = oldMethodRange[0]; i <= oldMethodRange[1]; i++) {
+                    oldMethodLines.add(srcCodeMapper.getCodeLine(i));
+                }
 
-            editScriptSet.add(signatureUpdate);
+                List<String> newMethodLines = new ArrayList<>();
+                for (int i = newMethodRange[0]; i <= newMethodRange[1]; i++) {
+                    newMethodLines.add(dstCodeMapper.getCodeLine(i));
+                }
+
+                // cmp line by line and create edit operations
+                int oldSize = oldMethodLines.size();
+                int newSize = newMethodLines.size();
+                int maxSize = Math.max(oldSize, newSize);
+
+                for (int i = 0; i < maxSize; i++) {
+                    if (i < oldSize && i < newSize) {
+                        // update if lines differ
+                        if (!oldMethodLines.get(i).equals(newMethodLines.get(i))) {
+                            editScriptSet.add(new Update(
+                                    null,
+                                    oldMethodRange[0] + i,
+                                    newMethodRange[0] + i,
+                                    oldMethodLines.get(i),
+                                    newMethodLines.get(i),
+                                    new SyntaxDifference("Line " + (oldMethodRange[0] + i) + " differs.")
+                            ));
+                        }
+                    } else if (i < oldSize) {
+                        // delete remaining lines in old method
+                        editScriptSet.add(new Delete(
+                                null,
+                                oldMethodRange[0] + i,
+                                oldMethodLines.get(i)
+                        ));
+                    } else if (i < newSize) {
+                        // insert remaining lines in new method
+                        editScriptSet.add(new Insert(
+                                null,
+                                newMethodRange[0] + i,
+                                newMethodLines.get(i)
+                        ));
+                    }
+                }
+            }
         }
 
         return new ArrayList<>(editScriptSet);

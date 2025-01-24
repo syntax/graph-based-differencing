@@ -32,14 +32,14 @@ public class Main {
         GraphExporter.clearOutputFolder("out");
 
         //  !!!! To run on datasets, use the following !!!!
-        String commit = "ef1160eda850892a6cdf4eea705cd76058cef8c4";
+        String commit = "605e88d4bfb7e5afa56ae70fe16bb0e973865124";
         String project = "signal-server";
-        String filename = "MessageController";
+        String filename = "KeysController";
 
         String beforeDir = "./benchmark/datasets/gh-java/before/" + project + "/" + commit + "/compiled";
         String afterDir = "./benchmark/datasets/gh-java/after/" + project + "/" + commit + "/compiled";
-        String class1Name = "org.whispersystems.textsecuregcm.controllers.MessageController";
-        String class2Name = "org.whispersystems.textsecuregcm.controllers.MessageController";
+        String class1Name = "org.whispersystems.textsecuregcm.controllers.KeysController";
+        String class2Name = "org.whispersystems.textsecuregcm.controllers.KeysController";
         String srcSourceFilePath = "./benchmark/datasets/gh-java/before/" + project + "/" + commit + "/" + filename +".java";
         String dstSourceFilePath = "./benchmark/datasets/gh-java/after/" + project + "/" + commit + "/" + filename +".java";
 
@@ -78,7 +78,7 @@ public class Main {
             System.out.println("PDGs generated for " + afterFile.getName() + ": " + pdgsClass2.size());
 
             if (!pdgsClass1.isEmpty() && !pdgsClass2.isEmpty()) {
-                PDGComparator.compareAndPrintGraphSimilarity(pdgsClass1, pdgsClass2, GraphMatcherFactory.MatchingStrategy.GED, srcSourceFilePath, dstSourceFilePath);
+                PDGComparator.compareAndPrintGraphSimilarity(pdgsClass1, pdgsClass2, GraphMatcherFactory.MatchingStrategy.ULLMANN, srcSourceFilePath, dstSourceFilePath);
             }
 
             copyResultsToOutput(srcSourceFilePath, dstSourceFilePath);
