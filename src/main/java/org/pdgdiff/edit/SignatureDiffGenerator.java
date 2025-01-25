@@ -106,10 +106,21 @@ public class SignatureDiffGenerator {
         List<Integer> oldParamLines = CodeAnalysisUtils.getParameterLineNumbers(oldMethod, oldMapper);
         List<Integer> newParamLines = CodeAnalysisUtils.getParameterLineNumbers(newMethod, newMapper);
 
-        ops.addAll(
-                compareParameterLists(oldSig.paramTypes, newSig.paramTypes, oldParamLines, newParamLines)
-        );
-
+        if (oldParamLines.size() == 1 && newParamLines.size() == 1) {
+            // avoid accidently marking a inserted param as a insert to the entire line, if the param
+            if (oldSig.paramTypes != newSig.paramTypes) {
+                SyntaxDifference diff = new SyntaxDifference("Parameter list changed");
+                ops.add(
+                        new Update(null, oldLine, newLine,
+                                oldSig.paramTypes.toString(), newSig.paramTypes.toString(), diff)
+                );
+            }
+        } else {
+            // handle multi line parameters
+            ops.addAll(
+                    compareParameterLists(oldSig.paramTypes, newSig.paramTypes, oldParamLines, newParamLines)
+            );
+        }
         return ops;
     }
 
