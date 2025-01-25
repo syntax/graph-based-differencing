@@ -6,10 +6,10 @@ import org.pdgdiff.matching.GraphMapping;
 import org.pdgdiff.matching.NodeMapping;
 import org.pdgdiff.util.CodeAnalysisUtils;
 import org.pdgdiff.util.SourceCodeMapper;
-import soot.*;
+import soot.Modifier;
+import soot.SootMethod;
+import soot.Unit;
 import soot.tagkit.LineNumberTag;
-import soot.toolkits.graph.Block;
-import soot.toolkits.graph.pdg.HashMutablePDG;
 import soot.toolkits.graph.pdg.IRegion;
 import soot.toolkits.graph.pdg.PDGNode;
 
@@ -17,6 +17,9 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import org.pdgdiff.edit.SignatureDiffGenerator.ParsedSignature;
+import static org.pdgdiff.edit.SignatureDiffGenerator.compareSignatures;
+import static org.pdgdiff.edit.SignatureDiffGenerator.parseMethodSignature;
 import static org.pdgdiff.graph.GraphTraversal.collectNodesBFS;
 
 /**
@@ -33,8 +36,7 @@ public class EditScriptGenerator {
             SootMethod srcMethod,
             SootMethod destMethod
     ) throws IOException {
-        // Using set to prevent duplicates, I realise this is probably a logic errorI am rashly fixing but will do for now.
-        // order of edit operations does not matter.
+        // Using a set to prevent duplicates (order does not matter for now).
         Set<EditOperation> editScriptSet = new HashSet<>();
 
         SourceCodeMapper srcCodeMapper = new SourceCodeMapper(srcSourceFilePath);
@@ -68,12 +70,11 @@ public class EditScriptGenerator {
                             int newLineNumber = syntaxDiff.getNewLineNumber();
                             String oldCodeSnippet = syntaxDiff.getOldCodeSnippet();
                             String newCodeSnippet = syntaxDiff.getNewCodeSnippet();
-                            PDGNode node = srcNode;
                             if (oldCodeSnippet.equals(newCodeSnippet)) {
-                                Move move  = new Move(node, oldLineNumber, newLineNumber, oldCodeSnippet);
+                                Move move  = new Move(srcNode, oldLineNumber, newLineNumber, oldCodeSnippet);
                                 editScriptSet.add(move);
                             } else {
-                                Update update = new Update(node, oldLineNumber, newLineNumber, oldCodeSnippet, newCodeSnippet, syntaxDiff);
+                                Update update = new Update(srcNode, oldLineNumber, newLineNumber, oldCodeSnippet, newCodeSnippet, syntaxDiff);
                                 editScriptSet.add(update);
                             }
                         }
@@ -100,40 +101,33 @@ public class EditScriptGenerator {
             }
         }
 
-        // Signature comparison
+        // structural signature diff
+        if (!srcMethod.getDeclaration().equals(destMethod.getDeclaration())) {
+            ParsedSignature oldSig = parseMethodSignature(srcMethod);
+            ParsedSignature newSig = parseMethodSignature(destMethod);
 
-        String oldMethodSignature = srcMethod.getDeclaration();
-        String newMethodSignature = destMethod.getDeclaration();
+            List<EditOperation> signatureDiffs =
+                    compareSignatures(oldSig, newSig, srcMethod, destMethod, srcCodeMapper, dstCodeMapper);
 
-        if (!oldMethodSignature.equals(newMethodSignature)) {
-            int oldMethodLineNumber = CodeAnalysisUtils.getMethodLineNumber(srcMethod, srcCodeMapper);
-            int newMethodLineNumber = CodeAnalysisUtils.getMethodLineNumber(destMethod, dstCodeMapper);
-
-            Update signatureUpdate = new Update(
-                    null, // no specific PDGNode associated for signature update
-                    oldMethodLineNumber,
-                    newMethodLineNumber,
-                    oldMethodSignature,
-                    newMethodSignature,
-                    new SyntaxDifference("Method signature differs for" + srcMethod.getName())
-            );
-
-            editScriptSet.add(signatureUpdate);
+            editScriptSet.addAll(signatureDiffs);
         }
 
         return new ArrayList<>(editScriptSet);
     }
 
-    // TODO; could instead write these by just deleting every line between the first and last line of the method, might be more verbose otherwise
-    // todo; certain lines will not be detected as have no direct jimple representation, e.g. 'else' or comments etc.
 
     public static List<EditOperation> generateAddScript(PDG pdg, String sourceFilePath, SootMethod method) throws IOException {
         SourceCodeMapper codeMapper = new SourceCodeMapper(sourceFilePath);
         List<EditOperation> editOperations = new ArrayList<>();
 
-        String methodSignature = method.getDeclaration();
-        int methodLineNumber = CodeAnalysisUtils.getMethodLineNumber(method, codeMapper);
-        editOperations.add(new Insert(null, methodLineNumber, methodSignature));
+        // insert the method signature lines (approx.)
+        int[] methodRange = CodeAnalysisUtils.getMethodLineRange(method, codeMapper);
+        if (methodRange[0] > 0 && methodRange[1] >= methodRange[0]) {
+            for (int i = methodRange[0]; i <= methodRange[1]; i++) {
+                String signatureLine = codeMapper.getCodeLine(i);
+                editOperations.add(new Insert(null, i, signatureLine));
+            }
+        }
 
         editOperations.addAll(
                 collectNodesBFS(pdg).stream()
@@ -152,9 +146,14 @@ public class EditScriptGenerator {
         SourceCodeMapper codeMapper = new SourceCodeMapper(sourceFilePath);
         List<EditOperation> editOperations = new ArrayList<>();
 
-        String methodSignature = method.getDeclaration();
-        int methodLineNumber = CodeAnalysisUtils.getMethodLineNumber(method, codeMapper);
-        editOperations.add(new Delete(null, methodLineNumber, methodSignature));
+        // delete the method signature lines (approx.)
+        int[] methodRange = CodeAnalysisUtils.getMethodLineRange(method, codeMapper);
+        if (methodRange[0] > 0 && methodRange[1] >= methodRange[0]) {
+            for (int i = methodRange[0]; i <= methodRange[1]; i++) {
+                String signatureLine = codeMapper.getCodeLine(i);
+                editOperations.add(new Delete(null, i, signatureLine));
+            }
+        }
 
         editOperations.addAll(
                 collectNodesBFS(pdg).stream()
@@ -192,14 +191,8 @@ public class EditScriptGenerator {
 
     public static int getNodeLineNumber(PDGNode node) {
         if (node.getType() == PDGNode.Type.CFGNODE) {
-//            Block block = (Block) node.getNode();
-//            Unit headUnit = block.getHead();
             Unit headUnit = (Unit) node.getNode();
             return getLineNumber(headUnit);
-        } else if (node.getType() == PDGNode.Type.REGION) {
-            IRegion region = (IRegion) node.getNode();
-            Unit firstUnit = region.getFirst();
-            return getLineNumber(firstUnit);
         }
         return -1;
     }
@@ -224,15 +217,6 @@ public class EditScriptGenerator {
         return new ComparisonResult(true);
     }
 
-    // helper class cos soot classes is not modifiable
-    private static List<PDGNode> getRegionChildNodes(PDGNode regionNode) {
-        List<PDGNode> childNodes = new ArrayList<>();
-        for (PDGNode dependent : regionNode.getDependents()) {
-            childNodes.add(dependent);
-        }
-        return childNodes;
-    }
-
     private static ComparisonResult compareCFGNodes(PDGNode n1, PDGNode n2,
                                                     SourceCodeMapper srcCodeMapper, SourceCodeMapper dstCodeMapper) {
 //        Block block1 = (Block) n1.getNode();
@@ -241,12 +225,8 @@ public class EditScriptGenerator {
         Unit unit1 = (Unit) n1.getNode();
         Unit unit2 = (Unit) n2.getNode();
 
-//        List<Unit> units1 = collectUnits(block1);
-//        List<Unit> units2 = collectUnits(block2);
-        List<Unit> units1 = new ArrayList<>();
-        units1.add(unit1);
-        List<Unit> units2 = new ArrayList<>();
-        units2.add(unit2);
+        List<Unit> units1 = Collections.singletonList(unit1);
+        List<Unit> units2 = Collections.singletonList(unit2);
 
         Set<SyntaxDifference> differences = compareUnitLists(units1, units2, srcCodeMapper, dstCodeMapper);
 
@@ -257,8 +237,7 @@ public class EditScriptGenerator {
             // check for move operations based on line numbers
             int lineNumber1 = getNodeLineNumber(n1);
             int lineNumber2 = getNodeLineNumber(n2);
-
-            if (lineNumber1 != lineNumber2) {
+            if (lineNumber1 != lineNumber2 && lineNumber1 != -1 && lineNumber2 != -1) {
                 return new ComparisonResult(false, true, differences);
             }
         }
