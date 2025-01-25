@@ -5,6 +5,7 @@ import soot.tagkit.LineNumberTag;
 
 import java.io.Console;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -87,103 +88,59 @@ public class CodeAnalysisUtils {
     }
 
 
-    // TODO: this doesnt work for complex signatures with exceptions and annotatoins, might be best to use a AST parser for this :(
-    public static int getMethodLineNumber(SootMethod method, SourceCodeMapper srcCodeMapper) {
-        int firstline = method.getJavaSourceStartLineNumber();
-
-        int currentLine = firstline;
-
-        String methodName = method.getName();
-        String returnType = method.getReturnType().toString();
-        List<Type> parameterTypes = method.getParameterTypes();
-
-        // regex pattern to match the method declaration
-        String methodPattern = buildMethodPattern(returnType, methodName, parameterTypes);
-        Pattern pattern = Pattern.compile(methodPattern);
-        StringBuilder accumulatedLines = new StringBuilder();
-        int methodDeclarationLine = -1;
-
-        for (int i = 0; i < 20 && currentLine > 0; currentLine--) {
-            String line = srcCodeMapper.getCodeLine(currentLine).trim();
-            if (line.isEmpty()) {
-                continue;
-            }
-
-            accumulatedLines.insert(0, line + " ");
-
-            // checking if these match the regex per that method. (this is a Java.Regex matcher, not one of mine
-            // naming a big confusing
-            Matcher regexMatcher = pattern.matcher(accumulatedLines.toString());
-            if (regexMatcher.find()) {
-                methodDeclarationLine = currentLine;
-                break;
-            }
-        }
-
-        return methodDeclarationLine != -1 ? methodDeclarationLine : firstline-1; // first line -1 is just a fall back..
-    }
-
     public static int[] getMethodLineRange(SootMethod method, SourceCodeMapper srcCodeMapper) throws IOException {
-        int currentLine = method.getJavaSourceStartLineNumber();
-        if (currentLine <= 0) {
-            return new int[]{-1, -1}; // not found
+        int initialLine = method.getJavaSourceStartLineNumber();
+        if (initialLine <= 0) {
+            return new int[]{-1, -1};
         }
 
         String methodName = method.getName();
         String methodPattern = String.format(".*\\b%s\\b\\s*\\(.*", Pattern.quote(methodName));
-        Pattern pattern = Pattern.compile(methodPattern);
+        Pattern signatureStartPattern = Pattern.compile(methodPattern);
 
-        int startLine = -1;
-        int endLine = currentLine;
-        boolean isSignatureFound = false;
-        StringBuilder accumulatedLines = new StringBuilder();
+        int totalLines = srcCodeMapper.getTotalLines();
+        int startLine = initialLine;
+        int endLine = initialLine;
 
-        for (int i = currentLine; i > 0; i--) {
+        for (int i = initialLine; i > 0; i--) {
             String line = srcCodeMapper.getCodeLine(i).trim();
+            if (line.isEmpty()) continue;
 
-            if (!isSignatureFound) {
-                // acc lines backwards
-                accumulatedLines.insert(0, line + " ");
-
-                // check if the accumulated lines match the method signature pattern
-                Matcher matcher = pattern.matcher(accumulatedLines.toString());
-                if (matcher.matches()) {
-                    startLine = i;
-                    isSignatureFound = true;
-                }
-            }
-
-            // break out at stopping point aka a class
-            if (isSignatureFound && (line.contains(";") || line.contains("{") || line.contains("class "))) {
+            Matcher m = signatureStartPattern.matcher(line);
+            if (m.matches()) {
+                startLine = i;
                 break;
             }
         }
 
-        return (startLine > 0) ? new int[]{startLine, endLine} : new int[]{-1, -1};
-    }
-
-
-
-    private static String buildMethodPattern(String returnType, String methodName, List<Type> parameterTypes) {
-        // try line number for params
-        // investigate looking for the annotations
-        StringBuilder paramsPattern = new StringBuilder();
-        paramsPattern.append("\\(");
-        for (int i = 0; i < parameterTypes.size(); i++) {
-            paramsPattern.append(".*");
-            if (i < parameterTypes.size() - 1) {
-                paramsPattern.append(",");
+        boolean foundBrace = false;
+        for (int i = startLine; i <= totalLines; i++) {
+            String line = srcCodeMapper.getCodeLine(i).trim();
+            if (line.contains("{")) {
+                endLine = i;
+                break;
+            }
+            if (!foundBrace) {
+                endLine = i;
             }
         }
-        paramsPattern.append("\\)");
 
-        String methodPattern = String.format(
-                ".*\\b%s\\b\\s+\\b%s\\b\\s*%s.*",
-                Pattern.quote(returnType),
-                Pattern.quote(methodName),
-                paramsPattern
-        );
-        return methodPattern;
+        return new int[]{startLine, endLine};
+    }
+
+    public static List<Integer> getParameterLineNumbers(SootMethod method, SourceCodeMapper codeMapper) throws IOException {
+        List<Integer> paramLines = new ArrayList<>();
+        int[] methodRange = getMethodLineRange(method, codeMapper);
+
+        if (methodRange[0] > 0 && methodRange[1] >= methodRange[0]) {
+            for (int i = methodRange[0]; i <= methodRange[1]; i++) {
+                String line = codeMapper.getCodeLine(i).trim();
+                if (line.contains("(") || line.contains(",")) {
+                    paramLines.add(i);
+                }
+            }
+        }
+        return paramLines;
     }
 
     public static int getLineNumber(Unit unit) {
