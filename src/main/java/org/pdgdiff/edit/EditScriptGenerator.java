@@ -18,6 +18,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import org.pdgdiff.edit.SignatureDiffGenerator.ParsedSignature;
+
+import static java.util.Collections.max;
+import static java.util.Collections.min;
 import static org.pdgdiff.edit.SignatureDiffGenerator.compareSignatures;
 import static org.pdgdiff.edit.SignatureDiffGenerator.parseMethodSignature;
 import static org.pdgdiff.graph.GraphTraversal.collectNodesBFS;
@@ -120,8 +123,12 @@ public class EditScriptGenerator {
         SourceCodeMapper codeMapper = new SourceCodeMapper(sourceFilePath);
         List<EditOperation> editOperations = new ArrayList<>();
 
-        // insert the method signature lines (approx.)
+        // insert the method signature lines (approx.), handling for annoataions
         int[] methodRange = CodeAnalysisUtils.getMethodLineRange(method, codeMapper);
+        List<Integer> annotationLines = CodeAnalysisUtils.getAnnotationsLineNumbers(method, codeMapper);
+        if(min(annotationLines) < methodRange[0]) {
+            methodRange[0] = min(annotationLines);
+        }
         if (methodRange[0] > 0 && methodRange[1] >= methodRange[0]) {
             for (int i = methodRange[0]; i <= methodRange[1]; i++) {
                 String signatureLine = codeMapper.getCodeLine(i);
@@ -148,6 +155,10 @@ public class EditScriptGenerator {
 
         // delete the method signature lines (approx.)
         int[] methodRange = CodeAnalysisUtils.getMethodLineRange(method, codeMapper);
+        List<Integer> annotationLines = CodeAnalysisUtils.getAnnotationsLineNumbers(method, codeMapper);
+        if(min(annotationLines) < methodRange[0]) {
+            methodRange[0] = min(annotationLines);
+        }
         if (methodRange[0] > 0 && methodRange[1] >= methodRange[0]) {
             for (int i = methodRange[0]; i <= methodRange[1]; i++) {
                 String signatureLine = codeMapper.getCodeLine(i);

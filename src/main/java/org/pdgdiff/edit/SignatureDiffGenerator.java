@@ -16,12 +16,14 @@ public class SignatureDiffGenerator {
         String returnType;
         String methodName;
         List<String> paramTypes;
+        List<String> annotations;
 
-        ParsedSignature(Set<String> modifiers, String returnType, String methodName, List<String> paramTypes) {
+        ParsedSignature(Set<String> modifiers, String returnType, String methodName, List<String> paramTypes, List<String> annotations) {
             this.modifiers = modifiers;
             this.returnType = returnType;
             this.methodName = methodName;
             this.paramTypes = paramTypes;
+            this.annotations = annotations;
         }
     }
 
@@ -43,7 +45,14 @@ public class SignatureDiffGenerator {
             paramList.add(t.toString());
         }
 
-        return new ParsedSignature(modifierSet, retType, name, paramList);
+        List<String> annotations = new ArrayList<>();
+        for (Object tag : method.getTags()) {
+            if (tag instanceof soot.tagkit.AnnotationTag) {
+                annotations.add(tag.toString());
+            }
+        }
+
+        return new ParsedSignature(modifierSet, retType, name, paramList, annotations);
     }
 
 
@@ -107,11 +116,11 @@ public class SignatureDiffGenerator {
         List<Integer> newParamLines = CodeAnalysisUtils.getParameterLineNumbers(newMethod, newMapper);
 
         if (oldParamLines.size() == 1 && newParamLines.size() == 1) {
-            // avoid accidently marking a inserted param as a insert to the entire line, if the param
+            // avoid accidently marking a inserted param as a insert to the entire line, if the param changed adn multiple params exist on the same line
             if (oldSig.paramTypes != newSig.paramTypes) {
                 SyntaxDifference diff = new SyntaxDifference("Parameter list changed");
                 ops.add(
-                        new Update(null, oldLine, newLine,
+                        new Update(null, oldParamLines.get(0), newParamLines.get(0),
                                 oldSig.paramTypes.toString(), newSig.paramTypes.toString(), diff)
                 );
             }
@@ -121,6 +130,28 @@ public class SignatureDiffGenerator {
                     compareParameterLists(oldSig.paramTypes, newSig.paramTypes, oldParamLines, newParamLines)
             );
         }
+
+        List<Integer> oldAnnotationLines = CodeAnalysisUtils.getAnnotationsLineNumbers(oldMethod, oldMapper);
+        List<Integer> newAnnotationLines = CodeAnalysisUtils.getAnnotationsLineNumbers(newMethod, newMapper);
+
+        if (oldSig.annotations.size() == 1 && newSig.annotations.size() == 1) {
+            // avoid accidently marking a inserted annotation as a insert to the entire line, if the annotation changed adn multiple annotations exist on the same line
+            if (oldSig.annotations != newSig.annotations) {
+                SyntaxDifference diff = new SyntaxDifference("Annotation list changed");
+                ops.add(
+                        new Update(null, oldAnnotationLines.get(0), newAnnotationLines.get(0),
+                                oldSig.annotations.toString(), newSig.annotations.toString(), diff)
+                );
+            }
+        } else {
+            // todo refactor old naming
+            System.out.println("oldAnnotationLines: " + oldAnnotationLines);
+            ops.addAll(
+                    compareParameterLists(oldSig.annotations, newSig.annotations, oldAnnotationLines, newAnnotationLines)
+            );
+        }
+
+
         return ops;
     }
 
