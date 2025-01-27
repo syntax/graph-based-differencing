@@ -11,7 +11,6 @@ differencing, compiler optimisations are disabled for target comparison files bo
 In some use cases, such as analysis efficiencies or trying to determine if programs are semantically identical, this tool will be more useful.
 
 **Please note;** This is a current WIP. The project is currently in the early stages of development, and the README will be updated as the project progresses.
-A large amount of TODOs regarding graph matching, and the actual approach can be found in `src.main.java.org.pdgdiff.models.TODO.md.`
 
 Documentation, in the form of a complete dissertation report, is in the works.
 
@@ -33,6 +32,12 @@ mvn compile
 Run the application;
 ```bash
 mvn exec:java -Dexec.mainClass="org.pdgdiff.Main"
+```
+
+Run the application with arguments for differencing;
+```bash
+mvn exec:java -Dexec.mainClass="org.pdgdiff.Main" -Dexec.args="<beforeSourcePath> <afterSourcePath> <beforeCompiledDir> <afterCompiledDir> <beforeClassName> <afterClassName>"
+
 ```
 
 Run the front-end (spring-boot, wip);
