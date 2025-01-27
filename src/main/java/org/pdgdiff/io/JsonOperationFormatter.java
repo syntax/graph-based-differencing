@@ -77,6 +77,11 @@ public class JsonOperationFormatter implements OperationFormatter {
 
     @Override
     public void moveOperation(Move operation) throws IOException {
-        // TODO: implement for a Move operation
+        writer.beginObject();
+        writer.name("action").value("Move");
+        writer.name("oldLine").value(operation.getOldLineNumber());
+        writer.name("newLine").value(operation.getNewLineNumber());
+        writer.name("code").value(operation.getCodeSnippet());
+        writer.endObject();
     }
 }

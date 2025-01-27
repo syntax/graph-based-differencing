@@ -28,34 +28,60 @@ public class Main {
 
     public static void main(String[] args) {
         System.out.println("Starting PDG Diff...");
-        // Clear out folder
+        String class1Name, class2Name;
+        String srcSourceFilePath, dstSourceFilePath;
+        String beforeDir, afterDir;
+
+
+        if (args.length < 6) {
+            System.out.println("Insufficient arguments provided.");
+            System.out.println("Usage: java org.pdgdiff.Main <beforeSourcePath> <afterSourcePath> <beforeCompiledDir> <afterCompiledDir> <beforeClassName> <afterClassName>");
+            System.out.println("Using Maven: mvn clean compile && mvn exec:java -Dexec.mainClass=\"org.pdgdiff.Main\" -Dexec.args=\"<beforeSourcePath> <afterSourcePath> <beforeCompiledDir> <afterCompiledDir> <beforeClassName> <afterClassName>\"\n");
+            System.out.println("Using hardcoded information");
+
+            //  !!!! To run on datasets, use the following !!!!
+//            String commit = "605e88d4bfb7e5afa56ae70fe16bb0e973865124";
+//            String project = "signal-server";
+//            String filename = "KeysController";
+//
+//            beforeDir = "./benchmark/datasets/gh-java/before/" + project + "/" + commit + "/compiled";
+//            afterDir = "./benchmark/datasets/gh-java/after/" + project + "/" + commit + "/compiled";
+//            class1Name = "org.whispersystems.textsecuregcm.controllers.KeysController";
+//            class2Name = "org.whispersystems.textsecuregcm.controllers.KeysController";
+//            srcSourceFilePath = "./benchmark/datasets/gh-java/before/" + project + "/" + commit + "/" + filename +".java";
+//            dstSourceFilePath = "./benchmark/datasets/gh-java/after/" + project + "/" + commit + "/" + filename +".java";
+
+
+
+            // !!!! to use on local test classes, use the following !!!!
+            class1Name = "org.pdgdiff.testclasses.TestAdder1";
+            class2Name = "org.pdgdiff.testclasses.TestAdder2";
+
+            srcSourceFilePath = "src/main/java/org/pdgdiff/testclasses/TestAdder1.java";
+            dstSourceFilePath = "src/main/java/org/pdgdiff/testclasses/TestAdder2.java";
+
+            beforeDir = System.getProperty("user.dir") + "/target/classes";
+            afterDir = System.getProperty("user.dir") + "/target/classes";
+
+        } else {
+            // as an example;
+            //  mvn exec:java -Dexec.mainClass="org.pdgdiff.Main" -Dexec.args="./src/main/java/org/pdgdiff/testclasses/TestAdder1.java ./src/main/java/org/pdgdiff/testclasses/TestAdder2.java ./target/classes ./target/classes org.pdgdiff.testclasses.TestAdder1 org.pdgdiff.testclasses.TestAdder2"
+            srcSourceFilePath = args[0];
+            dstSourceFilePath = args[1];
+            beforeDir = args[2];
+            afterDir = args[3];
+            class1Name = args[4];
+            class2Name = args[5];
+        }
+
+
+
+        // clear out folder
         GraphExporter.clearOutputFolder("out");
 
-        //  !!!! To run on datasets, use the following !!!!
-        String commit = "605e88d4bfb7e5afa56ae70fe16bb0e973865124";
-        String project = "signal-server";
-        String filename = "KeysController";
-
-        String beforeDir = "./benchmark/datasets/gh-java/before/" + project + "/" + commit + "/compiled";
-        String afterDir = "./benchmark/datasets/gh-java/after/" + project + "/" + commit + "/compiled";
-        String class1Name = "org.whispersystems.textsecuregcm.controllers.KeysController";
-        String class2Name = "org.whispersystems.textsecuregcm.controllers.KeysController";
-        String srcSourceFilePath = "./benchmark/datasets/gh-java/before/" + project + "/" + commit + "/" + filename +".java";
-        String dstSourceFilePath = "./benchmark/datasets/gh-java/after/" + project + "/" + commit + "/" + filename +".java";
 
 
-
-        // !!!! to use on local test classes, use the following !!!!
-//        String class1Name = "org.pdgdiff.testclasses.TestAdder1";
-//        String class2Name = "org.pdgdiff.testclasses.TestAdder2";
-//
-//        String srcSourceFilePath = "src/main/java/org/pdgdiff/testclasses/TestAdder1.java";
-//        String dstSourceFilePath = "src/main/java/org/pdgdiff/testclasses/TestAdder2.java";
-//
-//        String beforeDir = System.getProperty("user.dir") + "/target/classes";
-//        String afterDir = System.getProperty("user.dir") + "/target/classes";
-
-        // Initialize Soot
+        // init Soot
         SootInitializer.initializeSoot(beforeDir);
 
         // Load all classes in the program
