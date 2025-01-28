@@ -179,12 +179,14 @@ public class ClassMetadataDiffGenerator {
 
     private static boolean fieldsAreSimilar(SootField field1, SootField field2) {
         // check if same protectness and type
+        // cannot compare actual objects (getType()) because these are loaded in difference Soot Scenes, and hence dont
+        // hash as expected with .equals(), so using the string repr of each!!!
+        // todo check isStatic, isFinal, etc. and consider name, annotations, initial values
         return  ((field1.getModifiers() & Modifier.PUBLIC) == (field2.getModifiers() & Modifier.PUBLIC) ||
                 (field1.getModifiers() & Modifier.PRIVATE) == (field2.getModifiers() & Modifier.PRIVATE) ||
                 (field1.getModifiers() & Modifier.PROTECTED) == (field2.getModifiers() & Modifier.PROTECTED))
-                & (field1.getType().equals(field2.getType()));
+                & (field1.getType().toString().equals(field2.getType().toString()));
     }
-
 
     private static boolean fieldsAreEqual(SootField field1, SootField field2) {
         // cmp field types
