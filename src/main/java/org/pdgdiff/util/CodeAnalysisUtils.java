@@ -6,7 +6,9 @@ import soot.tagkit.LineNumberTag;
 import java.io.Console;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -141,6 +143,34 @@ public class CodeAnalysisUtils {
             }
         }
         return paramLines;
+    }
+
+    public static List<Integer> getAnnotationsLineNumbers(SootMethod method, SourceCodeMapper codeMapper) throws IOException {
+        System.out.println("annos for Method: " + method.getName());
+        List<Integer> annotationLines = new ArrayList<>();
+        int[] range = getMethodLineRange(method, codeMapper);
+        System.out.println("method sig declared on range: " + range[0] + " - " + range[1]);
+        if (range[0] <= 0) {
+            return annotationLines;
+        }
+        int startLine = range[0];
+        System.out.println("startLine: " + startLine);
+
+        // crawl upwards until reaching an empty line or a line that doesnt start with an @
+        int lineNum = startLine - 1;
+        while (lineNum > 0) {
+            String code = codeMapper.getCodeLine(lineNum).trim();
+            if (code.startsWith("@")) {
+                annotationLines.add(lineNum);
+                lineNum--;
+            } else if (code.isEmpty()) {
+                break;
+            } else {
+                break;
+            }
+        }
+        System.out.println("annos: " + annotationLines);
+        return annotationLines;
     }
 
     public static int getLineNumber(Unit unit) {

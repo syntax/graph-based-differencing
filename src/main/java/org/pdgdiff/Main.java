@@ -80,7 +80,6 @@ public class Main {
         GraphExporter.clearOutputFolder("out");
 
 
-
         // init Soot
         SootInitializer.initializeSoot(beforeDir);
 
@@ -104,7 +103,7 @@ public class Main {
             System.out.println("PDGs generated for " + afterFile.getName() + ": " + pdgsClass2.size());
 
             if (!pdgsClass1.isEmpty() && !pdgsClass2.isEmpty()) {
-                PDGComparator.compareAndPrintGraphSimilarity(pdgsClass1, pdgsClass2, GraphMatcherFactory.MatchingStrategy.ULLMANN, srcSourceFilePath, dstSourceFilePath);
+                PDGComparator.compareAndPrintGraphSimilarity(pdgsClass1, pdgsClass2, GraphMatcherFactory.MatchingStrategy.VF2, srcSourceFilePath, dstSourceFilePath);
             }
 
             copyResultsToOutput(srcSourceFilePath, dstSourceFilePath);
