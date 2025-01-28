@@ -1,6 +1,7 @@
 package org.pdgdiff.edit;
 
 import org.pdgdiff.edit.model.*;
+import org.pdgdiff.matching.models.heuristic.JaroWinklerSimilarity;
 import org.pdgdiff.util.CodeAnalysisUtils;
 import org.pdgdiff.util.SourceCodeMapper;
 import soot.Modifier;
@@ -44,13 +45,10 @@ public class SignatureDiffGenerator {
         for (soot.Type t : method.getParameterTypes()) {
             paramList.add(t.toString());
         }
+        System.out.println("paramList: " + paramList);
 
+        // to be populated later. there is no soot native way to get annotations
         List<String> annotations = new ArrayList<>();
-        for (Object tag : method.getTags()) {
-            if (tag instanceof soot.tagkit.AnnotationTag) {
-                annotations.add(tag.toString());
-            }
-        }
 
         return new ParsedSignature(modifierSet, retType, name, paramList, annotations);
     }
@@ -127,27 +125,42 @@ public class SignatureDiffGenerator {
         } else {
             // handle multi line parameters
             ops.addAll(
-                    compareParameterLists(oldSig.paramTypes, newSig.paramTypes, oldParamLines, newParamLines)
+                    compareStringListsDP(oldSig.paramTypes, newSig.paramTypes, oldParamLines, newParamLines)
             );
         }
+
 
         List<Integer> oldAnnotationLines = CodeAnalysisUtils.getAnnotationsLineNumbers(oldMethod, oldMapper);
         List<Integer> newAnnotationLines = CodeAnalysisUtils.getAnnotationsLineNumbers(newMethod, newMapper);
 
+        // NB this is not accounting for field annotations. todo fix
+        // overwrite annotations using line numbers, unfortunately soot does not provide a way to get annotations
+
+        oldSig.annotations = new ArrayList<>();
+        newSig.annotations = new ArrayList<>();
+        for (int i = 0; i < oldAnnotationLines.size(); i++) {
+            oldSig.annotations.add(oldMapper.getCodeLine(oldAnnotationLines.get(i)));
+        }
+        for (int i = 0; i < newAnnotationLines.size(); i++) {
+            newSig.annotations.add(newMapper.getCodeLine(newAnnotationLines.get(i)));
+        }
+
+
+        System.out.println("for method " + oldSig.methodName + " old annotations: " + oldSig.annotations);
+        System.out.println("for method " + newSig.methodName + " new annotations: " + newSig.annotations);
         if (oldSig.annotations.size() == 1 && newSig.annotations.size() == 1) {
-            // avoid accidently marking a inserted annotation as a insert to the entire line, if the annotation changed adn multiple annotations exist on the same line
             if (oldSig.annotations != newSig.annotations) {
-                SyntaxDifference diff = new SyntaxDifference("Annotation list changed");
+                SyntaxDifference diff = new SyntaxDifference("Annotation changed");
                 ops.add(
                         new Update(null, oldAnnotationLines.get(0), newAnnotationLines.get(0),
                                 oldSig.annotations.toString(), newSig.annotations.toString(), diff)
                 );
             }
         } else {
-            // todo refactor old naming
             System.out.println("oldAnnotationLines: " + oldAnnotationLines);
+            System.out.println("Using DP Algo now....");
             ops.addAll(
-                    compareParameterLists(oldSig.annotations, newSig.annotations, oldAnnotationLines, newAnnotationLines)
+                    compareStringListsDP(oldSig.annotations, newSig.annotations, oldAnnotationLines, newAnnotationLines)
             );
         }
 
@@ -155,44 +168,52 @@ public class SignatureDiffGenerator {
         return ops;
     }
 
-    // left to right dynamic programming approach to try and match up parameters, basically a edit distance optimiation
+    // left to right dynamic programming approach to try and match up parameters (or annos), basically a edit distance optimiation
     // nb soot gives us parameter types, not names
-    private static List<EditOperation> compareParameterLists(
-            List<String> oldParams,  // old parameter types
-            List<String> newParams,  // new parameter types
-            List<Integer> oldParamLines,  // old parameter line numbers
-            List<Integer> newParamLines   // new parameter line numbers
+
+    private static List<EditOperation> compareStringListsDP(
+            List<String> oldEntries,  // old parameter types OR old annotation lines
+            List<String> newEntries,  // new parameter types OR new annotation lines
+            List<Integer> oldEntriesLines,  // old parameter line numbers OR old annotation line numbers
+            List<Integer> newEntriesLines   // new parameter line numbers OR new annotation line numbers
     ) {
         List<EditOperation> ops = new ArrayList<>();
 
-        int m = oldParams.size();
-        int n = newParams.size();
+        int m = oldEntries.size();
+        int n = newEntries.size();
 
         // DP table to store minimal edit distance and operation
-        int[][] dp = new int[m + 1][n + 1];
+        double[][] dp = new double[m + 1][n + 1];
         String[][] opsTable = new String[m + 1][n + 1];
 
         // init DP table
         for (int i = 0; i <= m; i++) {
-            dp[i][0] = i;  // cost of deleting all remaining oldParams
+            dp[i][0] = i;  // cost of deleting all remaining oldEntries
             opsTable[i][0] = "DELETE";
         }
         for (int j = 0; j <= n; j++) {
-            dp[0][j] = j;  // cost of inserting all remaining newParams
+            dp[0][j] = j;  // cost of inserting all remaining newEntries
             opsTable[0][j] = "INSERT";
         }
 
         // populate DP table
         for (int i = 1; i <= m; i++) {
             for (int j = 1; j <= n; j++) {
-                if (oldParams.get(i - 1).equals(newParams.get(j - 1))) {
+                // nb params will be matching on type, and update cost considered on sim
+
+                if (oldEntries.get(i - 1).equals(newEntries.get(j - 1))) {
                     dp[i][j] = dp[i - 1][j - 1];  // NO change
                     opsTable[i][j] = "NO_CHANGE";
                 } else {
                     // compute costs for possible operations
-                    int deleteCost = dp[i - 1][j] + 1;
-                    int insertCost = dp[i][j - 1] + 1;
-                    int updateCost = dp[i - 1][j - 1] + 1;
+                    String oldString = oldEntries.get(i - 1);
+                    String newString = newEntries.get(j - 1);
+                    double deleteCost = dp[i - 1][j] + 1;
+                    double insertCost = dp[i][j - 1] + 1;
+                    // NB for parameters -> my list of old/newEntries is just a list of their types... so this wont work
+                    // as expected for example when differencing a changed name of a param. todo fix
+                    // for Annotations -> using the entire line as the string hence will be good
+                    double updateCost = dp[i - 1][j - 1] + (1 - JaroWinklerSimilarity.jaroSimilarity(oldString, newString));
 
                     // choose the minimum cost operation
                     if (deleteCost <= insertCost && deleteCost <= updateCost) {
@@ -215,26 +236,26 @@ public class SignatureDiffGenerator {
             String operation = opsTable[i][j];
 
             if ("NO_CHANGE".equals(operation)) {
-                // params match; no operation needed
+                // entries match; no operation needed
                 i--;
                 j--;
             } else if ("DELETE".equals(operation)) {
-                int lineNumber = oldParamLines.get(i - 1);
-                String param = oldParams.get(i - 1);
-                ops.add(new Delete(null, lineNumber, param));
+                int lineNumber = oldEntriesLines.get(i - 1);
+                String entry = oldEntries.get(i - 1);
+                ops.add(new Delete(null, lineNumber, entry));
                 i--;
             } else if ("INSERT".equals(operation)) {
-                int lineNumber = newParamLines.get(j - 1);
-                String param = newParams.get(j - 1);
-                ops.add(new Insert(null, lineNumber, param));
+                int lineNumber = newEntriesLines.get(j - 1);
+                String entry = newEntries.get(j - 1);
+                ops.add(new Insert(null, lineNumber, entry));
                 j--;
             } else if ("UPDATE".equals(operation)) {
-                int oldLine = oldParamLines.get(i - 1);
-                int newLine = newParamLines.get(j - 1);
-                String oldParam = oldParams.get(i - 1);
-                String newParam = newParams.get(j - 1);
-                SyntaxDifference diff = new SyntaxDifference("Parameter changed from " + oldParam + " to " + newParam);
-                ops.add(new Update(null, oldLine, newLine, oldParam, newParam, diff));
+                int oldLine = oldEntriesLines.get(i - 1);
+                int newLine = newEntriesLines.get(j - 1);
+                String oldEntry = oldEntries.get(i - 1);
+                String newEntry = newEntries.get(j - 1);
+                SyntaxDifference diff = new SyntaxDifference("String Lists changed from" + oldEntry + " to " + newEntry);
+                ops.add(new Update(null, oldLine, newLine, oldEntry, newEntry, diff));
                 i--;
                 j--;
             }

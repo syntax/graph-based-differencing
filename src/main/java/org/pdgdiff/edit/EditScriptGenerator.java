@@ -104,16 +104,15 @@ public class EditScriptGenerator {
             }
         }
 
-        // structural signature diff
-        if (!srcMethod.getDeclaration().equals(destMethod.getDeclaration())) {
-            ParsedSignature oldSig = parseMethodSignature(srcMethod);
-            ParsedSignature newSig = parseMethodSignature(destMethod);
+        // structural signature diff, happens in every case to account for annotations changing even if signature itself doesnt.
+        ParsedSignature oldSig = parseMethodSignature(srcMethod);
+        ParsedSignature newSig = parseMethodSignature(destMethod);
 
-            List<EditOperation> signatureDiffs =
-                    compareSignatures(oldSig, newSig, srcMethod, destMethod, srcCodeMapper, dstCodeMapper);
+        // misleading, should probably rename to something including annotations
+        List<EditOperation> signatureDiffs =
+                compareSignatures(oldSig, newSig, srcMethod, destMethod, srcCodeMapper, dstCodeMapper);
 
-            editScriptSet.addAll(signatureDiffs);
-        }
+        editScriptSet.addAll(signatureDiffs);
 
         return new ArrayList<>(editScriptSet);
     }
