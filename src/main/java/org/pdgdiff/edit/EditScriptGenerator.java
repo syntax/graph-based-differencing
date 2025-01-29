@@ -145,6 +145,23 @@ public class EditScriptGenerator {
                         .collect(Collectors.toList())
         );
 
+
+        // attempt to insert a trailing closing paren
+        int maxLine = editOperations.stream()
+                .mapToInt(op -> {
+                    PDGNode node = op.getNode();
+                    return node == null ? -1 : getNodeLineNumber(node);
+                })
+                .max()
+                .orElse(-1);
+        int nextLine = maxLine + 1;
+        if (nextLine <= codeMapper.getTotalLines()) {
+            String content = codeMapper.getCodeLine(nextLine).trim();
+            if (content.contains("}")) {
+                editOperations.add(new Insert(null, nextLine, content));
+            }
+        }
+
         return editOperations;
     }
 
@@ -174,6 +191,23 @@ public class EditScriptGenerator {
                         })
                         .collect(Collectors.toList())
         );
+
+
+        // attempt to delete a trailing closing paren
+        int maxLine = editOperations.stream()
+                .mapToInt(op -> {
+                    PDGNode node = op.getNode();
+                    return node == null ? -1 : getNodeLineNumber(node);
+                })
+                .max()
+                .orElse(-1);
+        int nextLine = maxLine + 1;
+        if (nextLine <= codeMapper.getTotalLines()) {
+            String content = codeMapper.getCodeLine(nextLine).trim();
+            if (content.contains("}")) {
+                editOperations.add(new Delete(null, nextLine, content));
+            }
+        }
 
         return editOperations;
     }
