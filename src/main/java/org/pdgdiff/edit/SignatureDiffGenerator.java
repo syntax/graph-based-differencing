@@ -115,11 +115,11 @@ public class SignatureDiffGenerator {
 
         if (oldParamLines.size() == 1 && newParamLines.size() == 1) {
             // avoid accidently marking a inserted param as a insert to the entire line, if the param changed adn multiple params exist on the same line
-            if (oldSig.paramTypes != newSig.paramTypes) {
+            if (!oldSig.paramTypes.equals(newSig.paramTypes)) {
                 SyntaxDifference diff = new SyntaxDifference("Parameter list changed");
                 ops.add(
                         new Update(null, oldParamLines.get(0), newParamLines.get(0),
-                                oldSig.paramTypes.toString(), newSig.paramTypes.toString(), diff)
+                                oldMapper.getCodeLine(oldParamLines.get(0)),newMapper.getCodeLine(newParamLines.get(0)), diff)
                 );
             }
         } else {
