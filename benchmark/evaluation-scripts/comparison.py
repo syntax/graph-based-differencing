@@ -62,13 +62,23 @@ def extract_char_range(tree_info):
 
 def parse_gumtree_json(json_output, char_to_line_f1, char_to_line_f2):
     #parse the GumTree JSON output and extract changed lines.
+
     data = json.loads(json_output)
     changed_lines = {
-        "deleted": [],
-        "moved": [],
-        "inserted": [],
-        "updated": []
+        "deleted_src": [],
+        "moved_src": [],
+        "moved_dst": [],
+        "inserted_dst": [],
+        "updated_src": [],
+        "updated_dst": []
     }
+
+    src_dest_map = {}
+    for match in data.get("matches", []):
+        src_range = extract_char_range(match["src"])
+        dest_range = extract_char_range(match["dest"])
+        if src_range and dest_range:
+            src_dest_map[src_range] = dest_range
 
     for action in data.get("actions", []):
         action_type = action["action"]
@@ -78,16 +88,27 @@ def parse_gumtree_json(json_output, char_to_line_f1, char_to_line_f2):
 
         if action_type.startswith("delete"):
             line_range = map_char_range_to_lines(char_range, char_to_line_f1)
-            changed_lines["deleted"].append(line_range)
+            changed_lines["deleted_src"].append(line_range)
         elif action_type.startswith("insert"):
             line_range = map_char_range_to_lines(char_range, char_to_line_f2)
-            changed_lines["inserted"].append(line_range)
+            changed_lines["inserted_dst"].append(line_range)
         elif action_type.startswith("update"):
-            line_range = map_char_range_to_lines(char_range, char_to_line_f1)
-            changed_lines["updated"].append(line_range)
+            src_line_range = map_char_range_to_lines(char_range, char_to_line_f1)
+            changed_lines["updated_src"].append(src_line_range)
+
+            dest_char_range = src_dest_map.get(char_range, None)
+            dest_line_range = map_char_range_to_lines(dest_char_range, char_to_line_f2)
+            if dest_line_range:
+                changed_lines["updated_dst"].append(dest_line_range)
         elif action_type.startswith("move"):
+            # i can ony get before infromation from the move for some reason..
             line_range = map_char_range_to_lines(char_range, char_to_line_f1)
-            changed_lines["moved"].append(line_range)
+            changed_lines["moved_src"].append(line_range)
+
+            dest_char_range = src_dest_map.get(char_range, None)
+            dest_line_range = map_char_range_to_lines(dest_char_range, char_to_line_f2)
+            if dest_line_range:
+                changed_lines["moved_dst"].append(dest_line_range)
 
     return changed_lines
 
@@ -99,10 +120,12 @@ def parse_gumtree_json(json_output, char_to_line_f1, char_to_line_f2):
 def parse_pdgdiff_output(output):
     data = json.loads(output)
     changed_lines = {
-        "deleted": [],
-        "moved": [],
-        "inserted": [],
-        "updated": []
+        "deleted_src": [],
+        "moved_src": [],
+        "moved_dst": [],
+        "inserted_dst": [],
+        "updated_src": [],
+        "updated_dst": []
     }
 
     for action in data.get("actions", []):
@@ -113,21 +136,21 @@ def parse_pdgdiff_output(output):
         if action_type == "Delete":
             old_line = action.get("line")
             if old_line is not None:
-                changed_lines["deleted"].append(old_line)
+                changed_lines["deleted_src"].append(old_line)
         elif action_type == "Insert":
             new_line = action.get("line")
             if new_line is not None:
-                changed_lines["inserted"].append(new_line)
+                changed_lines["inserted_dst"].append(new_line)
         elif action_type == "Update":
             if old_line is not None:
-                changed_lines["updated"].append(old_line)
-            # if new_line is not None and new_line != old_line:
-            #     changed_lines["updated"].append(new_line)
+                changed_lines["updated_src"].append(old_line)
+            if new_line is not None:
+                changed_lines["updated_dst"].append(new_line)
         elif action_type == "Move":
             if old_line is not None:
-                changed_lines["moved"].append(old_line)
-            # if new_line is not None and new_line != old_line:
-            #     changed_lines["moved"].append(new_line)
+                changed_lines["moved_src"].append(old_line)
+            if new_line is not None:
+                changed_lines["moved_dst"].append(new_line)
 
     return changed_lines
 
@@ -156,26 +179,38 @@ def handle_changed_lines(changed_lines):
         return sorted(set(expanded))  # Sort and remove duplicates
 
     # Expand and process each type of change
-    changed_lines["deleted"] = expand_and_sort(changed_lines["deleted"])
-    changed_lines["inserted"] = expand_and_sort(changed_lines["inserted"])
-    changed_lines["updated"] = expand_and_sort(changed_lines["updated"])
-    changed_lines["moved"] = expand_and_sort(changed_lines["moved"])
+    changed_lines["deleted_src"] = expand_and_sort(changed_lines["deleted_src"])
+    changed_lines["inserted_dst"] = expand_and_sort(changed_lines["inserted_dst"])
+    changed_lines["updated_src"] = expand_and_sort(changed_lines["updated_src"])
+    changed_lines["updated_dst"] = expand_and_sort(changed_lines["updated_dst"])
+    changed_lines["moved_src"] = expand_and_sort(changed_lines["moved_src"])
+    changed_lines["moved_dst"] = expand_and_sort(changed_lines["moved_dst"])
 
     return changed_lines
 
 def total_number_changes_lines(changed_lines):
-    total = 0
-    for change_type, lines in changed_lines.items():
-        total += len(lines)
-    return total
+    return sum(len(lines) for lines in changed_lines.values())
 
 
 def total_number_changes_lines_excluding_mv(changed_lines):
-    total = 0
+    return sum(len(lines) for key, lines in changed_lines.items() if key != "moved_src")
+
+def report_changed_lines(changed_lines, approach_name):
+    print(f"---- Changed Lines report for {approach_name}:")
     for change_type, lines in changed_lines.items():
-        if change_type != "moved":
-            total += len(lines)
-    return total
+        print(f"{change_type.capitalize()}: {lines}")
+    # for PDGDiff, dont include moves, but for Gumtree include moves
+    if approach_name == "PDGdiff":
+        print(f" !!! !! > Total number of changed lines in source: {len(set(changed_lines['deleted_src'] + changed_lines['updated_src']))}")
+        print(f" !!! !! > Total number of changed lines in destination (not incl moves): {len(set(changed_lines['inserted_dst'] + changed_lines['updated_dst']))}")
+        print(f"!! > Total number of changed lines overall: {total_number_changes_lines(changed_lines)}")
+        print(f"!! > Total number of changed lines excluding moved_src: {total_number_changes_lines_excluding_mv(changed_lines)}")
+    else:
+        print(f" !!! !! > Total number of changed lines in source: {len(set(changed_lines['deleted_src'] + changed_lines['updated_src'] + changed_lines['moved_src']))}")
+        print(f" !!! !! > Total number of changed lines in destination: {len(set(changed_lines['inserted_dst'] + changed_lines['updated_dst'] + changed_lines['moved_dst']))}")
+        print(f"!! > Total number of changed lines overall: {total_number_changes_lines(changed_lines)}")
+        print(f"!! > Total number of changed lines excluding moved_src: {total_number_changes_lines_excluding_mv(changed_lines)}")
+        print("\n")
 
 
 
@@ -184,6 +219,7 @@ def main():
     file1 = "TestAdder1.java"
     file2 = "TestAdder2.java"
 
+    # gumtree
     json_output = run_gumtree_textdiff(file1, file2)
     if not json_output:
         print("Failed to generate GumTree diff.")
@@ -195,22 +231,15 @@ def main():
     gt_changes = parse_gumtree_json(json_output, char_to_line_f1, char_to_line_f2)
     gt_changes = handle_changed_lines(gt_changes)
 
-    print("---- Changed Lines report for gumtree:")
-    for change_type, lines in gt_changes.items():
-        print(f"{change_type.capitalize()}: {lines}")
-    print(f"!! > Total number of changed lines: {total_number_changes_lines(gt_changes)}")
-    print(f"!! > Total number of changed lines excluding moved: {total_number_changes_lines_excluding_mv(gt_changes)}")
+    report_changed_lines(gt_changes, "GumTree")
 
     # pdgdiff
     path = "../../soot-pdg/out/diff.json"
     pdg_changes = parse_pdgdiff_output(open(path).read())
     pdg_changes = handle_changed_lines(pdg_changes)
 
-    print("---- Changed Lines report for pdgdiff:")
-    for change_type, lines in pdg_changes.items():
-        print(f"{change_type.capitalize()}: {lines}")
-    print(f"!! > Total number of changed lines: {total_number_changes_lines(pdg_changes)}")
-    print(f"!! > Total number of changed lines excluding moved: {total_number_changes_lines_excluding_mv(pdg_changes)}")
+
+    report_changed_lines(pdg_changes, "PDGdiff")
 
 
 
