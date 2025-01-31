@@ -32,6 +32,7 @@ public class PDGComparator {
 
 
     private static final int MAX_FILENAME_LENGTH = 255; // probably max, otherwise sometimes have issues
+    private static final RecoveryProcessor.RecoveryStrategy RECOVERY_STRATEGY = RecoveryProcessor.RecoveryStrategy.CLEANUP_AND_FLATTEN;
 
 
     public static void compareAndPrintGraphSimilarity(List<PDG> pdgList1, List<PDG> pdgList2,
@@ -89,7 +90,7 @@ public class PDGComparator {
                     List<EditOperation> editScript = EditScriptGenerator.generateEditScript(srcPDG, dstPDG, graphMapping,
                             srcSourceFilePath, dstSourceFilePath, srcObj, destObj);
 
-                    List<EditOperation> recoveredEditScript = RecoveryProcessor.recoverMappings(editScript, RecoveryProcessor.RecoveryStrategy.CLEANUP_AND_FLATTEN);
+                    List<EditOperation> recoveredEditScript = RecoveryProcessor.recoverMappings(editScript, RECOVERY_STRATEGY);
 
                     int editDistance = EditDistanceCalculator.calculateEditDistance(recoveredEditScript);
                     System.out.println("--- Edit information ---");
@@ -126,7 +127,8 @@ public class PDGComparator {
                 System.out.println("Unmatched method in List 1 (to be deleted): " + methodSignature);
 
                 List<EditOperation> editScript = EditScriptGenerator.generateDeleteScript(pdg, srcSourceFilePath, method);
-                exportEditScript(editScript, methodSignature, "DELETION");
+                List<EditOperation> recoveredEditScript = RecoveryProcessor.recoverMappings(editScript, RECOVERY_STRATEGY);
+                exportEditScript(recoveredEditScript, methodSignature, "DELETION");
             } catch (Exception e) {
                 System.err.println("Failed to generate delete script for unmatched method in List 1");
                 e.printStackTrace();
@@ -140,7 +142,8 @@ public class PDGComparator {
                 System.out.println("Unmatched method in List 2 (to be added): " + methodSignature);
 
                 List<EditOperation> editScript = EditScriptGenerator.generateAddScript(pdg, dstSourceFilePath, method);
-                exportEditScript(editScript, "INSERTION", methodSignature);
+                List<EditOperation> recoveredEditScript = RecoveryProcessor.recoverMappings(editScript, RECOVERY_STRATEGY);
+                exportEditScript(recoveredEditScript, "INSERTION", methodSignature);
             } catch (Exception e) {
                 System.err.println("Failed to generate add script for unmatched method in List 2");
                 e.printStackTrace();

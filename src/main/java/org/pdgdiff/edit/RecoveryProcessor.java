@@ -20,6 +20,7 @@ public class RecoveryProcessor {
         FLATTEN,
         CLEANUP_AND_FLATTEN,
         FLATTEN_AND_CLEANUP,
+        REMOVE_NEGATIVE_LINE_NUMBERS,
         NONE
     }
 
@@ -40,6 +41,8 @@ public class RecoveryProcessor {
             case FLATTEN_AND_CLEANUP: // this is risky and often leads to creation of conflicts that shouldnt exist. cleanup before flattern.
                 // todo; prob remove
                 return recoverMappingsFlattenAndCleanup(editScript);
+            case REMOVE_NEGATIVE_LINE_NUMBERS:
+                return removeNegativeLineNumbers(editScript);
             case NONE:
                 return editScript;
             default:
@@ -51,15 +54,46 @@ public class RecoveryProcessor {
         // TODO: remove unless i find new use for this
         List<EditOperation> flattenScript = recoverMappingsFlatten(editScript);
         List<EditOperation> cleanedAndFlatterened = recoverMappingsCleanup(flattenScript);
-        cleanUpDuplicates(cleanedAndFlatterened);
-        return cleanedAndFlatterened;
+        List<EditOperation> noNegatives = removeNegativeLineNumbers(cleanedAndFlatterened);
+        cleanUpDuplicates(noNegatives);
+        return noNegatives;
     }
 
     private static List<EditOperation> recoverMappingsCleanupAndFlattern(List<EditOperation> editScript) {
         List<EditOperation> cleanedScript = recoverMappingsCleanup(editScript);
         List<EditOperation> flattenedAndCleanedScript = recoverMappingsFlatten(cleanedScript);
-        cleanUpDuplicates(flattenedAndCleanedScript);
-        return flattenedAndCleanedScript;
+        List<EditOperation> noNegatives = removeNegativeLineNumbers(flattenedAndCleanedScript);
+        cleanUpDuplicates(noNegatives);
+        return noNegatives;
+    }
+
+    private static List<EditOperation> removeNegativeLineNumbers(List<EditOperation> editScript) {
+        // sometimes when jimple is hoisted to source code the line numbers will return -1, this is a simple fix to remove these.
+        List<EditOperation> cleanedScript = new ArrayList<>();
+        for (EditOperation op : editScript) {
+            if (op instanceof Update) {
+                Update update = (Update) op;
+                if (update.getOldLineNumber() >= 0 && update.getNewLineNumber() >= 0) {
+                    cleanedScript.add(update);
+                }
+            } else if (op instanceof Insert) {
+                Insert insert = (Insert) op;
+                if (insert.getLineNumber() >= 0) {
+                    cleanedScript.add(insert);
+                }
+            } else if (op instanceof Delete) {
+                Delete delete = (Delete) op;
+                if (delete.getLineNumber() >= 0) {
+                    cleanedScript.add(delete);
+                }
+            } else if (op instanceof Move) {
+                Move move = (Move) op;
+                if (move.getOldLineNumber() >= 0 && move.getNewLineNumber() >= 0) {
+                    cleanedScript.add(move);
+                }
+            }
+        }
+        return cleanedScript;
     }
 
     private static List<EditOperation> recoverMappingsFlatten(List<EditOperation> editScript) {
