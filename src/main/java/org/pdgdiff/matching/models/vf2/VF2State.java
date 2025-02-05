@@ -37,6 +37,8 @@ class VF2State {
 
     public boolean isComplete() {
         // once one of the graphs is fully matched (hence this is subgraph isomorphism)
+//TODO: consider allowing this:
+//        return mapping.size() >= Math.min(GraphTraversal.getNodeCount(pdg1) * 0.5 , GraphTraversal.getNodeCount(pdg2) * 0.5);
         return mapping.size() >= Math.min(GraphTraversal.getNodeCount(pdg1), GraphTraversal.getNodeCount(pdg2));
     }
 
