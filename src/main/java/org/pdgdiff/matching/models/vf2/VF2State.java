@@ -1,5 +1,6 @@
 package org.pdgdiff.matching.models.vf2;
 
+import org.pdgdiff.graph.GraphGenerator;
 import org.pdgdiff.matching.NodeFeasibility;
 import org.pdgdiff.graph.GraphTraversal;
 import org.pdgdiff.graph.PDG;
@@ -74,6 +75,8 @@ class VF2State {
         // Implement feasibility checks:
         // - Syntactic feasibility: node attributes match
         // - Semantic feasibility: the mapping is consistent with the graph structure
+        // TODO there is no point in doing checkSyntacticFeasibility here, as this is already tested when generating the candidates.
+        // TODO FIX.
         return checkSyntacticFeasibility(pair) && checkSemanticFeasibility(pair);
     }
 
@@ -123,42 +126,113 @@ class VF2State {
 
         // For all edges (n1', n1) in pdg1
         // NB getBackDependets typo exists in original soot code
-        for (PDGNode n1Prime : pair.n1.getBackDependets()) {
-            PDGNode mappedN1Prime = mapping.get(n1Prime);
-            if (mappedN1Prime != null) {
-                // There should be an edge (mappedN1Prime, n2) in pdg2
-                if (!mappedN1Prime.getDependents().contains(pair.n2)) {
+//        for (PDGNode n1Prime : pair.n1.getBackDependets()) {
+//            PDGNode mappedN1Prime = mapping.get(n1Prime);
+//            if (mappedN1Prime != null) {
+//                // There should be an edge (mappedN1Prime, n2) in pdg2
+//                if (!mappedN1Prime.getDependents().contains(pair.n2)) {
+//                    return false;
+//                }
+//            }
+//        }
+//
+//        // For all edges (n1, n1'') in pdg1
+//        for (PDGNode n1DoublePrime : pair.n1.getDependents()) {
+//            PDGNode mappedN1DoublePrime = mapping.get(n1DoublePrime);
+//            if (mappedN1DoublePrime != null) {
+//                // There should be an edge (n2, mappedN1DoublePrime) in pdg2
+//                if (!pair.n2.getDependents().contains(mappedN1DoublePrime)) {
+//                    return false;
+//                }
+//            }
+//        }
+//
+//        // Ensure no conflicting mappings exist
+//        for (Map.Entry<PDGNode, PDGNode> entry : mapping.entrySet()) {
+//            PDGNode mappedN1 = entry.getKey();
+//            PDGNode mappedN2 = entry.getValue();
+//
+//            // Check if there is an edge between pair.n1 and mappedN1 in pdg1
+//            boolean edgeInPDG1 = pair.n1.getDependents().contains(mappedN1) || pair.n1.getBackDependets().contains(mappedN1);
+//            boolean edgeInPDG2 = pair.n2.getDependents().contains(mappedN2) || pair.n2.getBackDependets().contains(mappedN2);
+//
+//            if (edgeInPDG1 != edgeInPDG2) {
+//                return false;
+//            }
+//        }
+//
+//        return true;
+
+        // cmp successors in PDG1 vs mapped successors in PDG2
+        for (PDGNode succInPDG1 : pdg1.getSuccsOf(pair.n1)) {
+            PDGNode succMappedInPDG2 = this.getMapping().get(succInPDG1);
+            if (succMappedInPDG2 != null) {
+                boolean dataEdge1 = pdg1.hasDataEdge(pair.n1, succInPDG1);
+                boolean dataEdge2 = pdg2.hasDataEdge(pair.n2, succMappedInPDG2);
+                if (dataEdge1 != dataEdge2) {
+                    return false;
+                }
+
+                boolean ctrlEdge1 = pdg1.hasControlEdge(pair.n1, succInPDG1);
+                boolean ctrlEdge2 = pdg2.hasControlEdge(pair.n2, succMappedInPDG2);
+                if (ctrlEdge1 != ctrlEdge2) {
                     return false;
                 }
             }
         }
 
-        // For all edges (n1, n1'') in pdg1
-        for (PDGNode n1DoublePrime : pair.n1.getDependents()) {
-            PDGNode mappedN1DoublePrime = mapping.get(n1DoublePrime);
-            if (mappedN1DoublePrime != null) {
-                // There should be an edge (n2, mappedN1DoublePrime) in pdg2
-                if (!pair.n2.getDependents().contains(mappedN1DoublePrime)) {
+        // cmp predecessors in PDG1 vs. mapped predecessors in PDG2
+        for (PDGNode predInPDG1 : pdg1.getPredsOf(pair.n1)) {
+            PDGNode predMappedInPDG2 = this.getMapping().get(predInPDG1);
+            if (predMappedInPDG2 != null) {
+                boolean dataEdge1 = pdg1.hasDataEdge(predInPDG1, pair.n1);
+                boolean dataEdge2 = pdg2.hasDataEdge(predMappedInPDG2, pair.n2);
+                if (dataEdge1 != dataEdge2) {
+                    return false;
+                }
+
+                boolean ctrlEdge1 = pdg1.hasControlEdge(predInPDG1, pair.n1);
+                boolean ctrlEdge2 = pdg2.hasControlEdge(predMappedInPDG2, pair.n2);
+                if (ctrlEdge1 != ctrlEdge2) {
                     return false;
                 }
             }
         }
 
-        // Ensure no conflicting mappings exist
-        for (Map.Entry<PDGNode, PDGNode> entry : mapping.entrySet()) {
-            PDGNode mappedN1 = entry.getKey();
-            PDGNode mappedN2 = entry.getValue();
+        // cross-check every existing mapping pair so that edges from (pair.n1->mappedN1) in PDG1 match edges from (pair.n2->mappedN2) in PDG2.
+        for (Map.Entry<PDGNode, PDGNode> entry : this.getMapping().entrySet()) {
+            PDGNode alreadyMappedN1 = entry.getKey();
+            PDGNode alreadyMappedN2 = entry.getValue();
 
-            // Check if there is an edge between pair.n1 and mappedN1 in pdg1
-            boolean edgeInPDG1 = pair.n1.getDependents().contains(mappedN1) || pair.n1.getBackDependets().contains(mappedN1);
-            boolean edgeInPDG2 = pair.n2.getDependents().contains(mappedN2) || pair.n2.getBackDependets().contains(mappedN2);
+            // Forward edges:
+            // if PDG1 has data/control edge from (pair.n1 -> alreadyMappedN1), then PDG2 must have the same edge type from (pair.n2 -> alreadyMappedN2)
+            boolean dataEdge1 = pdg1.hasDataEdge(pair.n1, alreadyMappedN1);
+            boolean dataEdge2 = pdg2.hasDataEdge(pair.n2, alreadyMappedN2);
+            if (dataEdge1 != dataEdge2) {
+                return false;
+            }
+            boolean ctrlEdge1 = pdg1.hasControlEdge(pair.n1, alreadyMappedN1);
+            boolean ctrlEdge2 = pdg2.hasControlEdge(pair.n2, alreadyMappedN2);
+            if (ctrlEdge1 != ctrlEdge2) {
+                return false;
+            }
 
-            if (edgeInPDG1 != edgeInPDG2) {
+            // Reverse edges:
+            // if PDG1 has data/control edge from (alreadyMappedN1 -> pair.n1), then PDG2 must have the same edge type from (alreadyMappedN2 -> pair.n2).
+            dataEdge1 = pdg1.hasDataEdge(alreadyMappedN1, pair.n1);
+            dataEdge2 = pdg2.hasDataEdge(alreadyMappedN2, pair.n2);
+            if (dataEdge1 != dataEdge2) {
+                return false;
+            }
+            ctrlEdge1 = pdg1.hasControlEdge(alreadyMappedN1, pair.n1);
+            ctrlEdge2 = pdg2.hasControlEdge(alreadyMappedN2, pair.n2);
+            if (ctrlEdge1 != ctrlEdge2) {
                 return false;
             }
         }
 
         return true;
+
     }
 
     private void updateTerminalSets(PDGNode n1, PDGNode n2) {
