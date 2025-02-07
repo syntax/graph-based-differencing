@@ -36,9 +36,9 @@ public class PDGComparator {
 
 
     public static void compareAndPrintGraphSimilarity(List<PDG> pdgList1, List<PDG> pdgList2,
-                                                      GraphMatcherFactory.MatchingStrategy strategy, String srcSourceFilePath, String dstSourceFilePath) throws IOException {
+                                                      Settings settings, String srcSourceFilePath, String dstSourceFilePath) throws IOException {
 
-        GraphMatcher matcher = GraphMatcherFactory.createMatcher(strategy, pdgList1, pdgList2);
+        GraphMatcher matcher = GraphMatcherFactory.createMatcher(settings.matchingStrategy, pdgList1, pdgList2);
         // for each graph print the size of its nodes and if it has a cycle
         pdgList1.forEach(pdg -> {
             System.out.println("------");
@@ -47,11 +47,11 @@ public class PDGComparator {
             CycleDetection.hasCycle(pdg);
         });
         // perform the actual graph matching
-        System.out.println("-> Beginning matching PDGs using strategy: " + strategy);
+        System.out.println("-> Beginning matching PDGs using strategy: " + settings.matchingStrategy);
         GraphMapping graphMapping = matcher.matchPDGLists();
 
         // TODO: clean up debug print stmts
-        System.out.println("--> Graph matching complete using strategy: " + strategy);
+        System.out.println("--> Graph matching complete using strategy: " + settings.matchingStrategy);
 
         // Handle unmatched graphs, i.e. additions or deletions of methods to the versions
         List<PDG> unmatchedInList1 = pdgList1.stream()
@@ -63,7 +63,7 @@ public class PDGComparator {
                 .collect(Collectors.toList());
 
         // Generate edit scripts for unmatched methods
-        generateEditScriptsForUnmatched(unmatchedInList1, unmatchedInList2, srcSourceFilePath, dstSourceFilePath);
+        generateEditScriptsForUnmatched(unmatchedInList1, unmatchedInList2, srcSourceFilePath, dstSourceFilePath, settings);
         exportGraphMappings(graphMapping, pdgList1, pdgList2, "out/");
 
         graphMapping.getGraphMapping().forEach((srcPDG, dstPDG) -> {
@@ -90,7 +90,7 @@ public class PDGComparator {
                     List<EditOperation> editScript = EditScriptGenerator.generateEditScript(srcPDG, dstPDG, graphMapping,
                             srcSourceFilePath, dstSourceFilePath, srcObj, destObj);
 
-                    List<EditOperation> recoveredEditScript = RecoveryProcessor.recoverMappings(editScript, RECOVERY_STRATEGY);
+                    List<EditOperation> recoveredEditScript = RecoveryProcessor.recoverMappings(editScript, settings.recoveryStrategy);
 
                     int editDistance = EditDistanceCalculator.calculateEditDistance(recoveredEditScript);
                     System.out.println("--- Edit information ---");
@@ -102,7 +102,7 @@ public class PDGComparator {
                     }
 
                     // serialise and export
-                    exportEditScript(recoveredEditScript, method1, method2);
+                    exportEditScript(recoveredEditScript, method1, method2, settings);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -119,7 +119,7 @@ public class PDGComparator {
     }
 
     private static void generateEditScriptsForUnmatched(List<PDG> unmatchedInList1, List<PDG> unmatchedInList2,
-                                                        String srcSourceFilePath, String dstSourceFilePath) {
+                                                        String srcSourceFilePath, String dstSourceFilePath, Settings settings) {
         unmatchedInList1.forEach(pdg -> {
             try {
                 SootMethod method = pdg.getCFG().getBody().getMethod();
@@ -127,8 +127,8 @@ public class PDGComparator {
                 System.out.println("Unmatched method in List 1 (to be deleted): " + methodSignature);
 
                 List<EditOperation> editScript = EditScriptGenerator.generateDeleteScript(pdg, srcSourceFilePath, method);
-                List<EditOperation> recoveredEditScript = RecoveryProcessor.recoverMappings(editScript, RECOVERY_STRATEGY);
-                exportEditScript(recoveredEditScript, methodSignature, "DELETION");
+                List<EditOperation> recoveredEditScript = RecoveryProcessor.recoverMappings(editScript, settings.recoveryStrategy);
+                exportEditScript(recoveredEditScript, methodSignature, "DELETION", settings);
             } catch (Exception e) {
                 System.err.println("Failed to generate delete script for unmatched method in List 1");
                 e.printStackTrace();
@@ -142,8 +142,8 @@ public class PDGComparator {
                 System.out.println("Unmatched method in List 2 (to be added): " + methodSignature);
 
                 List<EditOperation> editScript = EditScriptGenerator.generateAddScript(pdg, dstSourceFilePath, method);
-                List<EditOperation> recoveredEditScript = RecoveryProcessor.recoverMappings(editScript, RECOVERY_STRATEGY);
-                exportEditScript(recoveredEditScript, "INSERTION", methodSignature);
+                List<EditOperation> recoveredEditScript = RecoveryProcessor.recoverMappings(editScript, settings.recoveryStrategy);
+                exportEditScript(recoveredEditScript, "INSERTION", methodSignature, settings);
             } catch (Exception e) {
                 System.err.println("Failed to generate add script for unmatched method in List 2");
                 e.printStackTrace();
@@ -155,7 +155,7 @@ public class PDGComparator {
     // these are all a bit hacky, todo refactor to new file maybe called Export
 
 
-    private static void exportEditScript(List<EditOperation> editScript, String method1Signature, String method2Signature) {
+    private static void exportEditScript(List<EditOperation> editScript, String method1Signature, String method2Signature, Settings settings) {
         // Sanitize method names for use in filenames
         String method1Safe = method1Signature.replaceAll("[^a-zA-Z0-9\\.\\-]", "_");
         String method2Safe = method2Signature.replaceAll("[^a-zA-Z0-9\\.\\-]", "_");
@@ -173,7 +173,7 @@ public class PDGComparator {
         }
 
         try (Writer writer = new FileWriter(filename)) {
-            OperationSerializer serializer = new JsonOperationSerializer(editScript);
+            OperationSerializer serializer = new JsonOperationSerializer(editScript, settings);
             serializer.writeTo(writer);
             System.out.println("Edit script exported to: " + filename);
         } catch (Exception e) {

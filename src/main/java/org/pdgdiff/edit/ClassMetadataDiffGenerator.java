@@ -203,7 +203,7 @@ public class ClassMetadataDiffGenerator {
 
     private static void exportEditScript(List<EditOperation> editScript, String outputFileName) {
         try (Writer writer = new FileWriter(outputFileName)) {
-            OperationSerializer serializer = new JsonOperationSerializer(editScript);
+            OperationSerializer serializer = new JsonOperationSerializer(editScript, null, null);
             serializer.writeTo(writer);
             System.out.println("Class metadata diff exported to: " + outputFileName);
         } catch (Exception e) {

@@ -5,6 +5,7 @@ import org.pdgdiff.graph.GraphGenerator;
 import org.pdgdiff.graph.PDG;
 import org.pdgdiff.matching.GraphMatcherFactory;
 import org.pdgdiff.matching.PDGComparator;
+import org.pdgdiff.matching.Settings;
 import org.pdgdiff.util.SootInitializer;
 import soot.Scene;
 import soot.SootClass;
@@ -32,10 +33,15 @@ public class Main {
         String srcSourceFilePath, dstSourceFilePath;
         String beforeDir, afterDir;
 
+        // defaults
+        GraphMatcherFactory.MatchingStrategy matchingStrategy = GraphMatcherFactory.MatchingStrategy.VF2;
+        org.pdgdiff.edit.RecoveryProcessor.RecoveryStrategy recoveryStrategy =  org.pdgdiff.edit.RecoveryProcessor.RecoveryStrategy.CLEANUP_AND_FLATTEN;
+
+
 
         if (args.length < 6) {
             System.out.println("Insufficient arguments provided.");
-            System.out.println("Usage: java org.pdgdiff.Main <beforeSourcePath> <afterSourcePath> <beforeCompiledDir> <afterCompiledDir> <beforeClassName> <afterClassName>");
+            System.out.println("Usage: java org.pdgdiff.Main <beforeSourcePath> <afterSourcePath> <beforeCompiledDir> <afterCompiledDir> <beforeClassName> <afterClassName> [<matchingStrategy>] [<recoveryStrategy>]");
             System.out.println("Using Maven: mvn clean compile && mvn exec:java -Dexec.mainClass=\"org.pdgdiff.Main\" -Dexec.args=\"<beforeSourcePath> <afterSourcePath> <beforeCompiledDir> <afterCompiledDir> <beforeClassName> <afterClassName>\"\n");
             System.out.println("Using hardcoded information");
 
@@ -72,6 +78,26 @@ public class Main {
             afterDir = args[3];
             class1Name = args[4];
             class2Name = args[5];
+
+
+            // optionally parse strategy, otherwise default
+            if (args.length >= 7) {
+                try {
+                    matchingStrategy = GraphMatcherFactory.MatchingStrategy.valueOf(args[6].toUpperCase());
+                } catch (IllegalArgumentException e) {
+                    System.out.println("Invalid matching strategy provided, using default: VF2");
+                    matchingStrategy = GraphMatcherFactory.MatchingStrategy.VF2;
+                }
+            }
+            if (args.length >= 8) {
+                try {
+                    recoveryStrategy = org.pdgdiff.edit.RecoveryProcessor.RecoveryStrategy.valueOf(args[7].toUpperCase());
+                } catch (IllegalArgumentException e) {
+                    System.out.println("Invalid recovery strategy provided, using default: CLEANUP_AND_FLATTEN");
+                    recoveryStrategy = org.pdgdiff.edit.RecoveryProcessor.RecoveryStrategy.CLEANUP_AND_FLATTEN;
+                }
+            }
+
         }
 
 
@@ -102,8 +128,10 @@ public class Main {
             System.out.println("PDGs generated for " + beforeFile.getName() + ": " + pdgsClass1.size());
             System.out.println("PDGs generated for " + afterFile.getName() + ": " + pdgsClass2.size());
 
+            Settings strategySettings = new Settings(recoveryStrategy, matchingStrategy);
+
             if (!pdgsClass1.isEmpty() && !pdgsClass2.isEmpty()) {
-                PDGComparator.compareAndPrintGraphSimilarity(pdgsClass1, pdgsClass2, GraphMatcherFactory.MatchingStrategy.VF2, srcSourceFilePath, dstSourceFilePath);
+                PDGComparator.compareAndPrintGraphSimilarity(pdgsClass1, pdgsClass2, strategySettings, srcSourceFilePath, dstSourceFilePath);
             }
 
             copyResultsToOutput(srcSourceFilePath, dstSourceFilePath);
