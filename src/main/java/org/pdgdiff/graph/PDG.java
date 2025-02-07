@@ -28,6 +28,18 @@ public class PDG extends HashMutableEdgeLabelledDirectedGraph<PDGNode, GraphGene
         return startNode;
     }
 
+    public boolean hasDataEdge(PDGNode src, PDGNode tgt) {
+        return this.containsEdge(src, tgt, GraphGenerator.DependencyTypes.DATA_DEPENDENCY);
+    }
+
+    public boolean hasControlEdge(PDGNode src, PDGNode tgt) {
+        return this.containsEdge(src, tgt, GraphGenerator.DependencyTypes.CONTROL_DEPENDENCY);
+    }
+
+    public List<GraphGenerator.DependencyTypes> getEdgeLabels(PDGNode src, PDGNode tgt) {
+        return this.getLabelsForEdges(src, tgt);
+    }
+
 //    public List<PDGNode> getNodes() {
 //        return super.getNodes();
 //    }
