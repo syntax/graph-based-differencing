@@ -4,19 +4,17 @@ import org.pdgdiff.graph.GraphExporter;
 import org.pdgdiff.graph.GraphGenerator;
 import org.pdgdiff.graph.PDG;
 import org.pdgdiff.matching.GraphMatcherFactory;
-import org.pdgdiff.matching.PDGComparator;
+import org.pdgdiff.matching.DiffEngine;
 import org.pdgdiff.matching.StrategySettings;
 import org.pdgdiff.util.SootInitializer;
 import soot.Scene;
 import soot.SootClass;
 import soot.SootMethod;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.pdgdiff.export.EditScriptExporter.copyResultsToOutput;
 
 public class Main {
 
@@ -129,7 +127,7 @@ public class Main {
             StrategySettings strategySettings = new StrategySettings(recoveryStrategy, matchingStrategy);
 
             if (!pdgsClass1.isEmpty() && !pdgsClass2.isEmpty()) {
-                PDGComparator.compareAndPrintGraphSimilarity(pdgsClass1, pdgsClass2, strategySettings, srcSourceFilePath, dstSourceFilePath);
+                DiffEngine.difference(pdgsClass1, pdgsClass2, strategySettings, srcSourceFilePath, dstSourceFilePath);
             }
 
             copyResultsToOutput(srcSourceFilePath, dstSourceFilePath);
@@ -174,18 +172,5 @@ public class Main {
             }
         }
         return pdgList;
-    }
-
-    private static void copyResultsToOutput(String beforeSourceDir, String afterSourceDir) {
-        try {
-            Files.copy(Paths.get(beforeSourceDir), Paths.get("py-visualise/testclasses/TestAdder1.java"), StandardCopyOption.REPLACE_EXISTING);
-            Files.copy(Paths.get(afterSourceDir), Paths.get("py-visualise/testclasses/TestAdder2.java"), StandardCopyOption.REPLACE_EXISTING);
-            Files.copy(Paths.get("out/diff.json"), Paths.get("py-visualise/out/diff.json"), StandardCopyOption.REPLACE_EXISTING);
-            System.out.println(" --> results copied to python visualiser");
-        } catch (IOException e) {
-            System.err.println("An error occurred while copying the source files to the output folder: " + e.getMessage());
-            e.printStackTrace();
-
-        }
     }
 }
