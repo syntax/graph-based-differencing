@@ -5,14 +5,12 @@ import org.pdgdiff.graph.GraphGenerator;
 import org.pdgdiff.graph.PDG;
 import org.pdgdiff.matching.GraphMatcherFactory;
 import org.pdgdiff.matching.PDGComparator;
-import org.pdgdiff.matching.Settings;
+import org.pdgdiff.matching.StrategySettings;
 import org.pdgdiff.util.SootInitializer;
 import soot.Scene;
 import soot.SootClass;
 import soot.SootMethod;
-import soot.toolkits.graph.pdg.HashMutablePDG;
 
-import javax.security.sasl.SaslServer;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -128,7 +126,7 @@ public class Main {
             System.out.println("PDGs generated for " + beforeFile.getName() + ": " + pdgsClass1.size());
             System.out.println("PDGs generated for " + afterFile.getName() + ": " + pdgsClass2.size());
 
-            Settings strategySettings = new Settings(recoveryStrategy, matchingStrategy);
+            StrategySettings strategySettings = new StrategySettings(recoveryStrategy, matchingStrategy);
 
             if (!pdgsClass1.isEmpty() && !pdgsClass2.isEmpty()) {
                 PDGComparator.compareAndPrintGraphSimilarity(pdgsClass1, pdgsClass2, strategySettings, srcSourceFilePath, dstSourceFilePath);

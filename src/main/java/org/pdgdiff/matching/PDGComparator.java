@@ -1,6 +1,5 @@
 package org.pdgdiff.matching;
 
-import com.google.gson.JsonObject;
 import org.pdgdiff.edit.ClassMetadataDiffGenerator;
 import org.pdgdiff.edit.EditDistanceCalculator;
 import org.pdgdiff.edit.EditScriptGenerator;
@@ -12,19 +11,15 @@ import org.pdgdiff.graph.PDG;
 import org.pdgdiff.io.JsonOperationSerializer;
 import org.pdgdiff.io.OperationSerializer;
 import soot.SootClass;
-import soot.toolkits.graph.pdg.HashMutablePDG;
 
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonParser;
 import soot.SootMethod;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -32,26 +27,28 @@ public class PDGComparator {
 
 
     private static final int MAX_FILENAME_LENGTH = 255; // probably max, otherwise sometimes have issues
-    private static final RecoveryProcessor.RecoveryStrategy RECOVERY_STRATEGY = RecoveryProcessor.RecoveryStrategy.CLEANUP_AND_FLATTEN;
+    private static final List<EditOperation> aggregatedEditScripts = new ArrayList<>();
+    private static final boolean debug = false;
+
 
 
     public static void compareAndPrintGraphSimilarity(List<PDG> pdgList1, List<PDG> pdgList2,
-                                                      Settings settings, String srcSourceFilePath, String dstSourceFilePath) throws IOException {
+                                                      StrategySettings strategySettings, String srcSourceFilePath, String dstSourceFilePath) throws IOException {
 
-        GraphMatcher matcher = GraphMatcherFactory.createMatcher(settings.matchingStrategy, pdgList1, pdgList2);
+        GraphMatcher matcher = GraphMatcherFactory.createMatcher(strategySettings.matchingStrategy, pdgList1, pdgList2);
         // for each graph print the size of its nodes and if it has a cycle
-        pdgList1.forEach(pdg -> {
+        if (debug) pdgList1.forEach(pdg -> {
             System.out.println("------");
             System.out.println(pdg.getCFG().getBody().getMethod().getSignature());
             System.out.println("Node count" + GraphTraversal.getNodeCount(pdg));
             CycleDetection.hasCycle(pdg);
         });
         // perform the actual graph matching
-        System.out.println("-> Beginning matching PDGs using strategy: " + settings.matchingStrategy);
+        System.out.println("-> Beginning matching PDGs using strategy: " + strategySettings.matchingStrategy);
         GraphMapping graphMapping = matcher.matchPDGLists();
 
         // TODO: clean up debug print stmts
-        System.out.println("--> Graph matching complete using strategy: " + settings.matchingStrategy);
+        System.out.println("--> Graph matching complete using strategy: " + strategySettings.matchingStrategy);
 
         // Handle unmatched graphs, i.e. additions or deletions of methods to the versions
         List<PDG> unmatchedInList1 = pdgList1.stream()
@@ -63,17 +60,19 @@ public class PDGComparator {
                 .collect(Collectors.toList());
 
         // Generate edit scripts for unmatched methods
-        generateEditScriptsForUnmatched(unmatchedInList1, unmatchedInList2, srcSourceFilePath, dstSourceFilePath, settings);
+        generateEditScriptsForUnmatched(unmatchedInList1, unmatchedInList2, srcSourceFilePath, dstSourceFilePath, strategySettings);
         exportGraphMappings(graphMapping, pdgList1, pdgList2, "out/");
 
         graphMapping.getGraphMapping().forEach((srcPDG, dstPDG) -> {
             String method1 = srcPDG.getCFG().getBody().getMethod().getSignature();
             String method2 = dstPDG.getCFG().getBody().getMethod().getSignature();
             System.out.println("---\n> PDG from class 1: " + method1 + " is matched with PDG from class 2: " + method2);
-            System.out.println(GraphTraversal.getNodeCount(srcPDG));
-            CycleDetection.hasCycle(srcPDG);
-            System.out.println(GraphTraversal.getNodeCount(dstPDG));
-            CycleDetection.hasCycle(dstPDG);
+            if (debug) {
+                System.out.println(GraphTraversal.getNodeCount(srcPDG));
+                CycleDetection.hasCycle(srcPDG);
+                System.out.println(GraphTraversal.getNodeCount(dstPDG));
+                CycleDetection.hasCycle(dstPDG);
+            }
             NodeMapping nodeMapping = graphMapping.getNodeMapping(srcPDG);
             if (nodeMapping != null) {
                 System.out.println("--- Node Mapping:");
@@ -90,7 +89,7 @@ public class PDGComparator {
                     List<EditOperation> editScript = EditScriptGenerator.generateEditScript(srcPDG, dstPDG, graphMapping,
                             srcSourceFilePath, dstSourceFilePath, srcObj, destObj);
 
-                    List<EditOperation> recoveredEditScript = RecoveryProcessor.recoverMappings(editScript, settings.recoveryStrategy);
+                    List<EditOperation> recoveredEditScript = RecoveryProcessor.recoverMappings(editScript, strategySettings.recoveryStrategy);
 
                     int editDistance = EditDistanceCalculator.calculateEditDistance(recoveredEditScript);
                     System.out.println("--- Edit information ---");
@@ -102,7 +101,8 @@ public class PDGComparator {
                     }
 
                     // serialise and export
-                    exportEditScript(recoveredEditScript, method1, method2, settings);
+                    aggregatedEditScripts.addAll(recoveredEditScript);
+                    exportEditScript(recoveredEditScript, method1, method2, strategySettings);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -113,13 +113,15 @@ public class PDGComparator {
         SootClass srcClass = pdgList1.get(0).getCFG().getBody().getMethod().getDeclaringClass();
         SootClass dstClass = pdgList2.get(0).getCFG().getBody().getMethod().getDeclaringClass();
 
-        ClassMetadataDiffGenerator.generateClassMetadataDiff(srcClass, dstClass, srcSourceFilePath, dstSourceFilePath, "out/metadata_diff.json");
+        List<EditOperation> metadataScript = ClassMetadataDiffGenerator.generateClassMetadataDiff(srcClass, dstClass, srcSourceFilePath, dstSourceFilePath);
+        aggregatedEditScripts.addAll(metadataScript);
+        exportEditScript(metadataScript, "metadata", "metadata", null);
 
-        writeAggregatedEditScript();
+        writeAggregatedEditScript("out/diff.json", strategySettings);
     }
 
     private static void generateEditScriptsForUnmatched(List<PDG> unmatchedInList1, List<PDG> unmatchedInList2,
-                                                        String srcSourceFilePath, String dstSourceFilePath, Settings settings) {
+                                                        String srcSourceFilePath, String dstSourceFilePath, StrategySettings strategySettings) {
         unmatchedInList1.forEach(pdg -> {
             try {
                 SootMethod method = pdg.getCFG().getBody().getMethod();
@@ -127,8 +129,9 @@ public class PDGComparator {
                 System.out.println("Unmatched method in List 1 (to be deleted): " + methodSignature);
 
                 List<EditOperation> editScript = EditScriptGenerator.generateDeleteScript(pdg, srcSourceFilePath, method);
-                List<EditOperation> recoveredEditScript = RecoveryProcessor.recoverMappings(editScript, settings.recoveryStrategy);
-                exportEditScript(recoveredEditScript, methodSignature, "DELETION", settings);
+                List<EditOperation> recoveredEditScript = RecoveryProcessor.recoverMappings(editScript, strategySettings.recoveryStrategy);
+                aggregatedEditScripts.addAll(recoveredEditScript);
+                exportEditScript(recoveredEditScript, methodSignature, "DELETION", strategySettings);
             } catch (Exception e) {
                 System.err.println("Failed to generate delete script for unmatched method in List 1");
                 e.printStackTrace();
@@ -142,8 +145,9 @@ public class PDGComparator {
                 System.out.println("Unmatched method in List 2 (to be added): " + methodSignature);
 
                 List<EditOperation> editScript = EditScriptGenerator.generateAddScript(pdg, dstSourceFilePath, method);
-                List<EditOperation> recoveredEditScript = RecoveryProcessor.recoverMappings(editScript, settings.recoveryStrategy);
-                exportEditScript(recoveredEditScript, "INSERTION", methodSignature, settings);
+                List<EditOperation> recoveredEditScript = RecoveryProcessor.recoverMappings(editScript, strategySettings.recoveryStrategy);
+                aggregatedEditScripts.addAll(recoveredEditScript);
+                exportEditScript(recoveredEditScript, "INSERTION", methodSignature, strategySettings);
             } catch (Exception e) {
                 System.err.println("Failed to generate add script for unmatched method in List 2");
                 e.printStackTrace();
@@ -155,7 +159,7 @@ public class PDGComparator {
     // these are all a bit hacky, todo refactor to new file maybe called Export
 
 
-    private static void exportEditScript(List<EditOperation> editScript, String method1Signature, String method2Signature, Settings settings) {
+    private static void exportEditScript(List<EditOperation> editScript, String method1Signature, String method2Signature, StrategySettings strategySettings) {
         // Sanitize method names for use in filenames
         String method1Safe = method1Signature.replaceAll("[^a-zA-Z0-9\\.\\-]", "_");
         String method2Safe = method2Signature.replaceAll("[^a-zA-Z0-9\\.\\-]", "_");
@@ -173,7 +177,7 @@ public class PDGComparator {
         }
 
         try (Writer writer = new FileWriter(filename)) {
-            OperationSerializer serializer = new JsonOperationSerializer(editScript, settings);
+            OperationSerializer serializer = new JsonOperationSerializer(editScript, strategySettings);
             serializer.writeTo(writer);
             System.out.println("Edit script exported to: " + filename);
         } catch (Exception e) {
@@ -248,43 +252,14 @@ public class PDGComparator {
     }
 
 
-    // hacky solution for the time being, just iterates across all json files and creates one edit script
-    private static void writeAggregatedEditScript() {
-        String outputDir = "out/";
-        String outputFileName = outputDir + "diff.json";
-        JsonArray consolidatedActions = new JsonArray();
-
-        try {
-            List<File> jsonFiles = Files.list(Paths.get(outputDir))
-                    .filter(path -> path.toString().endsWith(".json"))
-                    .map(java.nio.file.Path::toFile)
-                    .collect(Collectors.toList());
-
-            JsonParser parser = new JsonParser();
-            for (File file : jsonFiles) {
-                if (file.getName().equals("diff.json")) continue;  // skip diff.json
-                try (FileReader reader = new FileReader(file)) {
-                    JsonObject jsonObject = parser.parse(reader).getAsJsonObject();
-                    JsonArray actions = jsonObject.getAsJsonArray("actions");
-                    consolidatedActions.addAll(actions);
-                } catch (Exception e) {
-                    System.err.println("failed to read or parse JSON file: " + file.getName());
-                    e.printStackTrace();
-                }
-            }
-
-            JsonObject aggregatedOutput = new JsonObject();
-            aggregatedOutput.add("actions", consolidatedActions);
-
-            try (Writer writer = new FileWriter(outputFileName)) {
-                writer.write(aggregatedOutput.toString());
-                System.out.println("---> agg edit scripts exported to: " + outputFileName);
-            }
-
+    private static void writeAggregatedEditScript(String filename, StrategySettings strategySettings) {
+        try (Writer writer = new FileWriter(filename)) {
+            OperationSerializer serializer = new JsonOperationSerializer(aggregatedEditScripts, strategySettings);
+            serializer.writeTo(writer);
+            System.out.println("Edit script exported to: " + filename);
         } catch (Exception e) {
-            System.err.println("Failed to aggregate JSON files into diff.json");
+            System.err.println("Failed to export edit script to " + filename);
             e.printStackTrace();
         }
     }
-
 }

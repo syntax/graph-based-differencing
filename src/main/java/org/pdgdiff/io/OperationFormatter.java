@@ -1,14 +1,14 @@
 package org.pdgdiff.io;
 
 import org.pdgdiff.edit.model.*;
-import org.pdgdiff.matching.Settings;
+import org.pdgdiff.matching.StrategySettings;
 
 /**
  * Interface defining methods to format edit operations.
  */
 public interface OperationFormatter {
 
-    void writeInfo(Settings settings) throws Exception;
+    void writeInfo(StrategySettings settings) throws Exception;
 
     void startOutput() throws Exception;
     void endOutput() throws Exception;

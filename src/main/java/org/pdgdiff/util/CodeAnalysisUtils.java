@@ -146,15 +146,12 @@ public class CodeAnalysisUtils {
     }
 
     public static List<Integer> getAnnotationsLineNumbers(SootMethod method, SourceCodeMapper codeMapper) throws IOException {
-        System.out.println("annos for Method: " + method.getName());
         List<Integer> annotationLines = new ArrayList<>();
         int[] range = getMethodLineRange(method, codeMapper);
-        System.out.println("method sig declared on range: " + range[0] + " - " + range[1]);
         if (range[0] <= 0) {
             return annotationLines;
         }
         int startLine = range[0];
-        System.out.println("startLine: " + startLine);
 
         // crawl upwards until reaching an empty line or a line that doesnt start with an @
         int lineNum = startLine - 1;
@@ -169,7 +166,6 @@ public class CodeAnalysisUtils {
                 break;
             }
         }
-        System.out.println("annos: " + annotationLines);
         return annotationLines;
     }
 

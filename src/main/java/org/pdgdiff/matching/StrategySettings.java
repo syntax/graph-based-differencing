@@ -2,11 +2,11 @@ package org.pdgdiff.matching;
 
 import org.pdgdiff.edit.RecoveryProcessor;
 
-public class Settings {
+public class StrategySettings {
     protected RecoveryProcessor.RecoveryStrategy recoveryStrategy;
     protected GraphMatcherFactory.MatchingStrategy matchingStrategy;
 
-    public Settings(RecoveryProcessor.RecoveryStrategy recoveryStrategy, GraphMatcherFactory.MatchingStrategy matchingStrategy) {
+    public StrategySettings(RecoveryProcessor.RecoveryStrategy recoveryStrategy, GraphMatcherFactory.MatchingStrategy matchingStrategy) {
         this.recoveryStrategy = recoveryStrategy;
         this.matchingStrategy = matchingStrategy;
     }

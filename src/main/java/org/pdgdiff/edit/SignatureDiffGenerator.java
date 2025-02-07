@@ -45,7 +45,6 @@ public class SignatureDiffGenerator {
         for (soot.Type t : method.getParameterTypes()) {
             paramList.add(t.toString());
         }
-        System.out.println("paramList: " + paramList);
 
         // to be populated later. there is no soot native way to get annotations
         List<String> annotations = new ArrayList<>();
@@ -146,8 +145,6 @@ public class SignatureDiffGenerator {
         }
 
 
-        System.out.println("for method " + oldSig.methodName + " old annotations: " + oldSig.annotations);
-        System.out.println("for method " + newSig.methodName + " new annotations: " + newSig.annotations);
         if (oldSig.annotations.size() == 1 && newSig.annotations.size() == 1) {
             if (oldSig.annotations != newSig.annotations) {
                 SyntaxDifference diff = new SyntaxDifference("Annotation changed");
@@ -157,8 +154,6 @@ public class SignatureDiffGenerator {
                 );
             }
         } else {
-            System.out.println("oldAnnotationLines: " + oldAnnotationLines);
-            System.out.println("Using DP Algo now....");
             ops.addAll(
                     compareStringListsDP(oldSig.annotations, newSig.annotations, oldAnnotationLines, newAnnotationLines)
             );
