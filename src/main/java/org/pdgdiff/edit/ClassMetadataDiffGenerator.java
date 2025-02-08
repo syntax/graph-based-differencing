@@ -17,12 +17,11 @@ import java.util.*;
 
 public class ClassMetadataDiffGenerator {
 
-    public static void generateClassMetadataDiff(
+    public static List<EditOperation> generateClassMetadataDiff(
             SootClass srcClass,
             SootClass dstClass,
             String srcSourceFilePath,
-            String dstSourceFilePath,
-            String outputFileName
+            String dstSourceFilePath
     ) throws IOException {
         Set<EditOperation> editScriptSet = new HashSet<>();
 
@@ -35,9 +34,7 @@ public class ClassMetadataDiffGenerator {
         // cmp fields
         compareFields(srcClass, dstClass, srcCodeMapper, dstCodeMapper, editScriptSet);
 
-        // convert the set to a list and output
-        List<EditOperation> editScript = new ArrayList<>(editScriptSet);
-        exportEditScript(editScript, outputFileName);
+        return new ArrayList<>(editScriptSet);
     }
 
     private static void compareClassMetadata(
@@ -199,16 +196,5 @@ public class ClassMetadataDiffGenerator {
         }
         // TODO: cmp annotations or initial values if necessary
         return true;
-    }
-
-    private static void exportEditScript(List<EditOperation> editScript, String outputFileName) {
-        try (Writer writer = new FileWriter(outputFileName)) {
-            OperationSerializer serializer = new JsonOperationSerializer(editScript);
-            serializer.writeTo(writer);
-            System.out.println("Class metadata diff exported to: " + outputFileName);
-        } catch (Exception e) {
-            System.err.println("Failed to export class metadata diff to " + outputFileName);
-            e.printStackTrace();
-        }
     }
 }

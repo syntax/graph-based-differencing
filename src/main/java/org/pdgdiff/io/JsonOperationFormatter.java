@@ -2,6 +2,8 @@ package org.pdgdiff.io;
 
 import org.pdgdiff.edit.model.*;
 import com.google.gson.stream.JsonWriter;
+import org.pdgdiff.matching.StrategySettings;
+
 import java.io.IOException;
 import java.io.Writer;
 
@@ -11,6 +13,14 @@ public class JsonOperationFormatter implements OperationFormatter {
     public JsonOperationFormatter(Writer writer) {
         this.writer = new JsonWriter(writer);
         this.writer.setIndent("  ");
+    }
+
+    @Override
+    public void writeInfo(StrategySettings settings) throws Exception {
+        writer.name("strategySettings").beginObject();
+        writer.name("recoveryStrategy").value(settings.getRecoveryStrategy().toString());
+        writer.name("matchingStrategy").value(settings.getMatchingStrategy().toString());
+        writer.endObject();
     }
 
     @Override
