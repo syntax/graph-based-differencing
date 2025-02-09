@@ -125,8 +125,8 @@ public class EditScriptGenerator {
         // insert the method signature lines (approx.), handling for annoataions
         int[] methodRange = CodeAnalysisUtils.getMethodLineRange(method, codeMapper);
         List<Integer> annotationLines = CodeAnalysisUtils.getAnnotationsLineNumbers(method, codeMapper);
-        if(min(annotationLines) < methodRange[0]) {
-            methodRange[0] = min(annotationLines);
+        if (!annotationLines.isEmpty() && Collections.min(annotationLines) < methodRange[0]) {
+            methodRange[0] = Collections.min(annotationLines);
         }
         if (methodRange[0] > 0 && methodRange[1] >= methodRange[0]) {
             for (int i = methodRange[0]; i <= methodRange[1]; i++) {
@@ -172,8 +172,8 @@ public class EditScriptGenerator {
         // delete the method signature lines (approx.)
         int[] methodRange = CodeAnalysisUtils.getMethodLineRange(method, codeMapper);
         List<Integer> annotationLines = CodeAnalysisUtils.getAnnotationsLineNumbers(method, codeMapper);
-        if(min(annotationLines) < methodRange[0]) {
-            methodRange[0] = min(annotationLines);
+        if (!annotationLines.isEmpty() && Collections.min(annotationLines) < methodRange[0]) {
+            methodRange[0] = Collections.min(annotationLines);
         }
         if (methodRange[0] > 0 && methodRange[1] >= methodRange[0]) {
             for (int i = methodRange[0]; i <= methodRange[1]; i++) {

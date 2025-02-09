@@ -101,7 +101,6 @@ public class ClassMetadataDiffGenerator {
 
             if (dstField != null) {
                 matchedFields.add(fieldName);
-
                 if (!fieldsAreEqual(srcField, dstField)) {
                     // update if field types or modifiers differ
                     int oldLineNumber = CodeAnalysisUtils.getFieldLineNumber(srcField, srcCodeMapper);

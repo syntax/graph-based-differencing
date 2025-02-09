@@ -59,10 +59,9 @@ public class CodeAnalysisUtils {
 
         // parse simple type name (i.e. without full package declaration) String instead of java.lang.String
         String simpleFieldType = fieldType.substring(fieldType.lastIndexOf('.') + 1);
-
         // regex pattern, possibility of missed case here
         String fieldPattern = String.format(
-                ".*\\b(?:public|protected|private|static|final|transient|volatile|abstract|synchronized|native|strictfp|\\s)*\\b%s\\b\\s+\\b%s\\b.*;",
+                ".*\\b(?:public|protected|private|static|final|transient|volatile|abstract|synchronized|native|strictfp|\\s)*\\b%s\\s*(?:<[^>]+>)?\\s+%s\\b.*;",
                 Pattern.quote(simpleFieldType),
                 Pattern.quote(fieldName)
         );
