@@ -146,11 +146,11 @@ public class SignatureDiffGenerator {
 
 
         if (oldSig.annotations.size() == 1 && newSig.annotations.size() == 1) {
-            if (oldSig.annotations != newSig.annotations) {
+            if (!Objects.equals(oldSig.annotations.get(0), newSig.annotations.get(0))) {
                 SyntaxDifference diff = new SyntaxDifference("Annotation changed");
                 ops.add(
                         new Update(null, oldAnnotationLines.get(0), newAnnotationLines.get(0),
-                                oldSig.annotations.toString(), newSig.annotations.toString(), diff)
+                                oldSig.annotations.get(0), newSig.annotations.get(0), diff)
                 );
             }
         } else {
