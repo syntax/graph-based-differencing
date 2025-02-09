@@ -105,9 +105,16 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-                <version>2.5.6</version> <!-- Ensure the version matches your Spring Boot version -->
+                <version>2.5.6</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
                 <configuration>
-                    <mainClass>org.pdgdiff.client.PDGController</mainClass>
+                    <mainClass>org.pdgdiff.Main</mainClass>
                 </configuration>
             </plugin>
         </plugins>

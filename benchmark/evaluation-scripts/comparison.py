@@ -1,12 +1,32 @@
 import subprocess
 import json
 import os
+import csv
+from datetime import datetime
+
+os.system("")
+
+
 
 
 # CONSTANTS, DEFINE
 
 GUMTREE_PATH = "../../../gumtree-4.0.0-beta2 2/bin"
-PDG_OUT_PATH = "../../out/diff.json"
+PDG_OUT_PATH = "out/diff.json"
+CSV_LOG_FILE = "diff_results.csv"
+
+
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+    
 
 ## !!!!!!!!!!!!!
 ## gumtree related functions
@@ -18,16 +38,17 @@ def run_gumtree_textdiff(file1, file2):
         # subprocess.run(["sdk", "use", "java", "17.0.14-tem"])
 
         # now gumtree
+        print(f"{bcolors.OKBLUE}[notif]{bcolors.ENDC} running GumTree.")
         result = subprocess.run(
             [f"./{GUMTREE_PATH}/gumtree", "textdiff", file1, file2, "-f", "JSON"],
             capture_output=True,
-            text=True
+            text=True,
         )
         result.check_returncode()
-        print(result.stdout)
+        # print(result.stdout)
         return result.stdout
     except subprocess.CalledProcessError as e:
-        print(f"Error running GumTree: {e.stderr}")
+        print(f"{bcolors.FAIL}[error]{bcolors.ENDC} err running GumTree: {e.stderr}")
         return None
 
 def map_char_to_line(file_path):
@@ -125,6 +146,32 @@ def parse_gumtree_json(json_output, char_to_line_f1, char_to_line_f2):
 ## !!!!!!!!!!!!!
 ## PDGdiff related functions
 
+
+
+# java -jar target/soot-pdg-1.0-SNAPSHOT.jar ./src/main/java/org/pdgdiff/testclasses/TestAdder1.java ./src/main/java/org/pdgdiff/testclasses/TestAdder2.java ./target/classes ./target/classes org.pdgdiff.testclasses.TestAdder1 org.pdgdiff.testclasses.TestAdder2 GED
+
+def run_pdg_textdiff(before_src_dir, after_src_dir, before_compiled_dir, after_compiled_dir, before_class_fullyqualified, after_class_fullyqualified, strategy):
+    if strategy not in ["vf2", "ged","ullmann"]:
+        print(f"{bcolors.FAIL}[error]{bcolors.ENDC} invalid strategy: {strategy}")
+        return None
+    try:
+        cmd = ["java", "-jar", "../../target/soot-pdg-1.0-SNAPSHOT.jar", before_src_dir, after_src_dir, before_compiled_dir, after_compiled_dir, before_class_fullyqualified, after_class_fullyqualified, strategy]
+        print(f"{bcolors.OKBLUE}[notif]{bcolors.ENDC} running PDGDiff with command: {' '.join(cmd)}")
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=90
+        )
+        result.check_returncode()
+        return result.stdout
+    except subprocess.TimeoutExpired:
+        print(f"{bcolors.WARNING}[warning]{bcolors.ENDC} PDGDiff took too long (>90s) and was skipped.")
+        return None
+    except subprocess.CalledProcessError as e:
+        print(f"{bcolors.FAIL}[error]{bcolors.ENDC} error running PDGDiff: {e.stderr}")
+        return None
+
 def parse_pdgdiff_output(output):
     data = json.loads(output)
     changed_lines = {
@@ -203,7 +250,7 @@ def total_number_changes_lines(changed_lines):
 
 
 def total_number_changes_lines_excluding_mv(changed_lines):
-    return sum(len(lines) for key, lines in changed_lines.items() if key != "moved_src")
+    return sum(len(lines) for key, lines in changed_lines.items() if key != "moved_src" and key != "moved_dst") 
 
 def report_changed_lines(changed_lines, approach_name):
     print(f"---- Changed Lines report for {approach_name}:")
@@ -214,12 +261,12 @@ def report_changed_lines(changed_lines, approach_name):
         print(f" !!! !! > Total number of changed lines in source: {len(set(changed_lines['deleted_src'] + changed_lines['updated_src']))}")
         print(f" !!! !! > Total number of changed lines in destination (not incl moves): {len(set(changed_lines['inserted_dst'] + changed_lines['updated_dst']))}")
         print(f"!! > Total number of changed lines overall: {total_number_changes_lines(changed_lines)}")
-        print(f"!! > Total number of changed lines excluding moved_src: {total_number_changes_lines_excluding_mv(changed_lines)}")
+        print(f"!! > Total number of changed lines excluding moved: {total_number_changes_lines_excluding_mv(changed_lines)}")
     else:  
         print(f" !!! !! > Total number of changed lines in source: {len(set(changed_lines['deleted_src'] + changed_lines['updated_src'] + changed_lines['moved_src']))}")
         print(f" !!! !! > Total number of changed lines in destination: {len(set(changed_lines['inserted_dst'] + changed_lines['updated_dst'] + changed_lines['moved_dst']))}")
         print(f"!! > Total number of changed lines overall: {total_number_changes_lines(changed_lines)}")
-        print(f"!! > Total number of changed lines excluding moved_src: {total_number_changes_lines_excluding_mv(changed_lines)}")
+        print(f"!! > Total number of changed lines excluding moved: {total_number_changes_lines_excluding_mv(changed_lines)}")
         print("\n")
 
 
@@ -314,14 +361,125 @@ def crawl_datasets():
 
     return dataset_info, good_commits
 
+def report_changed_lines_brief(changed_lines, approach_name, file_name):
+    # Compute total changed lines excluding moves
+    total_changes = total_number_changes_lines(changed_lines)
+    total_excluding_moves = total_number_changes_lines_excluding_mv(changed_lines)
+
+    color = bcolors.OKGREEN
+
+    print(color + f"[{approach_name}] {file_name}: {total_excluding_moves} changed lines (total: {total_changes})" + bcolors.ENDC)
+
+
+def initialize_csv():
+    if not os.path.exists(CSV_LOG_FILE):
+        with open(CSV_LOG_FILE, mode="w", newline="") as file:
+            writer = csv.writer(file)
+            writer.writerow([
+                "Timestamp", "Project", "Commit ID", "Changed File", "Approach",
+                "Total Changed Lines", "Total Changed Lines (Excl. Moves)",
+                "Deleted Lines (Src)", "Inserted Lines (Dst)",
+                "Updated Lines (Src)", "Updated Lines (Dst)",
+                "Moved Lines (Src)", "Moved Lines (Dst)", "Errors"
+            ])
+
+def log_results_to_csv(file_info, approach_name, changed_lines, error_msg=""):
+    try:
+        with open(CSV_LOG_FILE, mode="a", newline="") as file:
+            writer = csv.writer(file)
+            writer.writerow([
+                datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                file_info["project"],
+                file_info["commit_id"],
+                file_info["changed_file"],
+                approach_name,
+                total_number_changes_lines(changed_lines),
+                total_number_changes_lines_excluding_mv(changed_lines),
+                str(changed_lines["deleted_src"]),
+                str(changed_lines["inserted_dst"]),
+                str(changed_lines["updated_src"]),
+                str(changed_lines["updated_dst"]),
+                str(changed_lines["moved_src"]),
+                str(changed_lines["moved_dst"]),
+                error_msg
+            ])
+            print(f"{bcolors.OKCYAN}[status]{bcolors.ENDC} > logged results for {file_info['changed_file']} ({approach_name}) to CSV.")
+    except Exception as e:
+        print(f"{bcolors.WARNING}[warning]{bcolors.ENDC} error writing to CSV: {e}")
 
 def main():
 
     files_to_differece, commits = crawl_datasets()
-    print(f"[notif] successfully managed to gather complete details on {len(files_to_differece)} pairs of files.")
-    print(f"[notif] this comes from {commits} pairs of commits (before/after).")
+    print(f"{bcolors.OKBLUE}[notif]{bcolors.ENDC} successfully managed to gather complete details on {len(files_to_differece)} pairs of files.")
+    print(f"{bcolors.OKBLUE}[notif]{bcolors.ENDC} this comes from {commits} pairs of commits (before/after).")
     with open("dataset_info.json", "w") as f:
         json.dump(files_to_differece, f, indent=4)
+
+
+
+    for file_info in files_to_differece:
+        print(f"{bcolors.OKCYAN}[status]{bcolors.ENDC} > processing file: {bcolors.BOLD}{file_info['changed_file']}{bcolors.ENDC} from commit {bcolors.BOLD}{file_info['commit_id']}{bcolors.ENDC} in project {bcolors.BOLD}{file_info['project']}{bcolors.ENDC}")
+        try:
+            file1 = file_info["before_file_dir"]
+            file2 = file_info["after_file_dir"]
+
+            # gumtree
+            json_output = run_gumtree_textdiff(file1, file2)
+            if not json_output:
+                print("Failed to generate GumTree diff.")
+                raise Exception("Failed to generate GumTree diff.")
+
+            char_to_line_f1 = map_char_to_line(file1)
+            char_to_line_f2 = map_char_to_line(file2)
+
+            gt_changes = parse_gumtree_json(json_output, char_to_line_f1, char_to_line_f2)
+            gt_changes = handle_changed_lines(gt_changes)
+            
+            # report_changed_lines(gt_changes, "GumTree")
+            #  TODO
+            # pdgdiff
+            strategy = "vf2"
+            run_pdg_textdiff(file_info["before_file_dir"],
+                                file_info["after_file_dir"],
+                                file_info["before_compiled_dir"], 
+                                file_info["after_compiled_dir"], 
+                                file_info["before_class_fullyqualified"], 
+                                file_info["after_class_fullyqualified"], 
+                                strategy=strategy)
+            pdg_vf2_changes = parse_pdgdiff_output(open(PDG_OUT_PATH).read())
+            pdg_vf2_changes = handle_changed_lines(pdg_vf2_changes)
+
+
+            #   (pdg_changes, "PDGdiff") 
+
+
+            strategy = "ged"
+            run_pdg_textdiff(file_info["before_file_dir"],
+                                file_info["after_file_dir"],
+                                file_info["before_compiled_dir"], 
+                                file_info["after_compiled_dir"], 
+                                file_info["before_class_fullyqualified"], 
+                                file_info["after_class_fullyqualified"], 
+                                strategy=strategy)
+            pdg_ged_changes = parse_pdgdiff_output(open(PDG_OUT_PATH).read())
+            pdg_ged_changes = handle_changed_lines(pdg_ged_changes)
+
+
+            print(f"{bcolors.OKBLUE}[notif]{bcolors.ENDC} parsing results...")
+            report_changed_lines_brief(gt_changes, "GumTree", file_info["changed_file"])
+            report_changed_lines_brief(pdg_vf2_changes, "PDGdiff-vf2", file_info["changed_file"])
+            report_changed_lines_brief(pdg_ged_changes, "PDGdiff-ged", file_info["changed_file"])
+
+
+            log_results_to_csv(file_info, "GumTree", gt_changes)
+            log_results_to_csv(file_info, "PDGdiff-VF2", pdg_vf2_changes)
+            log_results_to_csv(file_info, "PDGdiff-GED", pdg_ged_changes)
+
+
+        except Exception as e:
+            print(f"{bcolors.FAIL}[error]{bcolors.ENDC} error processing file: {file_info['changed_file']}, {e}")
+            log_results_to_csv(file_info, "Error", {}, e)
+            continue
 
 
     #  # set appropriately, todo eventually iterature through files by file
