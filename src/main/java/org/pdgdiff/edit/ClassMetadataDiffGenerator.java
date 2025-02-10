@@ -107,16 +107,25 @@ public class ClassMetadataDiffGenerator {
                     int newLineNumber = CodeAnalysisUtils.getFieldLineNumber(dstField, dstCodeMapper);
                     String oldCodeSnippet = CodeAnalysisUtils.getFieldDeclaration(srcField, srcCodeMapper);
                     String newCodeSnippet = CodeAnalysisUtils.getFieldDeclaration(dstField, dstCodeMapper);
-
-                    EditOperation fieldUpdate = new Update(
-                            null,
-                            oldLineNumber,
-                            newLineNumber,
-                            oldCodeSnippet,
-                            newCodeSnippet,
-                            new SyntaxDifference("ClassMetadataDiff: Field " + fieldName + " differs")
-                    );
-                    editScriptSet.add(fieldUpdate);
+                    if (oldCodeSnippet.equals(newCodeSnippet)) {
+                        EditOperation fieldMove = new Move(
+                                null,
+                                oldLineNumber,
+                                newLineNumber,
+                                oldCodeSnippet
+                        );
+                        editScriptSet.add(fieldMove);
+                    } else {
+                        EditOperation fieldUpdate = new Update(
+                                null,
+                                oldLineNumber,
+                                newLineNumber,
+                                oldCodeSnippet,
+                                newCodeSnippet,
+                                new SyntaxDifference("ClassMetadataDiff: Field " + fieldName + " differs")
+                        );
+                        editScriptSet.add(fieldUpdate);
+                    }
                 }
             }
         }
