@@ -361,14 +361,14 @@ def crawl_datasets():
 
     return dataset_info, good_commits
 
-def report_changed_lines_brief(changed_lines, approach_name, file_name):
+def report_changed_lines_brief(changed_lines, approach_name, file_name, total_excluding_moves_and_comments, total_excluding_non_soot):
     # Compute total changed lines excluding moves
     total_changes = total_number_changes_lines(changed_lines)
     total_excluding_moves = total_number_changes_lines_excluding_mv(changed_lines)
 
     color = bcolors.OKGREEN
 
-    print(color + f"[{approach_name}] {file_name}: {total_excluding_moves} changed lines (total: {total_changes})" + bcolors.ENDC)
+    print(color + f"[{approach_name}] {file_name}: {bcolors.BOLD}{total_excluding_non_soot} lines that are repr by the graph.{bcolors.ENDC} (excl comments + imports + moves: {total_excluding_moves_and_comments}, excl moves: {total_excluding_moves}, abs total: {total_changes})")
 
 
 def initialize_csv():
@@ -378,12 +378,14 @@ def initialize_csv():
             writer.writerow([
                 "Timestamp", "Project", "Commit ID", "Changed File", "Approach",
                 "Total Changed Lines", "Total Changed Lines (Excl. Moves)",
+                "Total Changed Lines (Excl. Moves AND Comments)",
+                "Total Changed Lines (Excl. everything non soot)"
                 "Deleted Lines (Src)", "Inserted Lines (Dst)",
                 "Updated Lines (Src)", "Updated Lines (Dst)",
                 "Moved Lines (Src)", "Moved Lines (Dst)", "Errors"
             ])
 
-def log_results_to_csv(file_info, approach_name, changed_lines, error_msg=""):
+def log_results_to_csv(file_info, approach_name, changed_lines, error_msg="",non_comment_changed_count=None, non_soot_changed_count=None):
     try:
         with open(CSV_LOG_FILE, mode="a", newline="") as file:
             writer = csv.writer(file)
@@ -395,6 +397,8 @@ def log_results_to_csv(file_info, approach_name, changed_lines, error_msg=""):
                 approach_name,
                 total_number_changes_lines(changed_lines),
                 total_number_changes_lines_excluding_mv(changed_lines),
+                non_comment_changed_count if non_comment_changed_count is not None else 0,
+                non_soot_changed_count if non_soot_changed_count is not None else 0,
                 str(changed_lines["deleted_src"]),
                 str(changed_lines["inserted_dst"]),
                 str(changed_lines["updated_src"]),
@@ -406,6 +410,124 @@ def log_results_to_csv(file_info, approach_name, changed_lines, error_msg=""):
             print(f"{bcolors.OKCYAN}[status]{bcolors.ENDC} > logged results for {file_info['changed_file']} ({approach_name}) to CSV.")
     except Exception as e:
         print(f"{bcolors.WARNING}[warning]{bcolors.ENDC} error writing to CSV: {e}")
+
+
+
+def is_comment_or_blank(line: str) -> bool:
+    stripped = line.strip()
+    if not stripped:
+        return True  # blank line
+    # Single-line comment //...
+    if stripped.startswith("//"):
+        return True
+    if stripped.startswith("import"):
+        return True
+    # Block comment lines /**, /*, or * ...
+    if stripped.startswith("/*") or stripped.startswith("*") or stripped.startswith("/**"):
+        return True
+    return False
+
+
+def is_non_soot_detectable(line: str) -> bool:
+    stripped = line.strip()
+    if not stripped:
+        return True  # blank line
+    if stripped.startswith("//"):
+        return True
+    if stripped.startswith("import"):
+        return True
+    if stripped.startswith("package"):
+        return True
+    
+    if stripped == "}" or stripped == "};":
+        return True
+    if (stripped.startswith("else ") or stripped.startswith("} else")) and "if" not in stripped:
+        return True
+    if stripped.startswith("try"):
+        return True
+    if stripped.startswith("catch")or stripped.startswith("} catch"):
+        return True
+
+    if stripped.startswith("/*") or stripped.startswith("*") or stripped.startswith("/**"):
+        return True
+    return False
+
+
+def count_changed_lines_excluding_comments(changed_lines, src_file_path, dst_file_path):
+    try:
+        with open(src_file_path, "r", encoding="utf-8") as f:
+            src_lines = f.readlines()
+    except Exception:
+        src_lines = []
+
+    try:
+        with open(dst_file_path, "r", encoding="utf-8") as f:
+            dst_lines = f.readlines()
+    except Exception:
+        dst_lines = []
+
+    total_non_comment_changed_count = 0
+    
+    def count_non_comment(file_lines, line_nums):
+        """Count how many lines in `file_lines` (1-based) among `line_nums` are not pure comment/blank."""
+        count = 0
+        for ln in line_nums:
+            if 1 <= ln <= len(file_lines):
+                if not is_comment_or_blank(file_lines[ln - 1]):
+                    count += 1
+                # else:
+                #     print(f"{bcolors.WARNING}[warning]{bcolors.ENDC} line {ln} is a comment, an import or blank.\n{file_lines[ln - 1]}")
+        return count
+
+    # Changes in source file
+    total_non_comment_changed_count += count_non_comment(src_lines, changed_lines["deleted_src"])
+    total_non_comment_changed_count += count_non_comment(src_lines, changed_lines["updated_src"])
+    # total_non_comment_changed_count += count_non_comment(src_lines, changed_lines["moved_src"])
+
+    # Changes in destination file
+    total_non_comment_changed_count += count_non_comment(dst_lines, changed_lines["inserted_dst"])
+    total_non_comment_changed_count += count_non_comment(dst_lines, changed_lines["updated_dst"])
+    # total_non_comment_changed_count += count_non_comment(dst_lines, changed_lines["moved_dst"])
+
+    return total_non_comment_changed_count
+
+
+def count_changed_lines_excluding_nonsoot(changed_lines, src_file_path, dst_file_path):
+
+    try:
+        with open(src_file_path, "r", encoding="utf-8") as f:
+            src_lines = f.readlines()
+    except Exception:
+        src_lines = []
+
+    try:
+        with open(dst_file_path, "r", encoding="utf-8") as f:
+            dst_lines = f.readlines()
+    except Exception:
+        dst_lines = []
+
+    total_non_comment_changed_count = 0
+    
+    def count_non_soot(status, file_lines, line_nums):
+        count = 0
+        for ln in line_nums:
+            if 1 <= ln <= len(file_lines):
+                if not is_non_soot_detectable(file_lines[ln - 1]):
+                    count += 1
+                else:
+                    print(f"{bcolors.WARNING}[warning]{bcolors.ENDC} line {ln} from {status} file is not captured by soot and being excluded from comparison;\n{file_lines[ln - 1]}")
+        return count
+
+    total_non_comment_changed_count += count_non_soot("src",src_lines, changed_lines["deleted_src"])
+    total_non_comment_changed_count += count_non_soot("src",src_lines, changed_lines["updated_src"])
+    # total_non_comment_changed_count += count_non_comment(src_lines, changed_lines["moved_src"])
+
+    # Changes in destination file
+    total_non_comment_changed_count += count_non_soot("dst",dst_lines, changed_lines["inserted_dst"])
+    total_non_comment_changed_count += count_non_soot("dst",dst_lines, changed_lines["updated_dst"])
+    # total_non_comment_changed_count += count_non_comment(dst_lines, changed_lines["moved_dst"])
+
+    return total_non_comment_changed_count
 
 def main():
 
@@ -435,6 +557,11 @@ def main():
             gt_changes = parse_gumtree_json(json_output, char_to_line_f1, char_to_line_f2)
             gt_changes = handle_changed_lines(gt_changes)
             
+            gt_non_comment_count = count_changed_lines_excluding_comments(gt_changes, file1, file2)
+            gt_non_soot_count = count_changed_lines_excluding_nonsoot(gt_changes, file1, file2)
+
+
+            
             # report_changed_lines(gt_changes, "GumTree")
             #  TODO
             # pdgdiff
@@ -449,7 +576,8 @@ def main():
             pdg_vf2_changes = parse_pdgdiff_output(open(PDG_OUT_PATH).read())
             pdg_vf2_changes = handle_changed_lines(pdg_vf2_changes)
 
-
+            pdg_vf2_non_comment_count = count_changed_lines_excluding_comments(pdg_vf2_changes, file1, file2)
+            pdg_vf2_non_soot_count = count_changed_lines_excluding_nonsoot(pdg_vf2_changes, file1, file2)
             #   (pdg_changes, "PDGdiff") 
 
 
@@ -464,16 +592,18 @@ def main():
             pdg_ged_changes = parse_pdgdiff_output(open(PDG_OUT_PATH).read())
             pdg_ged_changes = handle_changed_lines(pdg_ged_changes)
 
+            pdg_ged_non_comment_count = count_changed_lines_excluding_comments(pdg_ged_changes, file1, file2)
+            pdg_get_non_soot_count = count_changed_lines_excluding_nonsoot(pdg_ged_changes, file1, file2)
 
             print(f"{bcolors.OKBLUE}[notif]{bcolors.ENDC} parsing results...")
-            report_changed_lines_brief(gt_changes, "GumTree", file_info["changed_file"])
-            report_changed_lines_brief(pdg_vf2_changes, "PDGdiff-vf2", file_info["changed_file"])
-            report_changed_lines_brief(pdg_ged_changes, "PDGdiff-ged", file_info["changed_file"])
+            report_changed_lines_brief(gt_changes, "GumTree", file_info["changed_file"], gt_non_comment_count, gt_non_soot_count)
+            report_changed_lines_brief(pdg_vf2_changes, "PDGdiff-vf2", file_info["changed_file"], pdg_vf2_non_comment_count, pdg_vf2_non_soot_count)
+            report_changed_lines_brief(pdg_ged_changes, "PDGdiff-ged", file_info["changed_file"], pdg_ged_non_comment_count, pdg_get_non_soot_count)
 
 
-            log_results_to_csv(file_info, "GumTree", gt_changes)
-            log_results_to_csv(file_info, "PDGdiff-VF2", pdg_vf2_changes)
-            log_results_to_csv(file_info, "PDGdiff-GED", pdg_ged_changes)
+            log_results_to_csv(file_info, "GumTree", gt_changes, gt_non_comment_count, gt_non_soot_count)
+            log_results_to_csv(file_info, "PDGdiff-VF2", pdg_vf2_changes, pdg_vf2_changes, pdg_vf2_non_comment_count)
+            log_results_to_csv(file_info, "PDGdiff-GED", pdg_ged_changes, pdg_ged_non_comment_count, pdg_get_non_soot_count)
 
 
         except Exception as e:
