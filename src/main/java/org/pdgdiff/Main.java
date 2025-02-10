@@ -124,6 +124,11 @@ public class Main {
             System.out.println("PDGs generated for " + beforeFile.getName() + ": " + pdgsClass1.size());
             System.out.println("PDGs generated for " + afterFile.getName() + ": " + pdgsClass2.size());
 
+            if (pdgsClass1.isEmpty() || pdgsClass2.isEmpty()) {
+                System.out.println("ERROR: No PDGs generated for one or both classes. There are probably no concrete methods in the class. Exiting...");
+                return;
+            }
+
             StrategySettings strategySettings = new StrategySettings(recoveryStrategy, matchingStrategy);
 
             if (!pdgsClass1.isEmpty() && !pdgsClass2.isEmpty()) {
