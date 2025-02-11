@@ -129,7 +129,7 @@ public class Main {
                 return;
             }
 
-            StrategySettings strategySettings = new StrategySettings(recoveryStrategy, matchingStrategy);
+            StrategySettings strategySettings = new StrategySettings(recoveryStrategy, matchingStrategy, true);
 
             if (!pdgsClass1.isEmpty() && !pdgsClass2.isEmpty()) {
                 DiffEngine.difference(pdgsClass1, pdgsClass2, strategySettings, srcSourceFilePath, dstSourceFilePath);

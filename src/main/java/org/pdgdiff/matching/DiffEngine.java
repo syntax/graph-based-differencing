@@ -111,7 +111,12 @@ public class DiffEngine {
         aggregatedEditScripts.addAll(metadataScript);
         exportEditScript(metadataScript, "metadata", "metadata", null);
 
-        writeAggregatedEditScript(aggregatedEditScripts, "out/diff.json", strategySettings);
+        if (strategySettings.isAggregateRecovery()) {
+            List<EditOperation> recAggregatedEditScripts = RecoveryProcessor.recoverMappings(aggregatedEditScripts, strategySettings.recoveryStrategy);
+            writeAggregatedEditScript(recAggregatedEditScripts, "out/diff.json", strategySettings);
+        } else {
+            writeAggregatedEditScript(aggregatedEditScripts, "out/diff.json", strategySettings);
+        }
     }
 
     private static void generateEditScriptsForUnmatched(List<PDG> unmatchedInList1, List<PDG> unmatchedInList2,

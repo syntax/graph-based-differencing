@@ -28,15 +28,16 @@ class bcolors:
     UNDERLINE = '\033[4m'
     
 
+# to run gumtree, need java 17+
+# source $HOME/.sdkman/bin/sdkman-init.sh
+# sdk use java 17.0.14-tem
+
+
 ## !!!!!!!!!!!!!
 ## gumtree related functions
 
 def run_gumtree_textdiff(file1, file2):
     try:
-        # use java 17 using sdkman
-        # subprocess.run(["source", "$HOME/.sdkman/bin/sdkman-init.sh"])
-        # subprocess.run(["sdk", "use", "java", "17.0.14-tem"])
-
         # now gumtree
         print(f"{bcolors.OKBLUE}[notif]{bcolors.ENDC} running GumTree.")
         result = subprocess.run(
@@ -581,6 +582,25 @@ def main():
             #   (pdg_changes, "PDGdiff") 
 
 
+
+            # report_changed_lines(gt_changes, "GumTree")
+            #  TODO
+            # pdgdiff
+            # strategy = "ullmann"
+            # run_pdg_textdiff(file_info["before_file_dir"],
+            #                     file_info["after_file_dir"],
+            #                     file_info["before_compiled_dir"], 
+            #                     file_info["after_compiled_dir"], 
+            #                     file_info["before_class_fullyqualified"], 
+            #                     file_info["after_class_fullyqualified"], 
+            #                     strategy=strategy)
+            # pdg_ull_changes = parse_pdgdiff_output(open(PDG_OUT_PATH).read())
+            # pdg_ull_changes = handle_changed_lines(pdg_ull_changes)
+
+            # pdg_ull_non_comment_count = count_changed_lines_excluding_comments(pdg_ull_changes, file1, file2)
+            # pdg_ull_non_soot_count = count_changed_lines_excluding_nonsoot(pdg_ull_changes, file1, file2)
+
+
             strategy = "ged"
             run_pdg_textdiff(file_info["before_file_dir"],
                                 file_info["after_file_dir"],
@@ -599,12 +619,13 @@ def main():
             report_changed_lines_brief(gt_changes, "GumTree", file_info["changed_file"], gt_non_comment_count, gt_non_soot_count)
             report_changed_lines_brief(pdg_vf2_changes, "PDGdiff-vf2", file_info["changed_file"], pdg_vf2_non_comment_count, pdg_vf2_non_soot_count)
             report_changed_lines_brief(pdg_ged_changes, "PDGdiff-ged", file_info["changed_file"], pdg_ged_non_comment_count, pdg_get_non_soot_count)
+            # report_changed_lines_brief(pdg_ull_changes, "PDGdiff-ull", file_info["changed_file"], pdg_ull_non_comment_count, pdg_ull_non_soot_count)
 
 
             log_results_to_csv(file_info, "GumTree", gt_changes, gt_non_comment_count, gt_non_soot_count)
             log_results_to_csv(file_info, "PDGdiff-VF2", pdg_vf2_changes, pdg_vf2_changes, pdg_vf2_non_comment_count)
             log_results_to_csv(file_info, "PDGdiff-GED", pdg_ged_changes, pdg_ged_non_comment_count, pdg_get_non_soot_count)
-
+            # log_results_to_csv(file_info, "PDGdiff-ULL", pdg_ull_changes, pdg_ull_non_comment_count, pdg_ull_non_soot_count)
 
         except Exception as e:
             print(f"{bcolors.FAIL}[error]{bcolors.ENDC} error processing file: {file_info['changed_file']}, {e}")
