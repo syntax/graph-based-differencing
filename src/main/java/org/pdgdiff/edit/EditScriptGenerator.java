@@ -105,8 +105,8 @@ public class EditScriptGenerator {
         }
 
         // structural signature diff, happens in every case to account for annotations changing even if signature itself doesnt.
-        ParsedSignature oldSig = parseMethodSignature(srcMethod);
-        ParsedSignature newSig = parseMethodSignature(destMethod);
+        ParsedSignature oldSig = parseMethodSignature(srcMethod, srcCodeMapper);
+        ParsedSignature newSig = parseMethodSignature(destMethod, dstCodeMapper);
 
         // misleading, should probably rename to something including annotations
         List<EditOperation> signatureDiffs =

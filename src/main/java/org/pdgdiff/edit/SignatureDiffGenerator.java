@@ -16,19 +16,19 @@ public class SignatureDiffGenerator {
         Set<String> modifiers;
         String returnType;
         String methodName;
-        List<String> paramTypes;
+        List<String> paramTokens;
         List<String> annotations;
 
-        ParsedSignature(Set<String> modifiers, String returnType, String methodName, List<String> paramTypes, List<String> annotations) {
+        ParsedSignature(Set<String> modifiers, String returnType, String methodName, List<String> paramTokens, List<String> annotations) {
             this.modifiers = modifiers;
             this.returnType = returnType;
             this.methodName = methodName;
-            this.paramTypes = paramTypes;
+            this.paramTokens = paramTokens;
             this.annotations = annotations;
         }
     }
 
-    public static ParsedSignature parseMethodSignature(SootMethod method) {
+    public static ParsedSignature parseMethodSignature(SootMethod method, SourceCodeMapper mapper) throws IOException {
         // convert integer modifiers to a set of strings: e.g. {"public", "static"}
         Set<String> modifierSet = new HashSet<>();
         int mods = method.getModifiers();
@@ -41,15 +41,20 @@ public class SignatureDiffGenerator {
         String retType = method.getReturnType() != null ? method.getReturnType().toString() : "";
         String name = method.getName();
 
-        List<String> paramList = new ArrayList<>();
-        for (soot.Type t : method.getParameterTypes()) {
-            paramList.add(t.toString());
-        }
+//        List<String> paramList = new ArrayList<>();
+//        for (soot.Type t : method.getParameterTypes()) {
+//            paramList.add(t.toString());
+//        }
 
-        // to be populated later. there is no soot native way to get annotations
-        List<String> annotations = new ArrayList<>();
+        // to be populated later, no soot native way to get all the info required
+        List<Integer> paramLines = new ArrayList<>();
+        List<String> paramTokens = CodeAnalysisUtils.getParamTokensAndLines(method, mapper, paramLines);
 
-        return new ParsedSignature(modifierSet, retType, name, paramList, annotations);
+        // Annotation tokens (e.g. "@Override") + lines
+        List<Integer> annoLines = new ArrayList<>();
+        List<String> annotations = CodeAnalysisUtils.getMethodAnnotationsWithLines(method, mapper, annoLines);
+
+        return new ParsedSignature(modifierSet, retType, name, paramTokens, annotations);
     }
 
 
@@ -109,55 +114,75 @@ public class SignatureDiffGenerator {
             );
         }
 
-        List<Integer> oldParamLines = CodeAnalysisUtils.getParameterLineNumbers(oldMethod, oldMapper);
-        List<Integer> newParamLines = CodeAnalysisUtils.getParameterLineNumbers(newMethod, newMapper);
+        List<Integer> oldParamLines = new ArrayList<>();
+        List<String> oldParamTokens = CodeAnalysisUtils.getParamTokensAndLines(oldMethod, oldMapper, oldParamLines);
 
-        if (oldParamLines.size() == 1 && newParamLines.size() == 1) {
-            // avoid accidently marking a inserted param as a insert to the entire line, if the param changed adn multiple params exist on the same line
-            if (!oldSig.paramTypes.equals(newSig.paramTypes)) {
-                SyntaxDifference diff = new SyntaxDifference("Parameter list changed");
-                ops.add(
-                        new Update(null, oldParamLines.get(0), newParamLines.get(0),
-                                oldMapper.getCodeLine(oldParamLines.get(0)),newMapper.getCodeLine(newParamLines.get(0)), diff)
-                );
-            }
-        } else {
-            // handle multi line parameters
-            ops.addAll(
-                    compareStringListsDP(oldSig.paramTypes, newSig.paramTypes, oldParamLines, newParamLines)
-            );
-        }
+        List<Integer> newParamLines = new ArrayList<>();
+        List<String> newParamTokens = CodeAnalysisUtils.getParamTokensAndLines(newMethod, newMapper, newParamLines);;
 
 
-        List<Integer> oldAnnotationLines = CodeAnalysisUtils.getAnnotationsLineNumbers(oldMethod, oldMapper);
-        List<Integer> newAnnotationLines = CodeAnalysisUtils.getAnnotationsLineNumbers(newMethod, newMapper);
+        ops.addAll(compareStringListsDP(oldParamTokens, newParamTokens,
+                oldParamLines, newParamLines,
+                "Parameter changed"));
+//
+//        if (oldParamLines.size() == 1 && newParamLines.size() == 1) {
+//            // TODO  : avoid accidently marking a inserted param as a insert to the entire line, if the param changed adn multiple params exist on the same li
+//                      This is debatable, if i mark just one side as an insert it will be more equatable with gumtree. However, I do think its less useful as a tool. hard to know.
+//            if (!oldSig.paramTypes.equals(newSig.paramTypes)) {
+//                SyntaxDifference diff = new SyntaxDifference("Parameter list changed");
+//                ops.add(
+//                        new Update(null, oldParamLines.get(0), newParamLines.get(0),
+//                                oldMapper.getCodeLine(oldParamLines.get(0)),newMapper.getCodeLine(newParamLines.get(0)), diff)
+//                );
+//            }
+//        } else {
+//            // handle multi line parameters;
+//            ops.addAll(
+//                    compareStringListsDP(oldSig.paramTypes, newSig.paramTypes, oldParamLines, newParamLines)
+//            );
+//        }
 
-        // NB this is not accounting for field annotations. todo fix
-        // overwrite annotations using line numbers, unfortunately soot does not provide a way to get annotations
 
-        oldSig.annotations = new ArrayList<>();
-        newSig.annotations = new ArrayList<>();
-        for (int i = 0; i < oldAnnotationLines.size(); i++) {
-            oldSig.annotations.add(oldMapper.getCodeLine(oldAnnotationLines.get(i)));
-        }
-        for (int i = 0; i < newAnnotationLines.size(); i++) {
-            newSig.annotations.add(newMapper.getCodeLine(newAnnotationLines.get(i)));
-        }
+//        List<Integer> oldAnnotationLines = CodeAnalysisUtils.getAnnotationsLineNumbers(oldMethod, oldMapper);
+//        List<Integer> newAnnotationLines = CodeAnalysisUtils.getAnnotationsLineNumbers(newMethod, newMapper);
+//
+//        // NB this is not accounting for field annotations. todo fix
+//        // overwrite annotations using line numbers, unfortunately soot does not provide a way to get annotations
+//
+//        oldSig.annotations = new ArrayList<>();
+//        newSig.annotations = new ArrayList<>();
+//        for (int i = 0; i < oldAnnotationLines.size(); i++) {
+//            oldSig.annotations.add(oldMapper.getCodeLine(oldAnnotationLines.get(i)));
+//        }
+//        for (int i = 0; i < newAnnotationLines.size(); i++) {
+//            newSig.annotations.add(newMapper.getCodeLine(newAnnotationLines.get(i)));
+//        }
+//
+//
+//        if (oldSig.annotations.size() == 1 && newSig.annotations.size() == 1) {
+//            if (!Objects.equals(oldSig.annotations.get(0), newSig.annotations.get(0))) {
+//                SyntaxDifference diff = new SyntaxDifference("Annotation changed");
+//                ops.add(
+//                        new Update(null, oldAnnotationLines.get(0), newAnnotationLines.get(0),
+//                                oldSig.annotations.get(0), newSig.annotations.get(0), diff)
+//                );
+//            }
+//        } else {
+//            ops.addAll(
+//                    compareStringListsDP(oldSig.annotations, newSig.annotations, oldAnnotationLines, newAnnotationLines)
+//            );
+//        }
+
+        List<Integer> oldAnnoLines = new ArrayList<>();
+        List<String> oldAnnoTokens = CodeAnalysisUtils.getMethodAnnotationsWithLines(oldMethod, oldMapper, oldAnnoLines);
 
 
-        if (oldSig.annotations.size() == 1 && newSig.annotations.size() == 1) {
-            if (!Objects.equals(oldSig.annotations.get(0), newSig.annotations.get(0))) {
-                SyntaxDifference diff = new SyntaxDifference("Annotation changed");
-                ops.add(
-                        new Update(null, oldAnnotationLines.get(0), newAnnotationLines.get(0),
-                                oldSig.annotations.get(0), newSig.annotations.get(0), diff)
-                );
-            }
-        } else {
-            ops.addAll(
-                    compareStringListsDP(oldSig.annotations, newSig.annotations, oldAnnotationLines, newAnnotationLines)
-            );
-        }
+        List<Integer> newAnnoLines = new ArrayList<>();
+        List<String> newAnnoTokens = CodeAnalysisUtils.getMethodAnnotationsWithLines(newMethod, newMapper, newAnnoLines);
+
+        ops.addAll(compareStringListsDP(oldAnnoTokens, newAnnoTokens,
+                oldAnnoLines, newAnnoLines,
+                "Annotation changed"));
 
 
         return ops;
@@ -170,47 +195,43 @@ public class SignatureDiffGenerator {
             List<String> oldEntries,  // old parameter types OR old annotation lines
             List<String> newEntries,  // new parameter types OR new annotation lines
             List<Integer> oldEntriesLines,  // old parameter line numbers OR old annotation line numbers
-            List<Integer> newEntriesLines   // new parameter line numbers OR new annotation line numbers
+            List<Integer> newEntriesLines,   // new parameter line numbers OR new annotation line numbers
+            String label
     ) {
         List<EditOperation> ops = new ArrayList<>();
-
         int m = oldEntries.size();
         int n = newEntries.size();
 
-        // DP table to store minimal edit distance and operation
         double[][] dp = new double[m + 1][n + 1];
         String[][] opsTable = new String[m + 1][n + 1];
 
-        // init DP table
+        // init
         for (int i = 0; i <= m; i++) {
-            dp[i][0] = i;  // cost of deleting all remaining oldEntries
+            dp[i][0] = i;
             opsTable[i][0] = "DELETE";
         }
         for (int j = 0; j <= n; j++) {
-            dp[0][j] = j;  // cost of inserting all remaining newEntries
+            dp[0][j] = j;
             opsTable[0][j] = "INSERT";
         }
+        opsTable[0][0] = "NO_CHANGE";
 
-        // populate DP table
+        // fill DP
         for (int i = 1; i <= m; i++) {
             for (int j = 1; j <= n; j++) {
-                // nb params will be matching on type, and update cost considered on sim
+                String oldStr = oldEntries.get(i - 1);
+                String newStr = newEntries.get(j - 1);
 
-                if (oldEntries.get(i - 1).equals(newEntries.get(j - 1))) {
-                    dp[i][j] = dp[i - 1][j - 1];  // NO change
+                if (oldStr.equals(newStr)) {
+                    dp[i][j] = dp[i - 1][j - 1];
                     opsTable[i][j] = "NO_CHANGE";
                 } else {
-                    // compute costs for possible operations
-                    String oldString = oldEntries.get(i - 1);
-                    String newString = newEntries.get(j - 1);
                     double deleteCost = dp[i - 1][j] + 1;
                     double insertCost = dp[i][j - 1] + 1;
-                    // NB for parameters -> my list of old/newEntries is just a list of their types... so this wont work
-                    // as expected for example when differencing a changed name of a param. todo fix
-                    // for Annotations -> using the entire line as the string hence will be good
-                    double updateCost = dp[i - 1][j - 1] + (1 - JaroWinklerSimilarity.jaroSimilarity(oldString, newString));
 
-                    // choose the minimum cost operation
+                    double similarity = JaroWinklerSimilarity.jaroSimilarity(oldStr, newStr);
+                    double updateCost = dp[i - 1][j - 1] + (1.0 - similarity);
+
                     if (deleteCost <= insertCost && deleteCost <= updateCost) {
                         dp[i][j] = deleteCost;
                         opsTable[i][j] = "DELETE";
@@ -225,32 +246,33 @@ public class SignatureDiffGenerator {
             }
         }
 
-        //backtracking
+        // backtrack
         int i = m, j = n;
         while (i > 0 || j > 0) {
             String operation = opsTable[i][j];
-
             if ("NO_CHANGE".equals(operation)) {
-                // entries match; no operation needed
                 i--;
                 j--;
             } else if ("DELETE".equals(operation)) {
-                int lineNumber = oldEntriesLines.get(i - 1);
-                String entry = oldEntries.get(i - 1);
-                ops.add(new Delete(null, lineNumber, entry));
+                int oldLineNum = oldEntriesLines.get(i - 1);
+                String oldEntry = oldEntries.get(i - 1);
+                ops.add(new Delete(null, oldLineNum, "Deleted: " + oldEntry));
                 i--;
             } else if ("INSERT".equals(operation)) {
-                int lineNumber = newEntriesLines.get(j - 1);
-                String entry = newEntries.get(j - 1);
-                ops.add(new Insert(null, lineNumber, entry));
+                int newLineNum = newEntriesLines.get(j - 1);
+                String newEntry = newEntries.get(j - 1);
+                ops.add(new Insert(null, newLineNum, "Inserted: " + newEntry));
                 j--;
             } else if ("UPDATE".equals(operation)) {
-                int oldLine = oldEntriesLines.get(i - 1);
-                int newLine = newEntriesLines.get(j - 1);
+                int oldLineNum = oldEntriesLines.get(i - 1);
+                int newLineNum = newEntriesLines.get(j - 1);
                 String oldEntry = oldEntries.get(i - 1);
                 String newEntry = newEntries.get(j - 1);
-                SyntaxDifference diff = new SyntaxDifference("String Lists changed from" + oldEntry + " to " + newEntry);
-                ops.add(new Update(null, oldLine, newLine, oldEntry, newEntry, diff));
+
+                SyntaxDifference diff = new SyntaxDifference(
+                        label + " from \"" + oldEntry + "\" to \"" + newEntry + "\""
+                );
+                ops.add(new Update(null, oldLineNum, newLineNum, oldEntry, newEntry, diff));
                 i--;
                 j--;
             }
