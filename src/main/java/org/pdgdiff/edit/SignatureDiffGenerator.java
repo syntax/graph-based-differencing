@@ -205,7 +205,7 @@ public class SignatureDiffGenerator {
         double[][] dp = new double[m + 1][n + 1];
         String[][] opsTable = new String[m + 1][n + 1];
 
-        // init
+        // init DP table
         for (int i = 0; i <= m; i++) {
             dp[i][0] = i;
             opsTable[i][0] = "DELETE";
@@ -255,13 +255,13 @@ public class SignatureDiffGenerator {
                 j--;
             } else if ("DELETE".equals(operation)) {
                 int oldLineNum = oldEntriesLines.get(i - 1);
-                String oldEntry = oldEntries.get(i - 1);
-                ops.add(new Delete(null, oldLineNum, "Deleted: " + oldEntry));
+                String entry = oldEntries.get(i - 1);
+                ops.add(new Delete(null, oldLineNum, entry));
                 i--;
             } else if ("INSERT".equals(operation)) {
                 int newLineNum = newEntriesLines.get(j - 1);
-                String newEntry = newEntries.get(j - 1);
-                ops.add(new Insert(null, newLineNum, "Inserted: " + newEntry));
+                String entry = newEntries.get(j - 1);
+                ops.add(new Insert(null, newLineNum, entry));
                 j--;
             } else if ("UPDATE".equals(operation)) {
                 int oldLineNum = oldEntriesLines.get(i - 1);
