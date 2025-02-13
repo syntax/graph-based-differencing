@@ -144,6 +144,103 @@ public class CodeAnalysisUtils {
         return paramLines;
     }
 
+    public static List<String> getParamTokensAndLines(
+            SootMethod method,
+            SourceCodeMapper mapper,
+            List<Integer> paramLinesOut
+    ) throws IOException {
+        paramLinesOut.clear();
+        List<String> paramTokens = new ArrayList<>();
+        int[] range = getMethodLineRange(method, mapper);
+        if (range[0] < 0 || range[1] < 0) {
+            return paramTokens;
+        }
+
+        int startLine = range[0];
+        int endLine   = range[1];
+        int totalLines = mapper.getTotalLines();
+
+        // collect the lines for the signature block
+        StringBuilder sb = new StringBuilder();
+        for (int ln = startLine; ln <= Math.min(endLine, totalLines); ln++) {
+            sb.append(mapper.getCodeLine(ln)).append("\n");
+        }
+        String signatureText = sb.toString();
+
+        int openParenIndex  = signatureText.indexOf('(');
+        int closeParenIndex = signatureText.lastIndexOf(')');
+        if (openParenIndex < 0 || closeParenIndex < 0 || closeParenIndex < openParenIndex) {
+            return paramTokens; // no parameters
+        }
+
+        String paramBlock = signatureText.substring(openParenIndex + 1, closeParenIndex).trim();
+        if (paramBlock.isEmpty()) {
+            return paramTokens;
+        }
+
+        // naive split on commas
+        String[] rawParams = paramBlock.split(",");
+
+        // which line contains the param substr is assigned to be line num of that param
+        List<String> lines = new ArrayList<>();
+        for (int ln = startLine; ln <= endLine; ln++) {
+            lines.add(mapper.getCodeLine(ln));
+        }
+
+        for (String raw : rawParams) {
+            String trimmed = raw.trim();
+            if (trimmed.isEmpty()) {
+                continue;
+            }
+            int bestLine = startLine; // fallback
+            for (int offset = 0; offset < lines.size(); offset++) {
+                if (lines.get(offset).contains(trimmed)) {
+                    bestLine = startLine + offset;
+                    break;
+                }
+            }
+            paramTokens.add(trimmed);
+            paramLinesOut.add(bestLine);
+        }
+        return paramTokens;
+    }
+
+    public static List<String> getMethodAnnotationsWithLines(
+            SootMethod method,
+            SourceCodeMapper codeMapper,
+            List<Integer> annoLinesOut
+    ) throws IOException {
+        annoLinesOut.clear();
+        List<String> annoTokens = new ArrayList<>();
+        int[] range = getMethodLineRange(method, codeMapper);
+        if (range[0] <= 0 || range[1] <= 0) {
+            return annoTokens;
+        }
+
+        int startLine = range[0];
+        // climb upward until we find lines not starting with '@'
+        int lineNum = startLine - 1;
+        while (lineNum > 0) {
+            String line = codeMapper.getCodeLine(lineNum).trim();
+            if (line.startsWith("@")) {
+                // If mult annotations exist on one line, split them:
+                String[] rawAnnos = line.split("\\s+@");
+                for (int i = 0; i < rawAnnos.length; i++) {
+                    String annoRaw = (i == 0) ? rawAnnos[i] : "@" + rawAnnos[i];
+                    annoRaw = annoRaw.trim();
+                    if (!annoRaw.isEmpty()) {
+                        annoTokens.add(annoRaw);
+                        annoLinesOut.add(lineNum);
+                    }
+                }
+                lineNum--;
+            } else {
+                break;
+            }
+        }
+        return annoTokens;
+    }
+
     public static List<Integer> getAnnotationsLineNumbers(SootMethod method, SourceCodeMapper codeMapper) throws IOException {
         List<Integer> annotationLines = new ArrayList<>();
         int[] range = getMethodLineRange(method, codeMapper);

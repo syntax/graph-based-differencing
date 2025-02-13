@@ -32,7 +32,7 @@ public class Main {
         // defaults
         GraphMatcherFactory.MatchingStrategy matchingStrategy = GraphMatcherFactory.MatchingStrategy.VF2;
         org.pdgdiff.edit.RecoveryProcessor.RecoveryStrategy recoveryStrategy =  org.pdgdiff.edit.RecoveryProcessor.RecoveryStrategy.CLEANUP_AND_FLATTEN;
-
+        boolean aggregateRecovery = true;
 
 
         if (args.length < 6) {
@@ -42,28 +42,31 @@ public class Main {
             System.out.println("Using hardcoded information");
 
             //  !!!! To run on datasets, use the following !!!!
-//            String commit = "605e88d4bfb7e5afa56ae70fe16bb0e973865124";
-//            String project = "signal-server";
-//            String filename = "KeysController";
-//
-//            beforeDir = "./benchmark/datasets/gh-java/before/" + project + "/" + commit + "/compiled";
-//            afterDir = "./benchmark/datasets/gh-java/after/" + project + "/" + commit + "/compiled";
-//            class1Name = "org.whispersystems.textsecuregcm.controllers.KeysController";
-//            class2Name = "org.whispersystems.textsecuregcm.controllers.KeysController";
-//            srcSourceFilePath = "./benchmark/datasets/gh-java/before/" + project + "/" + commit + "/" + filename +".java";
-//            dstSourceFilePath = "./benchmark/datasets/gh-java/after/" + project + "/" + commit + "/" + filename +".java";
+            String commit = "7bb99fd0bdc60bc5824aadc2b3121f6dded6a143";
+            String project = "ok-http";
+            String filename = "RecordedRequest";
 
 
+            beforeDir = "./benchmark/datasets/gh-java/before/" + project + "/" + commit + "/compiled";
+            afterDir = "./benchmark/datasets/gh-java/after/" + project + "/" + commit + "/compiled";
+            class1Name = "com.google.mockwebserver.RecordedRequest";
+            class2Name = "com.google.mockwebserver.RecordedRequest";
+            srcSourceFilePath = "./benchmark/datasets/gh-java/before/" + project + "/" + commit + "/" + filename +".java";
+            dstSourceFilePath = "./benchmark/datasets/gh-java/after/" + project + "/" + commit + "/" + filename +".java";
+
+
+
+            //./gumtree webdiff ../../soot-pdg/benchmark/datasets/gh-java/before/ok-http/7bb99fd0bdc60bc5824aadc2b3121f6dded6a143/RecordedRequest.java ../../soot-pdg/benchmark/datasets/gh-java/after/ok-http/7bb99fd0bdc60bc5824aadc2b3121f6dded6a143/RecordedRequest.java
 
             // !!!! to use on local test classes, use the following !!!!
-            class1Name = "org.pdgdiff.testclasses.TestAdder1";
-            class2Name = "org.pdgdiff.testclasses.TestAdder2";
-
-            srcSourceFilePath = "src/main/java/org/pdgdiff/testclasses/TestAdder1.java";
-            dstSourceFilePath = "src/main/java/org/pdgdiff/testclasses/TestAdder2.java";
-
-            beforeDir = System.getProperty("user.dir") + "/target/classes";
-            afterDir = System.getProperty("user.dir") + "/target/classes";
+//            class1Name = "org.pdgdiff.testclasses.TestAdder1";
+//            class2Name = "org.pdgdiff.testclasses.TestAdder2";
+//
+//            srcSourceFilePath = "src/main/java/org/pdgdiff/testclasses/TestAdder1.java";
+//            dstSourceFilePath = "src/main/java/org/pdgdiff/testclasses/TestAdder2.java";
+//
+//            beforeDir = System.getProperty("user.dir") + "/target/classes";
+//            afterDir = System.getProperty("user.dir") + "/target/classes";
 
         } else {
             // as an example;
@@ -129,7 +132,7 @@ public class Main {
                 return;
             }
 
-            StrategySettings strategySettings = new StrategySettings(recoveryStrategy, matchingStrategy, true);
+            StrategySettings strategySettings = new StrategySettings(recoveryStrategy, matchingStrategy, aggregateRecovery);
 
             if (!pdgsClass1.isEmpty() && !pdgsClass2.isEmpty()) {
                 DiffEngine.difference(pdgsClass1, pdgsClass2, strategySettings, srcSourceFilePath, dstSourceFilePath);
