@@ -11,8 +11,7 @@ import soot.Scene;
 import soot.SootClass;
 import soot.SootMethod;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 import static org.pdgdiff.export.EditScriptExporter.copyResultsToOutput;
 
@@ -42,6 +41,9 @@ public class Main {
             System.out.println("Using hardcoded information");
 
             //  !!!! To run on datasets, use the following !!!!
+
+            // NESTED CLASSES
+
             String commit = "918ef4a7ca8362efd45f67636bc8bd094f5a4414";
             String project = "signal-server";
             String filename = "IterablePair";
@@ -54,20 +56,32 @@ public class Main {
             srcSourceFilePath = "./benchmark/datasets/gh-java/before/" + project + "/" + commit + "/" + filename +".java";
             dstSourceFilePath = "./benchmark/datasets/gh-java/after/" + project + "/" + commit + "/" + filename +".java";
 
+            // NEW CLASSES
+//            String commit = "bbab2ce3c162b244119bdc22a990d7b75fdef0af";
+//            String project = "google-guava";
+//            String filename = "Objects";
+//
+//
+//            beforeDir = "./benchmark/datasets/gh-java/before/" + project + "/" + commit + "/compiled";
+//            afterDir = "./benchmark/datasets/gh-java/after/" + project + "/" + commit + "/compiled";
+//            class1Name = "com.google.common.base.Objects";
+//            class2Name = "com.google.common.base.Objects";
+//            srcSourceFilePath = "./benchmark/datasets/gh-java/before/" + project + "/" + commit + "/" + filename +".java";
+//            dstSourceFilePath = "./benchmark/datasets/gh-java/after/" + project + "/" + commit + "/" + filename +".java";
 
 
 
             //./gumtree webdiff ../../soot-pdg/benchmark/datasets/gh-java/before/ok-http/7bb99fd0bdc60bc5824aadc2b3121f6dded6a143/RecordedRequest.java ../../soot-pdg/benchmark/datasets/gh-java/after/ok-http/7bb99fd0bdc60bc5824aadc2b3121f6dded6a143/RecordedRequest.java
 
             // !!!! to use on local test classes, use the following !!!!
-//            class1Name = "org.pdgdiff.testclasses.TestAdder1";
-//            class2Name = "org.pdgdiff.testclasses.TestAdder2";
-//
-//            srcSourceFilePath = "src/main/java/org/pdgdiff/testclasses/TestAdder1.java";
-//            dstSourceFilePath = "src/main/java/org/pdgdiff/testclasses/TestAdder2.java";
-//
-//            beforeDir = System.getProperty("user.dir") + "/target/classes";
-//            afterDir = System.getProperty("user.dir") + "/target/classes";
+            class1Name = "org.pdgdiff.testclasses.TestAdder1";
+            class2Name = "org.pdgdiff.testclasses.TestAdder2";
+
+            srcSourceFilePath = "src/main/java/org/pdgdiff/testclasses/TestAdder1.java";
+            dstSourceFilePath = "src/main/java/org/pdgdiff/testclasses/TestAdder2.java";
+
+            beforeDir = System.getProperty("user.dir") + "/target/classes";
+            afterDir = System.getProperty("user.dir") + "/target/classes";
 
         } else {
             // as an example;
@@ -116,52 +130,128 @@ public class Main {
             // Retrieve the classes from the Soot Scene
             SootInitializer.initializeSoot(beforeDir);
             Scene.v().loadNecessaryClasses();
-            List<SootClass> beforeClasses = collectNestedClassesByFqn(class1Name); // TODO: handle and parse all of these
-            SootClass beforeFile = Scene.v().getSootClass(class1Name);
-            List<PDG> pdgsClass1 = generatePDGsForClass(beforeFile, FILE_VERSION.SOURCE);
+            Map<String, SootClass> beforeClasses = collectNestedClassesByFqn(class1Name); // TODO: handle and parse all of these
 
             SootInitializer.initializeSoot(afterDir);
             Scene.v().loadNecessaryClasses();
-            List<SootClass> afterClasses = collectNestedClassesByFqn(class2Name); // TODO: handle and parse all of these
-            SootClass afterFile = Scene.v().getSootClass(class2Name);
-            List<PDG> pdgsClass2 = generatePDGsForClass(afterFile, FILE_VERSION.DEST);
+            Map<String, SootClass> afterClasses = collectNestedClassesByFqn(class2Name); // TODO: handle and parse all of these
 
-            // Print the number of PDGs generated for each class
-            System.out.println("PDGs generated for " + beforeFile.getName() + ": " + pdgsClass1.size());
-            System.out.println("PDGs generated for " + afterFile.getName() + ": " + pdgsClass2.size());
 
-            if (pdgsClass1.isEmpty() || pdgsClass2.isEmpty()) {
-                System.out.println("ERROR: No PDGs generated for one or both classes. There are probably no concrete methods in the class. Exiting...");
-                return;
+            if (beforeClasses.size() == 1 && afterClasses.size() == 1) {
+                // standard, only one class in each
+
+                System.out.println("\nDetected exactly ONE class in BEFORE and AFTER => using single-class logic.");
+
+                SootClass beforeFile = beforeClasses.values().iterator().next();
+                SootClass afterFile  = afterClasses.values().iterator().next();
+
+                // Generate PDGs
+                List<PDG> pdgsClass1 = generatePDGsForClass(beforeFile, FILE_VERSION.SOURCE);
+                List<PDG> pdgsClass2 = generatePDGsForClass(afterFile,  FILE_VERSION.DEST);
+
+                System.out.println("PDGs generated for " + beforeFile.getName() + ": " + pdgsClass1.size());
+                System.out.println("PDGs generated for " + afterFile.getName()  + ": " + pdgsClass2.size());
+
+                if (pdgsClass1.isEmpty() || pdgsClass2.isEmpty()) {
+                    System.out.println("ERROR: No PDGs generated for one or both classes. Probably no concrete methods. Exiting...");
+                    return;
+                }
+                StrategySettings strategySettings = new StrategySettings(recoveryStrategy, matchingStrategy, aggregateRecovery);
+                try {
+                    DiffEngine.difference(pdgsClass1, pdgsClass2, strategySettings, srcSourceFilePath, dstSourceFilePath);
+
+                    copyResultsToOutput(srcSourceFilePath, dstSourceFilePath);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    System.err.println("An error occurred during single-class diff: " + e.getMessage());
+                }
+            } else {
+                // multi-class version
+
+                Map<String, List<PDG>> beforePdgsMap = new HashMap<>();
+                for (Map.Entry<String, SootClass> entry : beforeClasses.entrySet()) {
+                    String fqn = entry.getKey();
+                    SootClass sc = entry.getValue();
+                    List<PDG> pdgs = generatePDGsForClass(sc, FILE_VERSION.SOURCE);
+                    beforePdgsMap.put(fqn, pdgs);
+                }
+
+                Map<String, List<PDG>> afterPdgsMap = new HashMap<>();
+                for (Map.Entry<String, SootClass> entry : afterClasses.entrySet()) {
+                    String fqn = entry.getKey();
+                    SootClass sc = entry.getValue();
+                    List<PDG> pdgs = generatePDGsForClass(sc, FILE_VERSION.DEST);
+                    afterPdgsMap.put(fqn, pdgs);
+                }
+
+                // Print the number of PDGs generated for each class
+                System.out.println("\nPDGs for 'before' file total: " + beforePdgsMap.values().stream().mapToInt(List::size).sum());
+                System.out.println("PDGs for 'after' file total: " + afterPdgsMap.values().stream().mapToInt(List::size).sum());
+
+
+                if (beforePdgsMap.isEmpty() || afterPdgsMap.isEmpty()) {
+                    System.out.println("ERROR: No PDGs generated for one or both classes. There are probably no concrete methods in the class. Exiting...");
+                    return;
+                }
+
+                StrategySettings strategySettings = new StrategySettings(recoveryStrategy, matchingStrategy, aggregateRecovery);
+
+                Set<String> allFqns = new HashSet<>();
+                System.out.println("Before classes: " + beforePdgsMap.keySet());
+                System.out.println("After classes: " + afterPdgsMap.keySet());
+
+                allFqns.addAll(beforePdgsMap.keySet());
+                allFqns.addAll(afterPdgsMap.keySet());
+
+                System.out.println("All classes: " + allFqns);
+
+                for (String fqn : allFqns) {
+                    // nb: this obviously assumes classes have the same name.
+                    System.out.println("\n=== Comparing class: " + fqn + " ===");
+
+                    List<PDG> bPdgs = beforePdgsMap.getOrDefault(fqn, Collections.emptyList());
+                    List<PDG> aPdgs = afterPdgsMap.getOrDefault(fqn, Collections.emptyList());
+
+                    if (bPdgs.isEmpty() && !aPdgs.isEmpty()) {
+                        // This class is ADDED
+                        System.out.println("Class " + fqn + " was ADDED in 'after'.");
+                        DiffEngine.difference(Collections.emptyList(), aPdgs, strategySettings,
+                                srcSourceFilePath, dstSourceFilePath);
+                    } else if (!bPdgs.isEmpty() && aPdgs.isEmpty()) {
+                        // the class is DELETED
+                        System.out.println("Class " + fqn + " was DELETED in 'after'.");
+                        DiffEngine.difference(bPdgs, Collections.emptyList(), strategySettings,
+                                srcSourceFilePath, dstSourceFilePath);
+                    } else {
+                        // class existed in both => do normal method-level PDG diff
+                        System.out.println("Class " + fqn + " exists in both. Diffing method-level PDGs...");
+                        DiffEngine.difference(bPdgs, aPdgs, strategySettings, srcSourceFilePath, dstSourceFilePath);
+                    }
+                }
+
+                copyResultsToOutput(srcSourceFilePath, dstSourceFilePath);
+
+                SootInitializer.resetSoot();
             }
-
-            StrategySettings strategySettings = new StrategySettings(recoveryStrategy, matchingStrategy, aggregateRecovery);
-
-            if (!pdgsClass1.isEmpty() && !pdgsClass2.isEmpty()) {
-                DiffEngine.difference(pdgsClass1, pdgsClass2, strategySettings, srcSourceFilePath, dstSourceFilePath);
-            }
-
-            copyResultsToOutput(srcSourceFilePath, dstSourceFilePath);
 
         } catch (Exception e) {
             System.err.println("An error occurred while processing the classes: " + e.getMessage());
         }
 
-        // Clean up Soot resources
         SootInitializer.resetSoot();
     }
 
-    private static List<SootClass> collectNestedClassesByFqn(String fqn) {
-        List<SootClass> result = new ArrayList<>();
+    private static Map<String, SootClass> collectNestedClassesByFqn(String fqn) {
+        Map<String, SootClass> result = new HashMap<>();
         // todo: consider that there might be some unecessary time cost here, for large projects
         for (SootClass sc : Scene.v().getApplicationClasses()) {
             String fullName = sc.getName(); // e.g. "org.whispersystems.textsecuregcm.util.IterablePair$ParallelIterator" aka fqn
             if (fullName.equals(fqn) || fullName.startsWith(fqn + "$")) {
-                result.add(sc);
+                result.put(fullName, sc);
             }
         }
         System.out.println("Found " + result.size() + " classes in Soot that match FQN: " + fqn);
-        for (SootClass sc : result) {
+        for (SootClass sc : result.values()) {
             System.out.println("  -> " + sc.getName());
         }
         return result;
