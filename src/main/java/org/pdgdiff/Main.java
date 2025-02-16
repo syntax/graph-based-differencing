@@ -116,11 +116,13 @@ public class Main {
             // Retrieve the classes from the Soot Scene
             SootInitializer.initializeSoot(beforeDir);
             Scene.v().loadNecessaryClasses();
+            List<SootClass> beforeClasses = collectNestedClassesByFqn(class1Name); // TODO: handle and parse all of these
             SootClass beforeFile = Scene.v().getSootClass(class1Name);
             List<PDG> pdgsClass1 = generatePDGsForClass(beforeFile, FILE_VERSION.SOURCE);
 
             SootInitializer.initializeSoot(afterDir);
             Scene.v().loadNecessaryClasses();
+            List<SootClass> afterClasses = collectNestedClassesByFqn(class2Name); // TODO: handle and parse all of these
             SootClass afterFile = Scene.v().getSootClass(class2Name);
             List<PDG> pdgsClass2 = generatePDGsForClass(afterFile, FILE_VERSION.DEST);
 
@@ -147,6 +149,22 @@ public class Main {
 
         // Clean up Soot resources
         SootInitializer.resetSoot();
+    }
+
+    private static List<SootClass> collectNestedClassesByFqn(String fqn) {
+        List<SootClass> result = new ArrayList<>();
+        // todo: consider that there might be some unecessary time cost here, for large projects
+        for (SootClass sc : Scene.v().getApplicationClasses()) {
+            String fullName = sc.getName(); // e.g. "org.whispersystems.textsecuregcm.util.IterablePair$ParallelIterator" aka fqn
+            if (fullName.equals(fqn) || fullName.startsWith(fqn + "$")) {
+                result.add(sc);
+            }
+        }
+        System.out.println("Found " + result.size() + " classes in Soot that match FQN: " + fqn);
+        for (SootClass sc : result) {
+            System.out.println("  -> " + sc.getName());
+        }
+        return result;
     }
 
     // Method to generate PDGs for all methods in a given class and store them in a list
