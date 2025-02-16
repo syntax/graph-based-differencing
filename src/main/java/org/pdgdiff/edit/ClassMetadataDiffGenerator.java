@@ -1,8 +1,6 @@
 package org.pdgdiff.edit;
 
 import org.pdgdiff.edit.model.*;
-import org.pdgdiff.io.JsonOperationSerializer;
-import org.pdgdiff.io.OperationSerializer;
 import org.pdgdiff.util.CodeAnalysisUtils;
 import org.pdgdiff.util.SourceCodeMapper;
 import soot.Modifier;
@@ -10,9 +8,7 @@ import soot.SootClass;
 import soot.SootField;
 import soot.util.Chain;
 
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.Writer;
 import java.util.*;
 
 public class ClassMetadataDiffGenerator {

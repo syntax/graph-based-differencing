@@ -42,17 +42,18 @@ public class Main {
             System.out.println("Using hardcoded information");
 
             //  !!!! To run on datasets, use the following !!!!
-            String commit = "7bb99fd0bdc60bc5824aadc2b3121f6dded6a143";
-            String project = "ok-http";
-            String filename = "RecordedRequest";
+            String commit = "918ef4a7ca8362efd45f67636bc8bd094f5a4414";
+            String project = "signal-server";
+            String filename = "IterablePair";
 
 
             beforeDir = "./benchmark/datasets/gh-java/before/" + project + "/" + commit + "/compiled";
             afterDir = "./benchmark/datasets/gh-java/after/" + project + "/" + commit + "/compiled";
-            class1Name = "com.google.mockwebserver.RecordedRequest";
-            class2Name = "com.google.mockwebserver.RecordedRequest";
+            class1Name = "org.whispersystems.textsecuregcm.util.IterablePair";
+            class2Name = "org.whispersystems.textsecuregcm.util.IterablePair";
             srcSourceFilePath = "./benchmark/datasets/gh-java/before/" + project + "/" + commit + "/" + filename +".java";
             dstSourceFilePath = "./benchmark/datasets/gh-java/after/" + project + "/" + commit + "/" + filename +".java";
+
 
 
 
