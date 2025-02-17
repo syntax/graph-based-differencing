@@ -54,7 +54,8 @@ public class EditScriptExporter {
     public static void exportGraphMappings(GraphMapping graphMapping, List<PDG> pdgList1, List<PDG> pdgList2, String outputDir) {
         String filename = outputDir + "graphMappings.txt";
 
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filename))) {
+        // for multi-class graph matchings, we append to the file
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filename, true))) {
             writer.write("Graph Mappings (Before -> After):\n");
 
             graphMapping.getGraphMapping().forEach((srcPDG, dstPDG) -> {

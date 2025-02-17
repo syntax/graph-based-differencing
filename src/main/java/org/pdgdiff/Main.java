@@ -1,5 +1,6 @@
 package org.pdgdiff;
 
+import org.pdgdiff.edit.RecoveryProcessor;
 import org.pdgdiff.graph.GraphExporter;
 import org.pdgdiff.graph.GraphGenerator;
 import org.pdgdiff.graph.PDG;
@@ -30,7 +31,7 @@ public class Main {
 
         // defaults
         GraphMatcherFactory.MatchingStrategy matchingStrategy = GraphMatcherFactory.MatchingStrategy.VF2;
-        org.pdgdiff.edit.RecoveryProcessor.RecoveryStrategy recoveryStrategy =  org.pdgdiff.edit.RecoveryProcessor.RecoveryStrategy.CLEANUP_AND_FLATTEN;
+        org.pdgdiff.edit.RecoveryProcessor.RecoveryStrategy recoveryStrategy =  RecoveryProcessor.RecoveryStrategy.CLEANUP_AND_FLATTEN;
         boolean aggregateRecovery = true;
 
 
@@ -56,16 +57,18 @@ public class Main {
 //            srcSourceFilePath = "./benchmark/datasets/gh-java/before/" + project + "/" + commit + "/" + filename +".java";
 //            dstSourceFilePath = "./benchmark/datasets/gh-java/after/" + project + "/" + commit + "/" + filename +".java";
 
+
             // NEW CLASSES
-            String commit = "bbab2ce3c162b244119bdc22a990d7b75fdef0af";
-            String project = "google-guava";
-            String filename = "Objects";
+            String commit = "918ef4a7ca8362efd45f67636bc8bd094f5a4414";
+            String project = "signal-server";
+            String filename = "MessageController";
+
 
 
             beforeDir = "./benchmark/datasets/gh-java/before/" + project + "/" + commit + "/compiled";
             afterDir = "./benchmark/datasets/gh-java/after/" + project + "/" + commit + "/compiled";
-            class1Name = "com.google.common.base.Objects";
-            class2Name = "com.google.common.base.Objects";
+            class1Name = "org.whispersystems.textsecuregcm.controllers.MessageController";
+            class2Name = "org.whispersystems.textsecuregcm.controllers.MessageController";
             srcSourceFilePath = "./benchmark/datasets/gh-java/before/" + project + "/" + commit + "/" + filename +".java";
             dstSourceFilePath = "./benchmark/datasets/gh-java/after/" + project + "/" + commit + "/" + filename +".java";
 
@@ -74,14 +77,14 @@ public class Main {
             //./gumtree webdiff ../../soot-pdg/benchmark/datasets/gh-java/before/google-guava/bbab2ce3c162b244119bdc22a990d7b75fdef0af/Objects.java ../../soot-pdg/benchmark/datasets/gh-java/after/google-guava/bbab2ce3c162b244119bdc22a990d7b75fdef0af/Objects.java
 
             // !!!! to use on local test classes, use the following !!!!
-//            class1Name = "org.pdgdiff.testclasses.TestAdder1";
-//            class2Name = "org.pdgdiff.testclasses.TestAdder2";
-//
-//            srcSourceFilePath = "src/main/java/org/pdgdiff/testclasses/TestAdder1.java";
-//            dstSourceFilePath = "src/main/java/org/pdgdiff/testclasses/TestAdder2.java";
-//
-//            beforeDir = System.getProperty("user.dir") + "/target/classes";
-//            afterDir = System.getProperty("user.dir") + "/target/classes";
+            class1Name = "org.pdgdiff.testclasses.TestAdder1";
+            class2Name = "org.pdgdiff.testclasses.TestAdder2";
+
+            srcSourceFilePath = "src/main/java/org/pdgdiff/testclasses/TestAdder1.java";
+            dstSourceFilePath = "src/main/java/org/pdgdiff/testclasses/TestAdder2.java";
+
+            beforeDir = System.getProperty("user.dir") + "/target/classes";
+            afterDir = System.getProperty("user.dir") + "/target/classes";
 
         } else {
             // as an example;
@@ -294,6 +297,12 @@ public class Main {
 
     // method to generate PDGs for all methods in a given class and store them in a list
     private static List<PDG> generatePDGsForClass(SootClass sootClass, FILE_VERSION version) {
+        if (sootClass.getName().matches(".*\\$\\d+")) {
+            // this causes problems, for now, we are ignoring differencing of anon or synthetic classes
+            System.out.println("Skipping anonymous/synthetic class: " + sootClass.getName());
+            return Collections.emptyList();
+        }
+
         List<PDG> pdgList = new ArrayList<>();
         System.out.println("Generating PDGs for class: " + sootClass.getName());
         // Iterate over each method in the class
@@ -318,6 +327,7 @@ public class Main {
                     GraphExporter.exportPDG(pdg, baseFileName + ".dot", baseFileName + ".txt");
                 } catch (Exception e) {
                     System.err.println("Failed to retrieve body or generate PDG for method: " + method.getName());
+                    e.printStackTrace();
                 }
             }
         }

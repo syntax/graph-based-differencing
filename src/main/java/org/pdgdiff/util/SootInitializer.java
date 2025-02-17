@@ -51,7 +51,7 @@ public class SootInitializer {
         Options.v().set_process_dir(Collections.singletonList(dir));
 
         // Whole program analysis
-        Options.v().set_whole_program(false); // Investigating if this stops DCE
+        Options.v().set_whole_program(true); // Investigating if this stops DCE
         Options.v().set_no_bodies_for_excluded(true);
 
 //        Options.v().set_coffi(true); -> dont use, renames variables to stacknums instead of preserving original
