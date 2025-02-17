@@ -104,12 +104,14 @@ public class DiffEngine {
         });
 
         // build edit script for class mappings at this point
-        SootClass srcClass = pdgList1.get(0).getCFG().getBody().getMethod().getDeclaringClass();
-        SootClass dstClass = pdgList2.get(0).getCFG().getBody().getMethod().getDeclaringClass();
+        if (!pdgList1.isEmpty() && !pdgList2.isEmpty()) {
+            SootClass srcClass = pdgList1.get(0).getCFG().getBody().getMethod().getDeclaringClass();
+            SootClass dstClass = pdgList2.get(0).getCFG().getBody().getMethod().getDeclaringClass();
 
-        List<EditOperation> metadataScript = ClassMetadataDiffGenerator.generateClassMetadataDiff(srcClass, dstClass, srcSourceFilePath, dstSourceFilePath);
-        aggregatedEditScripts.addAll(metadataScript);
-        exportEditScript(metadataScript, "metadata", "metadata", null);
+            List<EditOperation> metadataScript = ClassMetadataDiffGenerator.generateClassMetadataDiff(srcClass, dstClass, srcSourceFilePath, dstSourceFilePath);
+            aggregatedEditScripts.addAll(metadataScript);
+            exportEditScript(metadataScript, "metadata", "metadata", null);
+        }
 
         if (strategySettings.isAggregateRecovery()) {
             List<EditOperation> recAggregatedEditScripts = RecoveryProcessor.recoverMappings(aggregatedEditScripts, strategySettings.recoveryStrategy);
