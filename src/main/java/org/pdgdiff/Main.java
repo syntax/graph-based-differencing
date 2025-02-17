@@ -44,44 +44,44 @@ public class Main {
 
             // NESTED CLASSES
 
-            String commit = "918ef4a7ca8362efd45f67636bc8bd094f5a4414";
-            String project = "signal-server";
-            String filename = "IterablePair";
-
-
-            beforeDir = "./benchmark/datasets/gh-java/before/" + project + "/" + commit + "/compiled";
-            afterDir = "./benchmark/datasets/gh-java/after/" + project + "/" + commit + "/compiled";
-            class1Name = "org.whispersystems.textsecuregcm.util.IterablePair";
-            class2Name = "org.whispersystems.textsecuregcm.util.IterablePair";
-            srcSourceFilePath = "./benchmark/datasets/gh-java/before/" + project + "/" + commit + "/" + filename +".java";
-            dstSourceFilePath = "./benchmark/datasets/gh-java/after/" + project + "/" + commit + "/" + filename +".java";
-
-            // NEW CLASSES
-//            String commit = "bbab2ce3c162b244119bdc22a990d7b75fdef0af";
-//            String project = "google-guava";
-//            String filename = "Objects";
+//            String commit = "918ef4a7ca8362efd45f67636bc8bd094f5a4414";
+//            String project = "signal-server";
+//            String filename = "IterablePair";
 //
 //
 //            beforeDir = "./benchmark/datasets/gh-java/before/" + project + "/" + commit + "/compiled";
 //            afterDir = "./benchmark/datasets/gh-java/after/" + project + "/" + commit + "/compiled";
-//            class1Name = "com.google.common.base.Objects";
-//            class2Name = "com.google.common.base.Objects";
+//            class1Name = "org.whispersystems.textsecuregcm.util.IterablePair";
+//            class2Name = "org.whispersystems.textsecuregcm.util.IterablePair";
 //            srcSourceFilePath = "./benchmark/datasets/gh-java/before/" + project + "/" + commit + "/" + filename +".java";
 //            dstSourceFilePath = "./benchmark/datasets/gh-java/after/" + project + "/" + commit + "/" + filename +".java";
 
+            // NEW CLASSES
+            String commit = "bbab2ce3c162b244119bdc22a990d7b75fdef0af";
+            String project = "google-guava";
+            String filename = "Objects";
 
 
-            //./gumtree webdiff ../../soot-pdg/benchmark/datasets/gh-java/before/ok-http/7bb99fd0bdc60bc5824aadc2b3121f6dded6a143/RecordedRequest.java ../../soot-pdg/benchmark/datasets/gh-java/after/ok-http/7bb99fd0bdc60bc5824aadc2b3121f6dded6a143/RecordedRequest.java
+            beforeDir = "./benchmark/datasets/gh-java/before/" + project + "/" + commit + "/compiled";
+            afterDir = "./benchmark/datasets/gh-java/after/" + project + "/" + commit + "/compiled";
+            class1Name = "com.google.common.base.Objects";
+            class2Name = "com.google.common.base.Objects";
+            srcSourceFilePath = "./benchmark/datasets/gh-java/before/" + project + "/" + commit + "/" + filename +".java";
+            dstSourceFilePath = "./benchmark/datasets/gh-java/after/" + project + "/" + commit + "/" + filename +".java";
+
+
+
+            //./gumtree webdiff ../../soot-pdg/benchmark/datasets/gh-java/before/google-guava/bbab2ce3c162b244119bdc22a990d7b75fdef0af/Objects.java ../../soot-pdg/benchmark/datasets/gh-java/after/google-guava/bbab2ce3c162b244119bdc22a990d7b75fdef0af/Objects.java
 
             // !!!! to use on local test classes, use the following !!!!
-            class1Name = "org.pdgdiff.testclasses.TestAdder1";
-            class2Name = "org.pdgdiff.testclasses.TestAdder2";
-
-            srcSourceFilePath = "src/main/java/org/pdgdiff/testclasses/TestAdder1.java";
-            dstSourceFilePath = "src/main/java/org/pdgdiff/testclasses/TestAdder2.java";
-
-            beforeDir = System.getProperty("user.dir") + "/target/classes";
-            afterDir = System.getProperty("user.dir") + "/target/classes";
+//            class1Name = "org.pdgdiff.testclasses.TestAdder1";
+//            class2Name = "org.pdgdiff.testclasses.TestAdder2";
+//
+//            srcSourceFilePath = "src/main/java/org/pdgdiff/testclasses/TestAdder1.java";
+//            dstSourceFilePath = "src/main/java/org/pdgdiff/testclasses/TestAdder2.java";
+//
+//            beforeDir = System.getProperty("user.dir") + "/target/classes";
+//            afterDir = System.getProperty("user.dir") + "/target/classes";
 
         } else {
             // as an example;
@@ -130,11 +130,11 @@ public class Main {
             // Retrieve the classes from the Soot Scene
             SootInitializer.initializeSoot(beforeDir);
             Scene.v().loadNecessaryClasses();
-            Map<String, SootClass> beforeClasses = collectNestedClassesByFqn(class1Name); // TODO: handle and parse all of these
+            Map<String, SootClass> beforeClasses = collectNestedClassesByFqn(class1Name);
 
             SootInitializer.initializeSoot(afterDir);
             Scene.v().loadNecessaryClasses();
-            Map<String, SootClass> afterClasses = collectNestedClassesByFqn(class2Name); // TODO: handle and parse all of these
+            Map<String, SootClass> afterClasses = collectNestedClassesByFqn(class2Name);
 
 
             if (beforeClasses.size() == 1 && afterClasses.size() == 1) {
@@ -167,6 +167,42 @@ public class Main {
                 }
             } else {
                 // multi-class version
+                // TODO: neglecting this a bit because its a uncommon case, but need to handle class insertions and deletions properly,
+                //  e,g, need to handle field insertions deletions. also for some reason, nested class line nums seem to be slightly mismatched. for whatever reason.
+
+                // Test with the following:
+
+                // !!! BEGIN TESTS
+
+
+                // NESTED CLASSES
+//            String commit = "918ef4a7ca8362efd45f67636bc8bd094f5a4414";
+//            String project = "signal-server";
+//            String filename = "IterablePair";
+//
+//
+//            beforeDir = "./benchmark/datasets/gh-java/before/" + project + "/" + commit + "/compiled";
+//            afterDir = "./benchmark/datasets/gh-java/after/" + project + "/" + commit + "/compiled";
+//            class1Name = "org.whispersystems.textsecuregcm.util.IterablePair";
+//            class2Name = "org.whispersystems.textsecuregcm.util.IterablePair";
+//            srcSourceFilePath = "./benchmark/datasets/gh-java/before/" + project + "/" + commit + "/" + filename +".java";
+//            dstSourceFilePath = "./benchmark/datasets/gh-java/after/" + project + "/" + commit + "/" + filename +".java";
+
+                // NEW CLASSES
+//                String commit = "bbab2ce3c162b244119bdc22a990d7b75fdef0af";
+//                String project = "google-guava";
+//                String filename = "Objects";
+//
+//
+//                beforeDir = "./benchmark/datasets/gh-java/before/" + project + "/" + commit + "/compiled";
+//                afterDir = "./benchmark/datasets/gh-java/after/" + project + "/" + commit + "/compiled";
+//                class1Name = "com.google.common.base.Objects";
+//                class2Name = "com.google.common.base.Objects";
+//                srcSourceFilePath = "./benchmark/datasets/gh-java/before/" + project + "/" + commit + "/" + filename +".java";
+//                dstSourceFilePath = "./benchmark/datasets/gh-java/after/" + project + "/" + commit + "/" + filename +".java";
+
+
+                // !!! END TESTS
 
                 Map<String, List<PDG>> beforePdgsMap = new HashMap<>();
                 for (Map.Entry<String, SootClass> entry : beforeClasses.entrySet()) {
@@ -184,7 +220,6 @@ public class Main {
                     afterPdgsMap.put(fqn, pdgs);
                 }
 
-                // Print the number of PDGs generated for each class
                 System.out.println("\nPDGs for 'before' file total: " + beforePdgsMap.values().stream().mapToInt(List::size).sum());
                 System.out.println("PDGs for 'after' file total: " + afterPdgsMap.values().stream().mapToInt(List::size).sum());
 
@@ -213,7 +248,7 @@ public class Main {
                     List<PDG> aPdgs = afterPdgsMap.getOrDefault(fqn, Collections.emptyList());
 
                     if (bPdgs.isEmpty() && !aPdgs.isEmpty()) {
-                        // This class is ADDED
+                        // this class is ADDED
                         System.out.println("Class " + fqn + " was ADDED in 'after'.");
                         DiffEngine.difference(Collections.emptyList(), aPdgs, strategySettings,
                                 srcSourceFilePath, dstSourceFilePath);
@@ -257,11 +292,10 @@ public class Main {
         return result;
     }
 
-    // Method to generate PDGs for all methods in a given class and store them in a list
+    // method to generate PDGs for all methods in a given class and store them in a list
     private static List<PDG> generatePDGsForClass(SootClass sootClass, FILE_VERSION version) {
         List<PDG> pdgList = new ArrayList<>();
         System.out.println("Generating PDGs for class: " + sootClass.getName());
-        // TODO investigate getting metadata from here.
         // Iterate over each method in the class
         for (SootMethod method : sootClass.getMethods()) {
             if (method.isConcrete()) {
@@ -270,7 +304,6 @@ public class Main {
                     method.retrieveActiveBody();
                     System.out.println("Successfully retrieved active body for: " + method.getName() + " in " + sootClass.getName());
 
-                    // Generate the PDG for the method
                     PDG pdg = GraphGenerator.constructPdg(sootClass, method);
                     pdgList.add(pdg);
                     System.out.println("PDG generated for method: " + method.getName());
