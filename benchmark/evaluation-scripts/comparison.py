@@ -380,7 +380,7 @@ def initialize_csv():
                 "Timestamp", "Project", "Commit ID", "Changed File", "Approach",
                 "Total Changed Lines", "Total Changed Lines (Excl. Moves)",
                 "Total Changed Lines (Excl. Moves AND Comments)",
-                "Total Changed Lines (Excl. everything non soot)"
+                "Total Changed Lines (Excl. everything non soot)",
                 "Deleted Lines (Src)", "Inserted Lines (Dst)",
                 "Updated Lines (Src)", "Updated Lines (Dst)",
                 "Moved Lines (Src)", "Moved Lines (Dst)", "Errors"
@@ -448,7 +448,10 @@ def is_non_soot_detectable(line: str) -> bool:
         return True
     if stripped.startswith("catch")or stripped.startswith("} catch"):
         return True
-
+    if stripped.startswith("finally"):
+        return True
+    if stripped.startswith("@"):
+        return True
     if stripped.startswith("/*") or stripped.startswith("*") or stripped.startswith("/**"):
         return True
     return False
@@ -538,8 +541,8 @@ def main():
     with open("dataset_info.json", "w") as f:
         json.dump(files_to_differece, f, indent=4)
 
-
-
+    initialize_csv()
+    
     for file_info in files_to_differece:
         print(f"{bcolors.OKCYAN}[status]{bcolors.ENDC} > processing file: {bcolors.BOLD}{file_info['changed_file']}{bcolors.ENDC} from commit {bcolors.BOLD}{file_info['commit_id']}{bcolors.ENDC} in project {bcolors.BOLD}{file_info['project']}{bcolors.ENDC}")
         try:
@@ -622,9 +625,9 @@ def main():
             # report_changed_lines_brief(pdg_ull_changes, "PDGdiff-ull", file_info["changed_file"], pdg_ull_non_comment_count, pdg_ull_non_soot_count)
 
 
-            log_results_to_csv(file_info, "GumTree", gt_changes, gt_non_comment_count, gt_non_soot_count)
-            log_results_to_csv(file_info, "PDGdiff-VF2", pdg_vf2_changes, pdg_vf2_changes, pdg_vf2_non_comment_count)
-            log_results_to_csv(file_info, "PDGdiff-GED", pdg_ged_changes, pdg_ged_non_comment_count, pdg_get_non_soot_count)
+            log_results_to_csv(file_info, "GumTree", gt_changes, "", gt_non_comment_count, gt_non_soot_count)
+            log_results_to_csv(file_info, "PDGdiff-VF2", pdg_vf2_changes, "", pdg_vf2_changes, pdg_vf2_non_comment_count)
+            log_results_to_csv(file_info, "PDGdiff-GED", pdg_ged_changes, "", pdg_ged_non_comment_count, pdg_get_non_soot_count)
             # log_results_to_csv(file_info, "PDGdiff-ULL", pdg_ull_changes, pdg_ull_non_comment_count, pdg_ull_non_soot_count)
 
         except Exception as e:
