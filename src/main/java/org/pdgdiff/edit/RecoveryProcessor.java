@@ -3,7 +3,6 @@ package org.pdgdiff.edit;
 import org.pdgdiff.edit.model.*;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 // Notes on this implementation:
 // Initial idea of graph centrality heuristic: (doesn't actually make all that much sense,)
@@ -13,10 +12,11 @@ import java.util.stream.Collectors;
 public class RecoveryProcessor {
 
     public enum RecoveryStrategy {
-        GLOBAL_SIMILARITY,  // not recommended
-        CONFLICT_GRAPH,   // not recommended
+//        GLOBAL_SIMILARITY,  // not recommended
+//        CONFLICT_GRAPH,   // not recommended
+        LINE_LEVEL_UNIQUENESS,
         DUPLICATE_CLEANUP,
-        CLEANUP,
+        CLEANUP, // nb contains LINE_LEVEL_UNIQUNESS
         FLATTEN,
         CLEANUP_AND_FLATTEN,
         FLATTEN_AND_CLEANUP,
@@ -26,10 +26,12 @@ public class RecoveryProcessor {
 
     public static List<EditOperation> recoverMappings(List<EditOperation> editScript, RecoveryStrategy strategy) {
         switch (strategy) {
-            case GLOBAL_SIMILARITY:
-                return recoverMappingsGlobalSimilarity(editScript);
-            case CONFLICT_GRAPH:
-                return recoverMappingsConflictGraphSimilarity(editScript);
+//            case GLOBAL_SIMILARITY:
+//                return recoverMappingsGlobalSimilarity(editScript);
+//            case CONFLICT_GRAPH:
+//                return recoverMappingsConflictGraphSimilarity(editScript);
+            case LINE_LEVEL_UNIQUENESS:
+                return recoverMappingsUniqueLineNums(editScript);
             case DUPLICATE_CLEANUP:
                 return recoverMappingsNoDuplicates(editScript);
             case CLEANUP:
@@ -240,264 +242,342 @@ public class RecoveryProcessor {
             }
         }
 
+        flattenedScript = enforceLineLevelUniqueness(flattenedScript);
+
         // if an insertion and a deletion are near each other in line number, and have very similar code snippets, instead change a insertion and deletion pair to a update
         return flattenedScript;
     }
 
-    public static List<EditOperation> recoverMappingsGlobalSimilarity(List<EditOperation> editScript) {
-        // TODO: Probably want to get rid of this method, it is pretty much inferior in all ways to conflict graph method.
-        cleanUpDuplicates(editScript);
+//    public static List<EditOperation> recoverMappingsGlobalSimilarity(List<EditOperation> editScript) {
+//        // TODO: Probably want to get rid of this method, it is pretty much inferior in all ways to conflict graph method.
+//        cleanUpDuplicates(editScript);
+//
+//        List<Update> updateOperations = editScript.stream()
+//                .filter(op -> op instanceof Update)
+//                .map(op -> (Update) op)
+//                .collect(Collectors.toList());
+//
+//        Map<String, List<Update>> oldCodeToUpdates = new HashMap<>();
+//        Map<String, List<Update>> newCodeToUpdates = new HashMap<>();
+//
+//
+//        for (Update update : updateOperations) {
+//            String oldKey = update.getOldCodeSnippet() + "||" + update.getOldLineNumber();
+//            String newKey = update.getNewCodeSnippet() + "||" + update.getNewLineNumber();
+//
+//            oldCodeToUpdates.computeIfAbsent(oldKey, k -> new ArrayList<>()).add(update);
+//            newCodeToUpdates.computeIfAbsent(newKey, k -> new ArrayList<>()).add(update);
+//        }
+//
+//        // calc similarities between all pairs of old and new code snippets
+//        List<Assignment> possibleAssignments = new ArrayList<>();
+//        for (String oldKey : oldCodeToUpdates.keySet()) {
+//            String oldCode = oldKey.split("\\|\\|")[0];
+//            for (String newKey : newCodeToUpdates.keySet()) {
+//                String newCode = newKey.split("\\|\\|")[0];
+//                double similarity = computeSimilarity(oldCode, newCode);
+//                possibleAssignments.add(new Assignment(oldKey, newKey, similarity));
+//            }
+//        }
+//
+//        possibleAssignments.sort((a1, a2) -> Double.compare(a2.similarity, a1.similarity));
+//
+//        double similarityThreshold = 0.7;   // investiage more
+//
+//        Set<String> assignedOldKeys = new HashSet<>();
+//        Set<String> assignedNewKeys = new HashSet<>();
+//        List<Assignment> assignments = new ArrayList<>();
+//
+//        for (Assignment assignment : possibleAssignments) {
+//            if (assignment.similarity < similarityThreshold) {
+//                break;
+//            }
+//            if (!assignedOldKeys.contains(assignment.oldKey) && !assignedNewKeys.contains(assignment.newKey)) {
+//                assignedOldKeys.add(assignment.oldKey);
+//                assignedNewKeys.add(assignment.newKey);
+//                assignments.add(assignment);
+//            }
+//        }
+//
+//        List<EditOperation> resolvedEdits = new ArrayList<>();
+//
+//        for (Assignment assignment : assignments) {
+//            List<Update> updates = oldCodeToUpdates.get(assignment.oldKey);
+//            String newCode = assignment.newKey.split("\\|\\|")[0];
+//            int newLineNumber = Integer.parseInt(assignment.newKey.split("\\|\\|")[1]);
+//
+//            for (Update update : updates) {
+//                update.setNewCodeSnippet(newCode);
+//                update.setNewLineNumber(newLineNumber);
+//                resolvedEdits.add(update);
+//            }
+//        }
+//
+//        // retain unmatched updates without modification
+//        for (String oldKey : oldCodeToUpdates.keySet()) {
+//            if (!assignedOldKeys.contains(oldKey)) {
+//                resolvedEdits.addAll(oldCodeToUpdates.get(oldKey));
+//            }
+//        }
+//        for (String newKey : newCodeToUpdates.keySet()) {
+//            if (!assignedNewKeys.contains(newKey)) {
+//                resolvedEdits.addAll(newCodeToUpdates.get(newKey));
+//            }
+//        }
+//
+//        return resolvedEdits;
+//    }
+//
 
-        List<Update> updateOperations = editScript.stream()
-                .filter(op -> op instanceof Update)
-                .map(op -> (Update) op)
-                .collect(Collectors.toList());
 
-        Map<String, List<Update>> oldCodeToUpdates = new HashMap<>();
-        Map<String, List<Update>> newCodeToUpdates = new HashMap<>();
+//    private static class Assignment {
+//        String oldKey; // combined old code and line number
+//        String newKey; // combiend new code and line number
+//        double similarity;
+//
+//        public Assignment(String oldKey, String newKey, double similarity) {
+//            this.oldKey = oldKey;
+//            this.newKey = newKey;
+//            this.similarity = similarity;
+//        }
+//    }
 
-
-        for (Update update : updateOperations) {
-            String oldKey = update.getOldCodeSnippet() + "||" + update.getOldLineNumber();
-            String newKey = update.getNewCodeSnippet() + "||" + update.getNewLineNumber();
-
-            oldCodeToUpdates.computeIfAbsent(oldKey, k -> new ArrayList<>()).add(update);
-            newCodeToUpdates.computeIfAbsent(newKey, k -> new ArrayList<>()).add(update);
-        }
-
-        // calc similarities between all pairs of old and new code snippets
-        List<Assignment> possibleAssignments = new ArrayList<>();
-        for (String oldKey : oldCodeToUpdates.keySet()) {
-            String oldCode = oldKey.split("\\|\\|")[0];
-            for (String newKey : newCodeToUpdates.keySet()) {
-                String newCode = newKey.split("\\|\\|")[0];
-                double similarity = computeSimilarity(oldCode, newCode);
-                possibleAssignments.add(new Assignment(oldKey, newKey, similarity));
+    private static List<EditOperation> enforceLineLevelUniqueness(List<EditOperation> editScript) {
+        // grp all Update ops by their oldLineNumber
+        Map<Integer, List<Update>> updatesByOldLine = new HashMap<>();
+        for (EditOperation op : editScript) {
+            if (op instanceof Update) {
+                Update u = (Update) op;
+                updatesByOldLine.computeIfAbsent(u.getOldLineNumber(), k -> new ArrayList<>())
+                        .add(u);
             }
         }
 
-        possibleAssignments.sort((a1, a2) -> Double.compare(a2.similarity, a1.similarity));
+        // keep only the "best" update for each oldLineNumber
+        // if there is a conflict (i.e. multiple updates with distinct newLineNumbers).
+        List<EditOperation> finalEdits = new ArrayList<>(editScript);
 
-        double similarityThreshold = 0.7;   // investiage more
+        for (Map.Entry<Integer, List<Update>> e : updatesByOldLine.entrySet()) {
+            List<Update> conflicts = e.getValue();
+            if (conflicts.size() <= 1) continue; // no conflict
 
-        Set<String> assignedOldKeys = new HashSet<>();
-        Set<String> assignedNewKeys = new HashSet<>();
-        List<Assignment> assignments = new ArrayList<>();
 
-        for (Assignment assignment : possibleAssignments) {
-            if (assignment.similarity < similarityThreshold) {
-                break;
-            }
-            if (!assignedOldKeys.contains(assignment.oldKey) && !assignedNewKeys.contains(assignment.newKey)) {
-                assignedOldKeys.add(assignment.oldKey);
-                assignedNewKeys.add(assignment.newKey);
-                assignments.add(assignment);
-            }
-        }
-
-        List<EditOperation> resolvedEdits = new ArrayList<>();
-
-        for (Assignment assignment : assignments) {
-            List<Update> updates = oldCodeToUpdates.get(assignment.oldKey);
-            String newCode = assignment.newKey.split("\\|\\|")[0];
-            int newLineNumber = Integer.parseInt(assignment.newKey.split("\\|\\|")[1]);
-
-            for (Update update : updates) {
-                update.setNewCodeSnippet(newCode);
-                update.setNewLineNumber(newLineNumber);
-                resolvedEdits.add(update);
+            Update bestUpdate = pickBestUpdate(conflicts);
+            // rm all but the best from finalEdits
+            for (Update u : conflicts) {
+                if (u != bestUpdate) {
+                    finalEdits.remove(u);
+                }
             }
         }
 
-        // retain unmatched updates without modification
-        for (String oldKey : oldCodeToUpdates.keySet()) {
-            if (!assignedOldKeys.contains(oldKey)) {
-                resolvedEdits.addAll(oldCodeToUpdates.get(oldKey));
+        // similarly ensure dont have multiple old lines mapping to the same new lineNumber
+        // grp by newLineNumber
+        Map<Integer, List<Update>> updatesByNewLine = new HashMap<>();
+        for (EditOperation op : finalEdits) {
+            if (op instanceof Update) {
+                Update u = (Update) op;
+                updatesByNewLine.computeIfAbsent(u.getNewLineNumber(), k -> new ArrayList<>())
+                        .add(u);
             }
         }
-        for (String newKey : newCodeToUpdates.keySet()) {
-            if (!assignedNewKeys.contains(newKey)) {
-                resolvedEdits.addAll(newCodeToUpdates.get(newKey));
+        for (Map.Entry<Integer, List<Update>> e : updatesByNewLine.entrySet()) {
+            List<Update> conflicts = e.getValue();
+            if (conflicts.size() <= 1) continue;
+            Update bestUpdate = pickBestUpdate(conflicts);
+            for (Update u : conflicts) {
+                if (u != bestUpdate) {
+                    finalEdits.remove(u);
+                }
             }
         }
 
-        return resolvedEdits;
+        return finalEdits;
     }
 
-
-
-    private static class Assignment {
-        String oldKey; // combined old code and line number
-        String newKey; // combiend new code and line number
-        double similarity;
-
-        public Assignment(String oldKey, String newKey, double similarity) {
-            this.oldKey = oldKey;
-            this.newKey = newKey;
-            this.similarity = similarity;
+    // this could be changed a lot, just will do for now
+    private static Update pickBestUpdate(List<Update> candidates) {
+        double bestScore = Double.NEGATIVE_INFINITY;
+        Update bestU = null;
+        for (Update u : candidates) {
+            double sim = computeSimilarity(u.getOldCodeSnippet(), u.getNewCodeSnippet());
+            if (sim > bestScore) {
+                bestScore = sim;
+                bestU = u;
+            }
         }
+        return bestU;
+
+        // todo: ideally would use int[] methodRange = CodeAnalysisUtils.getMethodLineRange(method, codeMapper);
+        //  and create some notation of where the element is in the method, relative, as another metric
+        //  but this is not available in this context, just using edit script here.
     }
+
 
     public static List<EditOperation> recoverMappingsNoDuplicates(List<EditOperation> editScript) {
         cleanUpDuplicates(editScript);
         return editScript;
     }
 
-    private static List<EditOperation> recoverMappingsConflictGraphSimilarity(List<EditOperation> editScript) {
-        cleanUpDuplicates(editScript);
-
-        List<Update> updateOperations = editScript.stream()
-                .filter(op -> op instanceof Update)
-                .map(op -> (Update) op)
-                .collect(Collectors.toList());
-
-        // build the conflict graph based on line number conflicts
-        Map<Update, Set<Update>> conflictGraph = new HashMap<>();
-        for (Update update : updateOperations) {
-            conflictGraph.putIfAbsent(update, new HashSet<>());
-        }
-
-        for (int i = 0; i < updateOperations.size(); i++) {
-            Update op1 = updateOperations.get(i);
-            for (int j = i + 1; j < updateOperations.size(); j++) {
-                Update op2 = updateOperations.get(j);
-                if (op1 != op2) {
-                    // Check for conflicts on old or new line numbers, add an edge where two updates conflict on a line number
-                    if (op1.getOldLineNumber() == op2.getOldLineNumber() || op1.getNewLineNumber() == op2.getNewLineNumber()) {
-                        conflictGraph.get(op1).add(op2);
-                        conflictGraph.get(op2).add(op1);
-                    }
-                }
-            }
-        }
-
-//        printConflictGraph(conflictGraph);
-
-        List<Set<Update>> connectedComponents = findConnectedComponents(conflictGraph);
-
-        // process each component to resolve conflicts
-        List<EditOperation> newEditScript = new ArrayList<>();
-        Set<Update> processedUpdates = new HashSet<>();
-
-        // BELOW is an implementation of the Global similarity algorithm, but only on the subset of connected components found.
-
-        for (Set<Update> component : connectedComponents) {
-            // collect old and new code snippets within the component
-            Map<String, List<Update>> oldCodeToUpdates = new HashMap<>();
-            Map<String, List<Update>> newCodeToUpdates = new HashMap<>();
-
-            for (Update update : component) {
-                String oldKey = update.getOldCodeSnippet() + "||" + update.getOldLineNumber();
-                String newKey = update.getNewCodeSnippet() + "||" + update.getNewLineNumber();
-
-                oldCodeToUpdates.computeIfAbsent(oldKey, k -> new ArrayList<>()).add(update);
-                newCodeToUpdates.computeIfAbsent(newKey, k -> new ArrayList<>()).add(update);
-            }
-
-            // calc similarities between all pairs of old and new code snippets within the component
-            List<Assignment> possibleAssignments = new ArrayList<>();
-            for (String oldKey : oldCodeToUpdates.keySet()) {
-                String oldCode = oldKey.split("\\|\\|")[0];
-                for (String newKey : newCodeToUpdates.keySet()) {
-                    String newCode = newKey.split("\\|\\|")[0];
-                    double similarity = computeSimilarity(oldCode, newCode);
-                    possibleAssignments.add(new Assignment(oldKey, newKey, similarity));
-                }
-            }
-
-            // sortin assignments by similarity in decreasing order
-            possibleAssignments.sort((a1, a2) -> Double.compare(a2.similarity, a1.similarity));
-
-            double similarityThreshold = 0.7; // TODO investigate more
-
-            Set<String> assignedOldKeys = new HashSet<>();
-            Set<String> assignedNewKeys = new HashSet<>();
-            List<Assignment> assignments = new ArrayList<>();
-
-            // assn updates based on highest similarity scores
-            for (Assignment assignment : possibleAssignments) {
-                if (assignment.similarity < similarityThreshold) {
-                    break;
-                }
-                if (!assignedOldKeys.contains(assignment.oldKey) && !assignedNewKeys.contains(assignment.newKey)) {
-                    assignedOldKeys.add(assignment.oldKey);
-                    assignedNewKeys.add(assignment.newKey);
-                    assignments.add(assignment);
-                }
-            }
-
-            // update operations based on resolved assignments
-            for (Assignment assignment : assignments) {
-                List<Update> updates = oldCodeToUpdates.get(assignment.oldKey);
-                String newCode = assignment.newKey.split("\\|\\|")[0];
-                int newLineNumber = Integer.parseInt(assignment.newKey.split("\\|\\|")[1]);
-
-                for (Update update : updates) {
-                    update.setNewCodeSnippet(newCode);
-                    update.setNewLineNumber(newLineNumber);
-                    newEditScript.add(update);
-                    processedUpdates.add(update);
-                }
-            }
-
-            // retain unmatched updates within the component without modification
-            for (String oldKey : oldCodeToUpdates.keySet()) {
-                if (!assignedOldKeys.contains(oldKey)) {
-                    for (Update update : oldCodeToUpdates.get(oldKey)) {
-                        newEditScript.add(update);
-                        processedUpdates.add(update);
-                    }
-                }
-            }
-            for (String newKey : newCodeToUpdates.keySet()) {
-                if (!assignedNewKeys.contains(newKey)) {
-                    for (Update update : newCodeToUpdates.get(newKey)) {
-                        if (!processedUpdates.contains(update)) {
-                            newEditScript.add(update);
-                            processedUpdates.add(update);
-                        }
-                    }
-                }
-            }
-        }
-
-        // add any remaining operations not processed (non-conflicting updates and other operations)
-        for (EditOperation op : editScript) {
-            if (!(op instanceof Update) || !processedUpdates.contains(op)) {
-                newEditScript.add(op);
-            }
-        }
-
-        return newEditScript;
+    public static List<EditOperation> recoverMappingsUniqueLineNums(List<EditOperation> editScript) {
+        return enforceLineLevelUniqueness(editScript);
     }
+
+//    private static List<EditOperation> recoverMappingsConflictGraphSimilarity(List<EditOperation> editScript) {
+//        cleanUpDuplicates(editScript);
+//
+//        List<Update> updateOperations = editScript.stream()
+//                .filter(op -> op instanceof Update)
+//                .map(op -> (Update) op)
+//                .collect(Collectors.toList());
+//
+//        // build the conflict graph based on line number conflicts
+//        Map<Update, Set<Update>> conflictGraph = new HashMap<>();
+//        for (Update update : updateOperations) {
+//            conflictGraph.putIfAbsent(update, new HashSet<>());
+//        }
+//
+//        for (int i = 0; i < updateOperations.size(); i++) {
+//            Update op1 = updateOperations.get(i);
+//            for (int j = i + 1; j < updateOperations.size(); j++) {
+//                Update op2 = updateOperations.get(j);
+//                if (op1 != op2) {
+//                    // Check for conflicts on old or new line numbers, add an edge where two updates conflict on a line number
+//                    if (op1.getOldLineNumber() == op2.getOldLineNumber() || op1.getNewLineNumber() == op2.getNewLineNumber()) {
+//                        conflictGraph.get(op1).add(op2);
+//                        conflictGraph.get(op2).add(op1);
+//                    }
+//                }
+//            }
+//        }
+//
+////        printConflictGraph(conflictGraph);
+//
+//        List<Set<Update>> connectedComponents = findConnectedComponents(conflictGraph);
+//
+//        // process each component to resolve conflicts
+//        List<EditOperation> newEditScript = new ArrayList<>();
+//        Set<Update> processedUpdates = new HashSet<>();
+//
+//        // BELOW is an implementation of the Global similarity algorithm, but only on the subset of connected components found.
+//
+//        for (Set<Update> component : connectedComponents) {
+//            // collect old and new code snippets within the component
+//            Map<String, List<Update>> oldCodeToUpdates = new HashMap<>();
+//            Map<String, List<Update>> newCodeToUpdates = new HashMap<>();
+//
+//            for (Update update : component) {
+//                String oldKey = update.getOldCodeSnippet() + "||" + update.getOldLineNumber();
+//                String newKey = update.getNewCodeSnippet() + "||" + update.getNewLineNumber();
+//
+//                oldCodeToUpdates.computeIfAbsent(oldKey, k -> new ArrayList<>()).add(update);
+//                newCodeToUpdates.computeIfAbsent(newKey, k -> new ArrayList<>()).add(update);
+//            }
+//
+//            // calc similarities between all pairs of old and new code snippets within the component
+//            List<Assignment> possibleAssignments = new ArrayList<>();
+//            for (String oldKey : oldCodeToUpdates.keySet()) {
+//                String oldCode = oldKey.split("\\|\\|")[0];
+//                for (String newKey : newCodeToUpdates.keySet()) {
+//                    String newCode = newKey.split("\\|\\|")[0];
+//                    double similarity = computeSimilarity(oldCode, newCode);
+//                    possibleAssignments.add(new Assignment(oldKey, newKey, similarity));
+//                }
+//            }
+//
+//            // sortin assignments by similarity in decreasing order
+//            possibleAssignments.sort((a1, a2) -> Double.compare(a2.similarity, a1.similarity));
+//
+//            double similarityThreshold = 0.7; // TODO investigate more
+//
+//            Set<String> assignedOldKeys = new HashSet<>();
+//            Set<String> assignedNewKeys = new HashSet<>();
+//            List<Assignment> assignments = new ArrayList<>();
+//
+//            // assn updates based on highest similarity scores
+//            for (Assignment assignment : possibleAssignments) {
+//                if (assignment.similarity < similarityThreshold) {
+//                    break;
+//                }
+//                if (!assignedOldKeys.contains(assignment.oldKey) && !assignedNewKeys.contains(assignment.newKey)) {
+//                    assignedOldKeys.add(assignment.oldKey);
+//                    assignedNewKeys.add(assignment.newKey);
+//                    assignments.add(assignment);
+//                }
+//            }
+//
+//            // update operations based on resolved assignments
+//            for (Assignment assignment : assignments) {
+//                List<Update> updates = oldCodeToUpdates.get(assignment.oldKey);
+//                String newCode = assignment.newKey.split("\\|\\|")[0];
+//                int newLineNumber = Integer.parseInt(assignment.newKey.split("\\|\\|")[1]);
+//
+//                for (Update update : updates) {
+//                    update.setNewCodeSnippet(newCode);
+//                    update.setNewLineNumber(newLineNumber);
+//                    newEditScript.add(update);
+//                    processedUpdates.add(update);
+//                }
+//            }
+//
+//            // retain unmatched updates within the component without modification
+//            for (String oldKey : oldCodeToUpdates.keySet()) {
+//                if (!assignedOldKeys.contains(oldKey)) {
+//                    for (Update update : oldCodeToUpdates.get(oldKey)) {
+//                        newEditScript.add(update);
+//                        processedUpdates.add(update);
+//                    }
+//                }
+//            }
+//            for (String newKey : newCodeToUpdates.keySet()) {
+//                if (!assignedNewKeys.contains(newKey)) {
+//                    for (Update update : newCodeToUpdates.get(newKey)) {
+//                        if (!processedUpdates.contains(update)) {
+//                            newEditScript.add(update);
+//                            processedUpdates.add(update);
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//
+//        // add any remaining operations not processed (non-conflicting updates and other operations)
+//        for (EditOperation op : editScript) {
+//            if (!(op instanceof Update) || !processedUpdates.contains(op)) {
+//                newEditScript.add(op);
+//            }
+//        }
+//
+//        return newEditScript;
+//    }
 
     // Find connected components in the conflict graph
-    private static List<Set<Update>> findConnectedComponents(Map<Update, Set<Update>> graph) {
-        List<Set<Update>> components = new ArrayList<>();
-        Set<Update> visited = new HashSet<>();
-
-        for (Update node : graph.keySet()) {
-            if (!visited.contains(node)) {
-                Set<Update> component = new HashSet<>();
-                Stack<Update> stack = new Stack<>();
-                stack.push(node);
-
-                while (!stack.isEmpty()) {
-                    Update current = stack.pop();
-                    if (visited.add(current)) {
-                        component.add(current);
-                        for (Update neighbor : graph.get(current)) {
-                            if (!visited.contains(neighbor)) {
-                                stack.push(neighbor);
-                            }
-                        }
-                    }
-                }
-                components.add(component);
-            }
-        }
-        return components;
-    }
+//    private static List<Set<Update>> findConnectedComponents(Map<Update, Set<Update>> graph) {
+//        List<Set<Update>> components = new ArrayList<>();
+//        Set<Update> visited = new HashSet<>();
+//
+//        for (Update node : graph.keySet()) {
+//            if (!visited.contains(node)) {
+//                Set<Update> component = new HashSet<>();
+//                Stack<Update> stack = new Stack<>();
+//                stack.push(node);
+//
+//                while (!stack.isEmpty()) {
+//                    Update current = stack.pop();
+//                    if (visited.add(current)) {
+//                        component.add(current);
+//                        for (Update neighbor : graph.get(current)) {
+//                            if (!visited.contains(neighbor)) {
+//                                stack.push(neighbor);
+//                            }
+//                        }
+//                    }
+//                }
+//                components.add(component);
+//            }
+//        }
+//        return components;
+//    }
 
 
 
@@ -582,20 +662,20 @@ public class RecoveryProcessor {
         return d[m][n];
     }
 
-    private static void printConflictGraph(Map<Update, Set<Update>> conflictGraph) {
-        System.out.println("Conflict Graph:");
-        for (Map.Entry<Update, Set<Update>> entry : conflictGraph.entrySet()) {
-            Update node = entry.getKey();
-            Set<Update> neighbors = entry.getValue();
-
-            System.out.print("Node " + node.getOldLineNumber() + "->" + node.getNewLineNumber() + " is connected to: ");
-            if (neighbors.isEmpty()) {
-                System.out.println("No conflicts");
-            } else {
-                neighbors.forEach(neighbor -> System.out.print(neighbor.getOldLineNumber() + "->" + neighbor.getNewLineNumber() + " "));
-                System.out.println();
-            }
-        }
-    }
+//    private static void printConflictGraph(Map<Update, Set<Update>> conflictGraph) {
+//        System.out.println("Conflict Graph:");
+//        for (Map.Entry<Update, Set<Update>> entry : conflictGraph.entrySet()) {
+//            Update node = entry.getKey();
+//            Set<Update> neighbors = entry.getValue();
+//
+//            System.out.print("Node " + node.getOldLineNumber() + "->" + node.getNewLineNumber() + " is connected to: ");
+//            if (neighbors.isEmpty()) {
+//                System.out.println("No conflicts");
+//            } else {
+//                neighbors.forEach(neighbor -> System.out.print(neighbor.getOldLineNumber() + "->" + neighbor.getNewLineNumber() + " "));
+//                System.out.println();
+//            }
+//        }
+//    }
 
 }

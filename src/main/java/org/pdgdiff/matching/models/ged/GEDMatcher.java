@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static org.pdgdiff.matching.models.heuristic.JaroWinklerSimilarity.JaroWinklerSimilarity;
+
 /**
  * Performs a Graph Edit Distance node alignment between two PDGs.
  * Returns a GEDResult containing the (distance, nodeMapping).
@@ -116,17 +118,31 @@ public class GEDMatcher {
      * returns substitution cost between two nodes. tbc and changd:
      * e.g. compare text, type, adjacency structure, etc.
      */
-    // SEMANTIC FEASIBILITY ETC
     private double substitutionCost(PDGNode n1, PDGNode n2) {
-        // if attributes match, cost is small. Otherwise, cost is bigger
-        // todo add ot this. dont think attrib ever really varies so much bar loop headers vs stmts
-        if (n1.getAttrib().equals(n2.getAttrib())) {
-            return 0.2;  // slight difference
-        } else if (NodeFeasibility.isSameNodeCategory(n1, n2)) {
-            return 0.5;  // moderate mismatch
-        } else {
-            return 1.0;  // bigger mismatch
+        // base cost if categories differ
+        if (!NodeFeasibility.isSameNodeCategory(n1, n2)) {
+            return 1.0;  // or big penalty
         }
+
+        // compare the node "type" or attribute
+        double attributePenalty = n1.getAttrib().equals(n2.getAttrib()) ? 0.0 : 0.8;
+
+        // get the textual content to compare.
+        String label1 = extractRelevantLabel(n1);
+        String label2 = extractRelevantLabel(n2);
+
+        double sim = JaroWinklerSimilarity(label1, label2); // in [0..1], higher=better
+        double stringCost = 1.0 - sim; // bigger difference -> bigger cost
+
+        double alpha = 0.1;  // weighting for syntactic differences, i.e. string difference
+        double beta  = 0.9;  // weighting for semantic difference, i.e. attribute difference
+
+        return alpha * stringCost + beta * attributePenalty;
+    }
+
+    private String extractRelevantLabel(PDGNode node) {
+        // remove beginning of  'Type: CFGNODE: <code begins here>'
+        return node.toString().substring(15);
     }
 
     /**
