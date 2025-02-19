@@ -5,6 +5,7 @@ import org.pdgdiff.matching.models.heuristic.JaroWinklerSimilarity;
 import org.pdgdiff.util.CodeAnalysisUtils;
 import org.pdgdiff.util.SourceCodeMapper;
 import soot.Modifier;
+import soot.SootClass;
 import soot.SootMethod;
 
 import java.io.IOException;
@@ -18,13 +19,15 @@ public class SignatureDiffGenerator {
         String methodName;
         List<String> paramTokens;
         List<String> annotations;
+        List <String> thrownExceptions;
 
-        ParsedSignature(Set<String> modifiers, String returnType, String methodName, List<String> paramTokens, List<String> annotations) {
+        ParsedSignature(Set<String> modifiers, String returnType, String methodName, List<String> paramTokens, List<String> annotations, List<String> thrownExceptions) {
             this.modifiers = modifiers;
             this.returnType = returnType;
             this.methodName = methodName;
             this.paramTokens = paramTokens;
             this.annotations = annotations;
+            this.thrownExceptions = thrownExceptions;
         }
     }
 
@@ -41,6 +44,12 @@ public class SignatureDiffGenerator {
         String retType = method.getReturnType() != null ? method.getReturnType().toString() : "";
         String name = method.getName();
 
+        List<SootClass> exceptionClasses = method.getExceptions();
+        List<String> thrownExceptions = new ArrayList<>();
+        for (SootClass exception : exceptionClasses) {
+            thrownExceptions.add(exception.getName());
+        }
+
 //        List<String> paramList = new ArrayList<>();
 //        for (soot.Type t : method.getParameterTypes()) {
 //            paramList.add(t.toString());
@@ -54,7 +63,7 @@ public class SignatureDiffGenerator {
         List<Integer> annoLines = new ArrayList<>();
         List<String> annotations = CodeAnalysisUtils.getMethodAnnotationsWithLines(method, mapper, annoLines);
 
-        return new ParsedSignature(modifierSet, retType, name, paramTokens, annotations);
+        return new ParsedSignature(modifierSet, retType, name, paramTokens, annotations, thrownExceptions);
     }
 
 
@@ -184,6 +193,23 @@ public class SignatureDiffGenerator {
                 oldAnnoLines, newAnnoLines,
                 "Annotation changed"));
 
+
+        List<String> oldExceptions = oldSig.thrownExceptions;
+        List<String> newExceptions = newSig.thrownExceptions;
+
+        Set<String> removedExceptions = new HashSet<>(oldExceptions);
+        removedExceptions.removeAll(newExceptions);
+        // todo: again should this be deletes or updates...
+        for (String ex : removedExceptions) {
+            ops.add(new Delete(null, oldLine, "Removed exception from func sig: " + ex));
+        }
+
+        Set<String> addedExceptions = new HashSet<>(newExceptions);
+        addedExceptions.removeAll(oldExceptions);
+        // todo: again should this be inserts or updates...
+        for (String ex : addedExceptions) {
+            ops.add(new Insert(null, newLine, "Added exception from func sig: " + ex));
+        }
 
         return ops;
     }

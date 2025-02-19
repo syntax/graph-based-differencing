@@ -14,7 +14,8 @@ public class RecoveryProcessor {
     public enum RecoveryStrategy {
 //        GLOBAL_SIMILARITY,  // not recommended
 //        CONFLICT_GRAPH,   // not recommended
-        LINE_LEVEL_UNIQUENESS,
+        LINE_LEVEL_UNIQUENESS, // TODO: invesitage that there is a chance that this is resulting in me loosing some data, i.e when i resolve a conflict I might
+                               //   lose some other data that was needed to be represented as changed, just because it doesnt directly map.
         DUPLICATE_CLEANUP,
         CLEANUP, // nb contains LINE_LEVEL_UNIQUNESS
         FLATTEN,
