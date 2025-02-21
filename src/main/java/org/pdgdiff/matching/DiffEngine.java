@@ -5,6 +5,7 @@ import org.pdgdiff.edit.EditDistanceCalculator;
 import org.pdgdiff.edit.EditScriptGenerator;
 import org.pdgdiff.edit.RecoveryProcessor;
 import org.pdgdiff.edit.model.EditOperation;
+import org.pdgdiff.export.DiffGraphExporter;
 import org.pdgdiff.graph.CycleDetection;
 import org.pdgdiff.graph.GraphTraversal;
 import org.pdgdiff.graph.PDG;
@@ -57,6 +58,13 @@ public class DiffEngine {
         generateEditScriptsForUnmatched(unmatchedInList1, unmatchedInList2, srcSourceFilePath, dstSourceFilePath, strategySettings);
         exportGraphMappings(graphMapping, pdgList1, pdgList2, "out/");
 
+        DiffGraphExporter.exportDiffPDGs(
+                graphMapping,
+                pdgList1,
+                pdgList2,
+                "out/delta-graphs/"
+        );
+
         graphMapping.getGraphMapping().forEach((srcPDG, dstPDG) -> {
             String method1 = srcPDG.getCFG().getBody().getMethod().getSignature();
             String method2 = dstPDG.getCFG().getBody().getMethod().getSignature();
@@ -108,6 +116,7 @@ public class DiffEngine {
             SootClass srcClass = pdgList1.get(0).getCFG().getBody().getMethod().getDeclaringClass();
             SootClass dstClass = pdgList2.get(0).getCFG().getBody().getMethod().getDeclaringClass();
 
+            // todo, if one of these is empty, i need to mark it as an insertion or deletion of the entire class. so need to do a INSERT all or DELET all for clsas metadata
             List<EditOperation> metadataScript = ClassMetadataDiffGenerator.generateClassMetadataDiff(srcClass, dstClass, srcSourceFilePath, dstSourceFilePath);
             aggregatedEditScripts.addAll(metadataScript);
             exportEditScript(metadataScript, "metadata", "metadata", null);

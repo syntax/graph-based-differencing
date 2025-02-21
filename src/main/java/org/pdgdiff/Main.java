@@ -58,21 +58,6 @@ public class Main {
 //            dstSourceFilePath = "./benchmark/datasets/gh-java/after/" + project + "/" + commit + "/" + filename +".java";
 
 
-            // NEW CLASSES
-            String commit = "918ef4a7ca8362efd45f67636bc8bd094f5a4414";
-            String project = "signal-server";
-            String filename = "MessageController";
-
-
-
-            beforeDir = "./benchmark/datasets/gh-java/before/" + project + "/" + commit + "/compiled";
-            afterDir = "./benchmark/datasets/gh-java/after/" + project + "/" + commit + "/compiled";
-            class1Name = "org.whispersystems.textsecuregcm.controllers.MessageController";
-            class2Name = "org.whispersystems.textsecuregcm.controllers.MessageController";
-            srcSourceFilePath = "./benchmark/datasets/gh-java/before/" + project + "/" + commit + "/" + filename +".java";
-            dstSourceFilePath = "./benchmark/datasets/gh-java/after/" + project + "/" + commit + "/" + filename +".java";
-
-
 
             //./gumtree webdiff ../../soot-pdg/benchmark/datasets/gh-java/before/google-guava/bbab2ce3c162b244119bdc22a990d7b75fdef0af/Objects.java ../../soot-pdg/benchmark/datasets/gh-java/after/google-guava/bbab2ce3c162b244119bdc22a990d7b75fdef0af/Objects.java
 
@@ -247,23 +232,26 @@ public class Main {
                     // nb: this obviously assumes classes have the same name.
                     System.out.println("\n=== Comparing class: " + fqn + " ===");
 
-                    List<PDG> bPdgs = beforePdgsMap.getOrDefault(fqn, Collections.emptyList());
-                    List<PDG> aPdgs = afterPdgsMap.getOrDefault(fqn, Collections.emptyList());
+                    List<PDG> beforePdgs = beforePdgsMap.getOrDefault(fqn, Collections.emptyList());
+                    List<PDG> afterPdgs = afterPdgsMap.getOrDefault(fqn, Collections.emptyList());
 
-                    if (bPdgs.isEmpty() && !aPdgs.isEmpty()) {
+                    // if that class has no pdgs in the before, but has some in the after, then it was added
+                    System.out.println("Before PDGs: " + beforePdgs);
+                    System.out.println("After PDGs: " + afterPdgs);
+                    if (beforePdgs.isEmpty() && !afterPdgs.isEmpty()) {
                         // this class is ADDED
                         System.out.println("Class " + fqn + " was ADDED in 'after'.");
-                        DiffEngine.difference(Collections.emptyList(), aPdgs, strategySettings,
+                        DiffEngine.difference(Collections.emptyList(), afterPdgs, strategySettings,
                                 srcSourceFilePath, dstSourceFilePath);
-                    } else if (!bPdgs.isEmpty() && aPdgs.isEmpty()) {
+                    } else if (!beforePdgs.isEmpty() && afterPdgs.isEmpty()) {
                         // the class is DELETED
                         System.out.println("Class " + fqn + " was DELETED in 'after'.");
-                        DiffEngine.difference(bPdgs, Collections.emptyList(), strategySettings,
+                        DiffEngine.difference(beforePdgs, Collections.emptyList(), strategySettings,
                                 srcSourceFilePath, dstSourceFilePath);
                     } else {
                         // class existed in both => do normal method-level PDG diff
                         System.out.println("Class " + fqn + " exists in both. Diffing method-level PDGs...");
-                        DiffEngine.difference(bPdgs, aPdgs, strategySettings, srcSourceFilePath, dstSourceFilePath);
+                        DiffEngine.difference(beforePdgs, afterPdgs, strategySettings, srcSourceFilePath, dstSourceFilePath);
                     }
                 }
 
