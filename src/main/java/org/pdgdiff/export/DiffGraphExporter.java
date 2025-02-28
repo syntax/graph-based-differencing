@@ -112,24 +112,24 @@ public class DiffGraphExporter {
 
                 if (dstNode == null) {
                     // node was deleted in dst
-                    String label = escape(removePrefix(srcNode.toString()));
+                    String label = removePrefix(srcNode.toString());
                     String color = "#FFCCCC"; // red for deletion
-                    nodeDataMap.put(nodeId, new NodeData(label, color));
+                    nodeDataMap.put(nodeId, new NodeData(createNodeLabel(label, srcNode), color));
                 } else {
                     // matched (possible unchanged, moved, or updated)
 //                    boolean changed = nodeContentChanged(srcNode, dstNode);
                     String label, color;
                     // label shows both sides
                     if (Objects.equals(removePrefix(srcNode.toString()), removePrefix(dstNode.toString()))) {
-                        label = escape(removePrefix(srcNode.toString()));
+                        label = removePrefix(srcNode.toString());
                         color = "lightgrey"; // grey for unchanged
                     } else {
-                        label = escape(String.format("%s\\n----\\n%s",
+                        label = String.format("%s!NEWLINE!----!NEWLINE!%s",
                                 removePrefix(srcNode.toString()),
-                                removePrefix(dstNode.toString())));
+                                removePrefix(dstNode.toString()));
                         color = "#FFCC99"; // orange for update
                     }
-                    nodeDataMap.put(nodeId, new NodeData(label, color));
+                    nodeDataMap.put(nodeId, new NodeData(createNodeLabel(label, srcNode, dstNode), color));
                 }
             }
 
@@ -137,9 +137,9 @@ public class DiffGraphExporter {
             for (PDGNode dstNode : dstNodes) {
                 if (!dstToSrc.containsKey(dstNode)) {
                     String nodeId = getNodeId(dstNode, false);
-                    String label = escape(removePrefix(dstNode.toString()));
+                    String label = removePrefix(dstNode.toString());
                     String color = "#CCFFCC"; // green-ish for addition
-                    nodeDataMap.put(nodeId, new NodeData(label, color));
+                    nodeDataMap.put(nodeId, new NodeData(createNodeLabel(label, dstNode), color));
                 }
             }
 
@@ -187,7 +187,7 @@ public class DiffGraphExporter {
             for (String nodeId : connectedNodeIds) {
                 NodeData data = nodeDataMap.get(nodeId);
                 if (data != null) {
-                    writer.printf("  %s [label=\"%s\", fillcolor=\"%s\"];%n",
+                    writer.printf("  %s [label=%s, fillcolor=\"%s\"];%n",
                             nodeId, data.label, data.color);
                 }
             }
@@ -209,7 +209,7 @@ public class DiffGraphExporter {
                         .map(s -> s.substring(4))
                         .distinct()
                         .collect(Collectors.joining("/"));
-                writer.printf("  %s -> %s [color=\"%s\", label=\"%s\"];%n",
+                writer.printf("  %s -> %s [color=%s, label=\"%s\"];%n",
                         key.srcId, key.tgtId, color, edgeLabel);
             }
 
@@ -220,32 +220,42 @@ public class DiffGraphExporter {
         }
     }
 
-    /**
-     * deciding if two PDG nodes differ by comparing a canonicalized version of their text,
-     * and also checking if their line numbers differ (similar to how we do in the edit script).
-     */
-    private static boolean nodeContentChanged(PDGNode src, PDGNode dst) {
-        // Compare the canonical text
-        String canonicalSrc = canonicalizeNodeText(src);
-        String canonicalDst = canonicalizeNodeText(dst);
-        if (!canonicalSrc.equals(canonicalDst)) {
-            return true;
-        }
-        return false;
-        // also maybe... consider a difference if line numbers differ
-//        int srcLine = getNodeLineNumber(src);
-//        int dstLine = getNodeLineNumber(dst);
-//        return (srcLine != -1 && dstLine != -1 && srcLine != dstLine);
+    // this is overloaded, depending on udpate or single-line number operation
+    private static String createNodeLabel(String originalLabel, PDGNode node) {
+        return createNodeLabel(originalLabel, node, null);
     }
 
-   // not sure on this
-    private static String canonicalizeNodeText(PDGNode node) {
-        String raw = node.toString();
-        raw = removePrefix(raw);
-        raw = raw.replaceAll("r\\d+", "rX")
-                .replaceAll("@\\d+", "@X")
-                .trim();
-        return raw;
+
+    private static String createNodeLabel(String originalLabel, PDGNode node1, PDGNode node2) {
+        int lineNum = getNodeLineNumber(node1);
+        int lineNum2 = -1;
+        if (node2 != null) {
+            lineNum2 = getNodeLineNumber(node2);
+        }
+        String safeLabel = escape(originalLabel);
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("<");
+        sb.append("<b>").append(safeLabel).append("</b>");
+        System.out.println("lineNum: " + lineNum + " lineNum2: " + lineNum2);
+        if (lineNum != -1 && lineNum2 == -1) {
+            System.out.println("hit");
+            sb.append("<br/>")
+                    .append("<font point-size=\"10\" color=\"gray\">")
+                    .append("Line: ").append(lineNum)
+                    .append("</font>");
+        } else if(lineNum != -1) {
+            System.out.println("hit2");
+            sb.append("<br/>")
+                    .append("<font point-size=\"10\" color=\"gray\">")
+                    .append("Line: ").append(lineNum)
+                    .append(" -&gt; ")
+                    .append("Line: ").append(lineNum2)
+                    .append("</font>");
+        }
+
+        sb.append(">");
+        return sb.toString();
     }
 
     // helper classes and methods
@@ -311,7 +321,11 @@ public class DiffGraphExporter {
 
     // for dot formatting
     private static String escape(String text) {
-        return text.replace("\"", "\\\"");
+        return text.replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "\\\"")
+                .replace("!NEWLINE!", "<br/>");
+
     }
 
     private static class EdgeKey {
