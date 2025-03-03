@@ -98,7 +98,15 @@ def parse_gumtree_json(json_output, char_to_line_f1, char_to_line_f2):
         "moved_dst": [],
         "inserted_dst": [],
         "updated_src": [],
-        "updated_dst": []
+        "updated_dst": [],
+        "soot_compatible":{
+            "deleted_src": [],
+            "moved_src": [],
+            "moved_dst": [],
+            "inserted_dst": [],
+            "updated_src": [],
+            "updated_dst": []
+        },
     }
     
     src_dest_map = {}
@@ -246,6 +254,68 @@ def handle_changed_lines(changed_lines):
 
     return changed_lines
 
+def expand_and_filter_soot_compatible(changed_lines, src_file, dst_file):
+    try:
+        with open(src_file, "r", encoding="utf-8") as f:
+            src_lines = f.readlines()
+    except:
+        src_lines = []
+
+    try:
+        with open(dst_file, "r", encoding="utf-8") as f:
+            dst_lines = f.readlines()
+    except:
+        dst_lines = []
+
+    def expand_line_nums(item):
+        """
+        If item is an int, return [item].
+        If item is a tuple (start, end), return [start, start+1, ..., end].
+        """
+        if isinstance(item, tuple):
+            return list(range(item[0], item[1] + 1))
+        else:
+            return [item]
+
+    categories_source = ["deleted_src", "updated_src", "moved_src"]
+    categories_dest   = ["inserted_dst", "updated_dst", "moved_dst"]
+
+    for cat in categories_source:
+        expanded_lines = []
+        soot_compat_lines = []
+
+        for entry in changed_lines[cat]:
+            expanded_lines.extend(expand_line_nums(entry))
+
+        expanded_lines = sorted(set(expanded_lines))
+
+        for ln in expanded_lines:
+            if 1 <= ln <= len(src_lines):
+                if not is_non_soot_detectable(src_lines[ln-1]):
+                    soot_compat_lines.append(ln)
+
+        changed_lines[cat] = expanded_lines
+        changed_lines["soot_compatible"][cat] = soot_compat_lines
+
+    for cat in categories_dest:
+        expanded_lines = []
+        soot_compat_lines = []
+
+        for entry in changed_lines[cat]:
+            expanded_lines.extend(expand_line_nums(entry))
+
+        expanded_lines = sorted(set(expanded_lines))
+
+        for ln in expanded_lines:
+            if 1 <= ln <= len(dst_lines):
+                if not is_non_soot_detectable(dst_lines[ln-1]):
+                    soot_compat_lines.append(ln)
+
+        changed_lines[cat] = expanded_lines
+        changed_lines["soot_compatible"][cat] = soot_compat_lines
+
+    return changed_lines
+
 def total_number_changes_lines(changed_lines):
     return sum(len(lines) for lines in changed_lines.values())
 
@@ -381,9 +451,16 @@ def initialize_csv():
                 "Total Changed Lines", "Total Changed Lines (Excl. Moves)",
                 "Total Changed Lines (Excl. Moves AND Comments)",
                 "Total Changed Lines (Excl. everything non soot)",
+
                 "Deleted Lines (Src)", "Inserted Lines (Dst)",
                 "Updated Lines (Src)", "Updated Lines (Dst)",
-                "Moved Lines (Src)", "Moved Lines (Dst)", "Errors"
+                "Moved Lines (Src)", "Moved Lines (Dst)", 
+                
+                "Deleted Lines (Src) (SootOK)", "Inserted Lines (Dst) (SootOK)",
+                "Updated Lines (Src) (SootOk)", "Updated Lines (Dst) (SootOk)",
+                "Moved Lines (Src) (SootOk)", "Moved Lines (Dst) (SootOk)",
+                
+                "Errors"
             ])
 
 def log_results_to_csv(file_info, approach_name, changed_lines, error_msg="",non_comment_changed_count=None, non_soot_changed_count=None):
@@ -406,6 +483,12 @@ def log_results_to_csv(file_info, approach_name, changed_lines, error_msg="",non
                 str(changed_lines["updated_dst"]),
                 str(changed_lines["moved_src"]),
                 str(changed_lines["moved_dst"]),
+                str(changed_lines["soot_compatible"]["deleted_src"]),
+                str(changed_lines["soot_compatible"]["inserted_dst"]),
+                str(changed_lines["soot_compatible"]["updated_src"]),
+                str(changed_lines["soot_compatible"]["updated_dst"]),
+                str(changed_lines["soot_compatible"]["moved_src"]),
+                str(changed_lines["soot_compatible"]["moved_dst"]),
                 error_msg
             ])
             print(f"{bcolors.OKCYAN}[status]{bcolors.ENDC} > logged results for {file_info['changed_file']} ({approach_name}) to CSV.")
@@ -559,7 +642,7 @@ def main():
             char_to_line_f2 = map_char_to_line(file2)
 
             gt_changes = parse_gumtree_json(json_output, char_to_line_f1, char_to_line_f2)
-            gt_changes = handle_changed_lines(gt_changes)
+            gt_changes = expand_and_filter_soot_compatible(gt_changes, file1, file2)
             
             gt_non_comment_count = count_changed_lines_excluding_comments(gt_changes, file1, file2)
             gt_non_soot_count = count_changed_lines_excluding_nonsoot(gt_changes, file1, file2)
@@ -578,7 +661,7 @@ def main():
                                 file_info["after_class_fullyqualified"], 
                                 strategy=strategy)
             pdg_vf2_changes = parse_pdgdiff_output(open(PDG_OUT_PATH).read())
-            pdg_vf2_changes = handle_changed_lines(pdg_vf2_changes)
+            pdg_vf2_changes = expand_and_filter_soot_compatible(pdg_vf2_changes, file1, file2)
 
             pdg_vf2_non_comment_count = count_changed_lines_excluding_comments(pdg_vf2_changes, file1, file2)
             pdg_vf2_non_soot_count = count_changed_lines_excluding_nonsoot(pdg_vf2_changes, file1, file2)
@@ -613,10 +696,11 @@ def main():
                                 file_info["after_class_fullyqualified"], 
                                 strategy=strategy)
             pdg_ged_changes = parse_pdgdiff_output(open(PDG_OUT_PATH).read())
-            pdg_ged_changes = handle_changed_lines(pdg_ged_changes)
+            pdg_ged_changes = expand_and_filter_soot_compatible(pdg_ged_changes, file1, file2)
 
             pdg_ged_non_comment_count = count_changed_lines_excluding_comments(pdg_ged_changes, file1, file2)
             pdg_get_non_soot_count = count_changed_lines_excluding_nonsoot(pdg_ged_changes, file1, file2)
+            
 
             print(f"{bcolors.OKBLUE}[notif]{bcolors.ENDC} parsing results...")
             report_changed_lines_brief(gt_changes, "GumTree", file_info["changed_file"], gt_non_comment_count, gt_non_soot_count)
