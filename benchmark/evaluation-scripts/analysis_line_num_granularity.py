@@ -168,13 +168,13 @@ plt.xticks(rotation=45)
 
 plt.tight_layout()
 plt.savefig("plots/violin.png")
-plt.show()
+#plt.show()
 
-# --- Grouped bar charts for median, etc 80th, and 90th percentiles ---
+# --- PERCENTILES ---
 
 percentiles = np.arange(0, 101)
+tick_step = 5
 
-# plot percentiles for Misses.
 plt.figure(figsize=(12, 6))
 for approach in sorted(diff_df["Approach"].unique()):
     data = diff_df[diff_df["Approach"] == approach]["Misses"]
@@ -185,19 +185,64 @@ plt.xlabel("Percentile")
 plt.ylabel("Misses")
 plt.title("Percentile Curve for Misses by Approach")
 plt.legend()
+ax = plt.gca()
+y_max = diff_df["Misses"].max()
+ax.set_yticks(np.arange(0, y_max + tick_step, tick_step))
 plt.grid(True)
 plt.savefig("plots/misses.png")
 
-# plot percentiles for Hallucinations.
 plt.figure(figsize=(12, 6))
 for approach in sorted(diff_df["Approach"].unique()):
     data = diff_df[diff_df["Approach"] == approach]["Hallucinations"]
-    # cmp percentile values for this approach.
     perc_values = np.percentile(data, percentiles)
     sns.lineplot(x=percentiles, y=perc_values, label=approach)
 plt.xlabel("Percentile")
 plt.ylabel("Hallucinations")
 plt.title("Percentile Curve for Hallucinations by Approach")
 plt.legend()
+ax = plt.gca()
+y_max = diff_df["Misses"].max()
+ax.set_yticks(np.arange(0, y_max + tick_step, tick_step))
 plt.grid(True)
 plt.savefig("plots/hallucinations.png")
+
+
+# --- INVESTIGATING GRANULARITY - source vs dest misses ---
+
+summary_src_dest = diff_df.groupby("Approach").agg({
+    "Misses_Src": "mean",
+    "Misses_Dest": "mean",
+    "Hallucinations_Src": "mean",
+    "Hallucinations_Dest": "mean"
+}).reset_index()
+
+print("Average Values by Approach (Source vs Destination):")
+print(summary_src_dest)
+
+approaches = summary_src_dest["Approach"]
+x = np.arange(len(approaches))
+width = 0.35
+
+fig, ax = plt.subplots(figsize=(10,6))
+bars_src = ax.bar(x - width/2, summary_src_dest["Misses_Src"], width, label="Source Misses")
+bars_dest = ax.bar(x + width/2, summary_src_dest["Misses_Dest"], width, label="Destination Misses")
+
+ax.set_ylabel("Average Misses (lines)")
+ax.set_title("Average Misses by Approach: Source vs Destination")
+ax.set_xticks(x)
+ax.set_xticklabels(approaches)
+ax.legend()
+plt.tight_layout()
+plt.savefig("plots/avg_misses.png")
+
+fig, ax = plt.subplots(figsize=(10,6))
+bars_src = ax.bar(x - width/2, summary_src_dest["Hallucinations_Src"], width, label="Source Hallucinations")
+bars_dest = ax.bar(x + width/2, summary_src_dest["Hallucinations_Dest"], width, label="Destination Hallucinations")
+
+ax.set_ylabel("Average Hallucinations (lines)")
+ax.set_title("Average Hall by Approach: Source vs Destination")
+ax.set_xticks(x)
+ax.set_xticklabels(approaches)
+ax.legend()
+plt.tight_layout()
+plt.savefig("plots/avg_hall.png")
