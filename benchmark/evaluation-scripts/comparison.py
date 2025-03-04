@@ -13,7 +13,7 @@ os.system("")
 
 GUMTREE_PATH = "../../../gumtree-4.0.0-beta2 2/bin"
 PDG_OUT_PATH = "out/diff.json"
-CSV_LOG_FILE = "diff_results.csv"
+CSV_LOG_FILE = "diff_results_gumtree_indiv_line_nums.csv"
 
 
 class bcolors:
@@ -189,7 +189,15 @@ def parse_pdgdiff_output(output):
         "moved_dst": [],
         "inserted_dst": [],
         "updated_src": [],
-        "updated_dst": []
+        "updated_dst": [],
+        "soot_compatible":{
+            "deleted_src": [],
+            "moved_src": [],
+            "moved_dst": [],
+            "inserted_dst": [],
+            "updated_src": [],
+            "updated_dst": []
+        },
     }
 
     for action in data.get("actions", []):
