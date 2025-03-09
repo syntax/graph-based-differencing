@@ -19,6 +19,15 @@ In some specific use cases, such as analysis efficiencies or trying to determine
 The complete process flow is described in the above visualisation. Data is read in from the source and destination files, and a PDG is generated for each. The PDGs are then compared using a graph isomorphism strategy, and the results are used to generate an pairing between methods. Each method pairing also has a node mapping, which is used to generate a edit script between two methods. A recovery method is applied to this to analyse operations using further heuristics, and these edit scripts are aggregated to create a final delta that summarises the changes between two files. 
 Current recommended matching strategies, that are proven to work quite well in most cases include VF2 and GED.
 
+### How can I visualise the changes?
+
+After running the program with the preffered matching engine settings, the diff can be visualised in different ways. Most commonly, 
+one can run the _py-visualise_ Flask app to view the diff in its side-by-side, text-based form. Alternatively, remaning more loyal to the graph-based differencing approach, the delta can be viewed at the Jimple level as a singular _delta_
+graph. This can be used by exporting the dot file created in the delta-graph folder to a png, or similar.
+
+![Delta](images/refactoredgraph.png)
+**NB**: This delta has been edited slightly to ensure its readable on this README and not too large.
+
 ### Preliminary list of dependencies
  - Java 8
  - Springboot 2.5.x
