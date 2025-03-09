@@ -141,7 +141,7 @@ def format_stats(label, st):
     )
 
 def main():
-    csv_path = "diff_results_new.csv"
+    csv_path = "diff_results_gumtree_indiv_line_nums.csv"
     df = load_data(csv_path)
     df = prepare_data(df)
     merged = merge_approaches(df)
