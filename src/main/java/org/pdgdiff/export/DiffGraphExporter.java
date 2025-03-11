@@ -237,15 +237,12 @@ public class DiffGraphExporter {
         StringBuilder sb = new StringBuilder();
         sb.append("<");
         sb.append("<b>").append(safeLabel).append("</b>");
-        System.out.println("lineNum: " + lineNum + " lineNum2: " + lineNum2);
         if (lineNum != -1 && lineNum2 == -1) {
-            System.out.println("hit");
             sb.append("<br/>")
                     .append("<font point-size=\"10\" color=\"gray\">")
                     .append("Line: ").append(lineNum)
                     .append("</font>");
         } else if(lineNum != -1) {
-            System.out.println("hit2");
             sb.append("<br/>")
                     .append("<font point-size=\"10\" color=\"gray\">")
                     .append("Line: ").append(lineNum)

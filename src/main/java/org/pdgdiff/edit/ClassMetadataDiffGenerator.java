@@ -78,7 +78,6 @@ public class ClassMetadataDiffGenerator {
         Map<String, SootField> srcFieldMap = new HashMap<>();
         Map<String, SootField> dstFieldMap = new HashMap<>();
 
-        // TODO: look into using soots own 'Chain' for this
         for (SootField field : srcFields) {
             srcFieldMap.put(field.getName(), field);
         }

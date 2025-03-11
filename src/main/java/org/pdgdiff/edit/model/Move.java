@@ -8,7 +8,6 @@ import java.util.Objects;
  * Represents a move operation in the edit script.
  */
 public class Move extends EditOperation {
-    // TODO: Fix this new version of move, it doesnt work lol.
     private int oldLineNumber;
     private int newLineNumber;
     private String codeSnippet;
