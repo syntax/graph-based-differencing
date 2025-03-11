@@ -5,7 +5,6 @@ import org.pdgdiff.matching.GraphMapping;
 import org.pdgdiff.matching.GraphMatcher;
 import org.pdgdiff.matching.NodeMapping;
 import org.pdgdiff.matching.models.heuristic.HeuristicMatcher;
-import soot.toolkits.graph.pdg.HashMutablePDG;
 
 import java.util.List;
 
@@ -18,13 +17,13 @@ public class HeuristicGraphMatcher extends GraphMatcher {
     public GraphMapping matchPDGLists() {
         HeuristicMatcher heuristicMatcher = new HeuristicMatcher();
 
-        for (PDG pdg1 : pdgList1) {
+        for (PDG pdg1 : srcPdgs) {
             PDG bestMatch = null;
             NodeMapping bestNodeMapping = null; // Track node-level mappings
             double bestScore = Double.NEGATIVE_INFINITY;  // Start with a very low score
 
             // Compare pdg1 with each PDG from the second list
-            for (PDG pdg2 : pdgList2) {
+            for (PDG pdg2 : dstPdgs) {
                 // Skip if this PDG has already been matched
                 if (matchedPDGs.contains(pdg2)) {
                     continue;

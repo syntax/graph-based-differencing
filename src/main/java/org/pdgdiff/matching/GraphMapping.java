@@ -7,7 +7,8 @@ import java.util.Map;
 
 /**
  * GraphMapping class to store mappings between PDGs. This class is used to store the mapping between
- * PDGs in two lists that have been matched by the GraphMatcher.
+ * PDGs in two lists that have been matched by the GraphMatcher. For each PDG mapping, a node mapping
+ * is also stored.
  */
 public class GraphMapping {
     private Map<PDG, PDG> graphMapping;
@@ -18,15 +19,9 @@ public class GraphMapping {
         this.nodeMappings = new HashMap<>();
     }
 
-    // Adds a mapping between two PDGs
     public void addGraphMapping(PDG srcPDG, PDG dstPDG, NodeMapping nodeMapping) {
         graphMapping.put(srcPDG, dstPDG);
         nodeMappings.put(srcPDG, nodeMapping);
-    }
-
-    // Retrieves the mapped PDG for a given PDG
-    public PDG getMappedGraph(PDG srcPDG) {
-        return graphMapping.get(srcPDG);
     }
 
     // Retrieves the node mapping for a given PDG pair

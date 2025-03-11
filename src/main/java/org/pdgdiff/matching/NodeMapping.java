@@ -24,16 +24,6 @@ public class NodeMapping {
         reverseNodeMapping.put(dstNode, srcNode);
     }
 
-    // Retrieves the mapped destination node for a given source node
-    public PDGNode getMappedNode(PDGNode node) {
-        return nodeMapping.get(node);
-    }
-
-    // Retrieves the mapped source node for a given destination node
-    public PDGNode getReverseMappedNode(PDGNode node) {
-        return reverseNodeMapping.get(node);
-    }
-
     // Exposes the entire node mapping
     public Map<PDGNode, PDGNode> getNodeMapping() {
         return nodeMapping;
@@ -57,16 +47,6 @@ public class NodeMapping {
             System.out.println("Source Node: " + entry.getKey().toString()
                     + " --> Mapped to: " + entry.getValue().toString());
         }
-    }
-
-    // Check if a node is already mapped
-    public boolean isMapped(PDGNode node) {
-        return nodeMapping.containsKey(node);
-    }
-
-    // Check if a destination node is already reverse-mapped
-    public boolean isReverseMapped(PDGNode node) {
-        return reverseNodeMapping.containsKey(node);
     }
 
     public boolean isEmpty() {
