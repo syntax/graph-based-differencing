@@ -28,6 +28,11 @@ graph. This can be used by exporting the dot file created in the delta-graph fol
 ![Delta](images/refactoredgraph.png)
 **NB**: This delta has been edited slightly to ensure its readable on this README and not too large.
 
+Alternatively, the delta can be visualised with a more traditional side-by-side view, as shown below. Note that because differencing occurs at the IR level post compiler-optimisation, some syntactic differences may not be captured. As an example, deadcode in addNumbers is not considered. This view can be run by `cd`'ing to the `py-visualise` directory and running `python3 app.py` following a install of the required dependencies.
+
+![Side-by-side](images/text-based.jpg)
+
+
 ### Preliminary list of dependencies
  - Java 8
  - Springboot 2.5.x
