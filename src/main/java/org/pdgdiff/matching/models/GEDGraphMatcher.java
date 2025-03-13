@@ -12,50 +12,48 @@ import java.util.List;
 
 /**
  * A GraphMatcher that uses a Graph Edit Distance approach to
- * match PDGs from list1 and list2.  Similar "outer loop" to VF2GraphMatcher,
+ * match PDGs from the source and dest file.  Similar "outer loop" to VF2GraphMatcher,
  * but calls GEDMatcher internally for each PDG pair.
  */
 public class GEDGraphMatcher extends GraphMatcher {
 
-    public GEDGraphMatcher(List<PDG> list1, List<PDG> list2) {
-        super(list1, list2);
+    public GEDGraphMatcher(List<PDG> srcPdgs, List<PDG> dstPdgs) {
+        super(srcPdgs, dstPdgs);
     }
 
     @Override
     public GraphMapping matchPDGLists() {
-        // Copy the PDG lists so we can track unmatched pairs
-        List<PDG> unmappedPDGs1 = new ArrayList<>(srcPdgs);
-        List<PDG> unmappedPDGs2 = new ArrayList<>(dstPdgs);
+        List<PDG> unmappedSrcPdgs = new ArrayList<>(srcPdgs);
+        List<PDG> unmappedDstPdgs = new ArrayList<>(dstPdgs);
 
-        while (!unmappedPDGs1.isEmpty() && !unmappedPDGs2.isEmpty()) {
+        while (!unmappedSrcPdgs.isEmpty() && !unmappedDstPdgs.isEmpty()) {
             double minDistance = Double.POSITIVE_INFINITY;
-            PDG bestPdg1 = null;
-            PDG bestPdg2 = null;
+            PDG bestSrcPdg = null;
+            PDG bestDstPdg = null;
             NodeMapping bestNodeMapping = null;
 
-            // For each unmatched PDG in src and dest, compute the minimal graph-edit distance
-            for (PDG pdg1 : unmappedPDGs1) {
-                for (PDG pdg2 : unmappedPDGs2) {
-                    // Use the GEDMatcher on this pair
-                    GEDMatcher ged = new GEDMatcher(pdg1, pdg2);
+            // for each unmatched PDG in src and dest, compute the minimal graph-edit distance
+            for (PDG srcPdg : unmappedSrcPdgs) {
+                for (PDG dstPdg : unmappedDstPdgs) {
+                    GEDMatcher ged = new GEDMatcher(srcPdg, dstPdg);
                     GEDResult result = ged.match();  // get (distance, nodeMapping)
 
                     if (result != null && result.distance < minDistance) {
                         minDistance = result.distance;
-                        bestPdg1 = pdg1;
-                        bestPdg2 = pdg2;
+                        bestSrcPdg = srcPdg;
+                        bestDstPdg = dstPdg;
                         bestNodeMapping = result.nodeMapping;
                     }
                 }
             }
 
-            if (bestPdg1 != null && bestPdg2 != null) {
+            if (bestSrcPdg != null && bestDstPdg != null) {
                 //  found the "best" pair, remove them from the unmatched sets
-                unmappedPDGs1.remove(bestPdg1);
-                unmappedPDGs2.remove(bestPdg2);
+                unmappedSrcPdgs.remove(bestSrcPdg);
+                unmappedDstPdgs.remove(bestDstPdg);
 
                 // the chosen mapping in the global GraphMapping
-                graphMapping.addGraphMapping(bestPdg1, bestPdg2, bestNodeMapping);
+                graphMapping.addGraphMapping(bestSrcPdg, bestDstPdg, bestNodeMapping);
             } else {
                 // No good matches remain
                 break;
