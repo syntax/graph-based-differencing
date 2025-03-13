@@ -10,7 +10,6 @@ Due to the fact that a PDG is often built from an intermediate representation fo
 differencing, compiler optimisations are disabled for target comparison files both at the java compiler level and the Soot level. 
 In some specific use cases, such as analysis efficiencies or trying to determine if programs are semantically identical, this tool should (🤞) be more useful than other differencing approaches.
 
-**Please note;** This is a current WIP. The project is currently in the early stages of development, and the README will be updated as the project progresses. Documentation, in the form of a complete dissertation report, is in the works.
 
 ### How does this work?
 
@@ -26,12 +25,13 @@ one can run the _py-visualise_ Flask app to view the diff in its side-by-side, t
 graph. This can be used by exporting the dot file created in the delta-graph folder to a png, or similar.
 
 ![Delta](images/refactoredgraph.png)
-**NB**: This delta has been edited slightly to ensure its readable on this README and not too large.
+**NB**: This delta has been edited slightly to ensure its readable on this README and not too large. This delta graph depicts the changes that transform the method _detailedComputation_ to the method _complexCalculation_, both depicted at the Java level in the text-based visualisation below.
 
 Alternatively, the delta can be visualised with a more traditional side-by-side view, as shown below. Note that because differencing occurs at the IR level post compiler-optimisation, some syntactic differences may not be captured. As an example, deadcode in addNumbers is not considered. This view can be run by `cd`'ing to the `py-visualise` directory and running `python3 app.py` following a install of the required dependencies.
 
 ![Side-by-side](images/text-based.jpg)
 
+Insertions and Deletions are marked with a green and red background respectively. Update operations are marked with a variety of colours, so that changes across the source and destination methods and the node pairings of the algorithm can be easily identified. A list of all the edit operations required to describe the delta is listed below the visualisation.
 
 ### Preliminary list of dependencies
  - Java 8
@@ -41,7 +41,6 @@ Alternatively, the delta can be visualised with a more traditional side-by-side 
  - Python 3.8.x or later
 
 ### Getting Started
-
 To run,
 
 Compile dependencies;
@@ -59,7 +58,12 @@ Run the application with arguments for differencing;
 mvn exec:java -Dexec.mainClass="org.pdgdiff.Main" -Dexec.args="<beforeSourcePath> <afterSourcePath> <beforeCompiledDir> <afterCompiledDir> <beforeClassName> <afterClassName>"
 ```
 
-To run the current Flask frontend;
+Package the application (necessary for evaluation purposes only);
+```bash
+mvn clean package
+```
+
+To run the Flask frontend for text-based visualisation;
 ```bash
 cd py-visualise
 python3 app.py
