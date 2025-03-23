@@ -331,13 +331,6 @@ public class EditScriptGenerator {
     }
 
     private static int getLineNumber(Unit unit) {
-        if (unit == null) {
-            return -1;
-        }
-        LineNumberTag tag = (LineNumberTag) unit.getTag("LineNumberTag");
-        if (tag != null) {
-            return tag.getLineNumber();
-        }
-        return -1;
+        return CodeAnalysisUtils.getLineNumber(unit);
     }
 }

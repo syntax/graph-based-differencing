@@ -2,8 +2,9 @@ import os
 import subprocess
 import shutil
 from pathlib import Path
+from typing import Optional
 
-# change to "verbose" for detailed logs, or "stats" for minimal logs
+# Change to "verbose" for detailed logs, or "stats" for minimal logs
 OUTPUT_MODE = "stats"
 
 GH_JAVA_PROJECTS = {
@@ -31,17 +32,25 @@ build_stats = {
 }
 
 def log(msg: str):
+    """Log function that only prints if in verbose mode."""
     if OUTPUT_MODE == "verbose":
         print(msg)
 
 def stats_log_project(project_name):
+    """ Print a one-line live count for a project (only in 'stats' mode). """
     if OUTPUT_MODE == "stats":
         p = build_stats[project_name]['passed']
         f = build_stats[project_name]['failed']
         print(f"[stats] {project_name}: passed={p}, failed={f}, files={files_gathered}")
 
 def run_cmd(cmd, cwd=None, capture_output=False):
-    # Helper function that runs a command with optional suppression of stdout/stderr  for 'stats' mode.
+    """
+    Helper function that runs a command with optional suppression of stdout/stderr
+    for 'stats' mode. If 'capture_output' is True, returns the CompletedProcess object
+    so we can read stdout/stderr if needed.
+
+    Raises CalledProcessError on non-zero exit code.
+    """
     if OUTPUT_MODE == "stats" and not capture_output:
         # hide stdout/stderr in 'stats' mode by default
         return subprocess.run(
@@ -55,10 +64,10 @@ def run_cmd(cmd, cwd=None, capture_output=False):
             capture_output=True, text=True
         )
     else:
-        # 'verbose' mode or we explicitly want output
         return subprocess.run(cmd, cwd=cwd, check=True)
 
 def clone_repos():
+    """Clone repositories into the projects directory."""
     PROJECTS_DIR.mkdir(exist_ok=True)
     for project_name, repo_url in GH_JAVA_PROJECTS.items():
         project_path = PROJECTS_DIR / project_name
@@ -67,21 +76,24 @@ def clone_repos():
             run_cmd(['git', 'clone', repo_url, str(project_path)], cwd=BASE_DIR)
 
 def checkout_commit(repo_path, commit_hash):
+    """
+    force checkout a specific commit, discarding any local changes,
+    and clean untracked files to ensure a fresh state.
+    """
     try:
         run_cmd(['git', 'checkout', '-f', commit_hash], cwd=repo_path)
         run_cmd(['git', 'clean', '-xfd'], cwd=repo_path)
     except subprocess.CalledProcessError as e:
         log(f"Error during checkout of commit {commit_hash}: {e}")
-        raise  # Re-raise so we can catch it at a higher level if needed
+        raise  # re-raise so can catch it at a higher level if needed
 
 def get_previous_commit(repo_path, commit_hash):
     result = run_cmd(['git', 'rev-parse', f'{commit_hash}^'],
                      cwd=repo_path,
                      capture_output=True)
-    return result.stdout.strip()
+    return result.stdout.strip() # result hash
 
 def process_commits():
-    # Process commits dynamically based on directory structure
     global files_gathered
 
     for project_name in GH_JAVA_PROJECTS.keys():
@@ -106,14 +118,12 @@ def process_commits():
                     target_commit = None
 
                     if stage == 'before':
-                        # Get the commit before 'commit_hash'
                         try:
                             target_commit = get_previous_commit(repo_path, commit_hash)
                         except subprocess.CalledProcessError:
                             log(f"Cannot determine previous commit for {commit_hash}. Probably the first commit.")
                             continue
                     else:
-                        # 'after' => just use the commit itself
                         target_commit = commit_hash
 
                     if not target_commit:
@@ -148,7 +158,10 @@ def process_commits():
 
 
 
-def find_build_xml(repo_path: Path) -> Path | None:
+def find_build_xml(repo_path: Path) -> Optional[Path]:
+    """
+    return a Path object for build.xml if found in either top-level or in the 'build' subdirectory, or None
+    """
     possible_paths = [
         repo_path / 'build.xml',
         repo_path / 'build' / 'build.xml',
@@ -162,6 +175,7 @@ def find_build_xml(repo_path: Path) -> Path | None:
 
 def compile_project(repo_path, commit_dir) -> bool:
     """
+    This works in a decent amount of cases, but not every case.
     Compile the project using:
       1) Gradle wrapper if available (unless it's an old codehaus version)
       2) System Gradle if build.gradle found
@@ -169,8 +183,6 @@ def compile_project(repo_path, commit_dir) -> bool:
       4) Ant (build.xml)
       5) Manual fallback
     """
-
-
     gradlew_path = repo_path / 'gradlew'
     gradle_wrapper_props = repo_path / 'gradle' / 'wrapper' / 'gradle-wrapper.properties'
     build_gradle = repo_path / 'build.gradle'
@@ -179,7 +191,7 @@ def compile_project(repo_path, commit_dir) -> bool:
 
 
     try:
-        # Gradle wrapper (check if it's referencing codehaus.org)
+        # 1) Gradle wrapper (check if it's referencing codehaus.org)
         if gradlew_path.exists() and gradle_wrapper_props.exists():
             with open(gradle_wrapper_props, 'r', encoding='utf-8') as f:
                 contents = f.read()
@@ -191,14 +203,14 @@ def compile_project(repo_path, commit_dir) -> bool:
                 copy_all_gradle_compiled_files(repo_path, commit_dir)
                 return True
 
-        # System Gradle
+        # 2) System Gradle
         if build_gradle.exists():
             log(f">> Using system Gradle to build {repo_path}")
             run_cmd(['gradle', 'clean', 'build', '-x', 'test', '--stacktrace'], cwd=repo_path)
             copy_all_gradle_compiled_files(repo_path, commit_dir)
             return True
 
-        # Maven
+        # 3) Maven
         if pom_xml.exists():
             log(f">> Using Maven (pom.xml) to build {repo_path}")
             run_cmd(
@@ -218,7 +230,7 @@ def compile_project(repo_path, commit_dir) -> bool:
             copy_all_maven_compiled_files(repo_path, commit_dir)
             return True
 
-        # Ant
+        # 4) Ant
         if build_xml.exists():
             ant_path = shutil.which('ant')
             if ant_path is None:
@@ -230,7 +242,7 @@ def compile_project(repo_path, commit_dir) -> bool:
                 copy_all_ant_compiled_files(repo_path, commit_dir)
                 return True
 
-        # Manual fallback, basically never works. lol
+        # 5) Manual fallback, basically never works. lol
         log(f">> No recognized or viable build system in {repo_path}. Attempting manual compilation...")
         compile_java_manually(repo_path, commit_dir)
         return True
@@ -250,6 +262,10 @@ def compile_project(repo_path, commit_dir) -> bool:
         return False
 
 def copy_all_gradle_compiled_files(repo_path: Path, commit_dir: Path):
+    """
+    After a Gradle build, .class files may be in submodules under build/classes.
+    recursively find those and copy them to commit_dir/compiled.
+    """
     compiled_output_dir = commit_dir / 'compiled'
     if compiled_output_dir.exists():
         shutil.rmtree(compiled_output_dir)
@@ -262,6 +278,10 @@ def copy_all_gradle_compiled_files(repo_path: Path, commit_dir: Path):
                 copy_directory_contents(classes_dir, compiled_output_dir)
 
 def copy_all_maven_compiled_files(repo_path: Path, commit_dir: Path):
+    """
+    After a Maven build (install), .class files may be in submodules under target/classes.
+    recursively find those and copy them to commit_dir/compiled.
+    """
     compiled_output_dir = commit_dir / 'compiled'
     if compiled_output_dir.exists():
         shutil.rmtree(compiled_output_dir)
@@ -274,12 +294,16 @@ def copy_all_maven_compiled_files(repo_path: Path, commit_dir: Path):
                 copy_directory_contents(classes_dir, compiled_output_dir)
 
 def copy_all_ant_compiled_files(repo_path: Path, commit_dir: Path):
+    """
+    After an Ant build, the default location for compiled classes
+    is often build/classes (but can vary and this can cause problemos)
+    """
     compiled_output_dir = commit_dir / 'compiled'
     if compiled_output_dir.exists():
         shutil.rmtree(compiled_output_dir)
     compiled_output_dir.mkdir(parents=True, exist_ok=True)
 
-    #  default for many Ant scripts is "build/classes"
+    # The default for many Ant scripts is "build/classes" i have found
     ant_build_classes = repo_path / 'build' / 'classes'
     if ant_build_classes.exists():
         copy_directory_contents(ant_build_classes, compiled_output_dir)
@@ -287,7 +311,9 @@ def copy_all_ant_compiled_files(repo_path: Path, commit_dir: Path):
         log(f"No 'build/classes' directory found; the Ant script may store classes elsewhere.")
 
 def copy_directory_contents(src_dir: Path, dest_dir: Path):
-    # recursivel copy all files from src_dir into dest_dir, preserving relative paths.
+    """
+    Recursively copy all files from src_dir into dest_dir, preserving relative paths.
+    """
     for item in src_dir.rglob('*'):
         if item.is_file():
             relative = item.relative_to(src_dir)
@@ -296,7 +322,6 @@ def copy_directory_contents(src_dir: Path, dest_dir: Path):
             shutil.copy2(item, target_file)
 
 def find_src_directory(repo_path):
-    # attempt to find a plausible 'src' directory if we must fall back to manual.
     possible_paths = [
         repo_path / 'h2' / 'src',
         repo_path / 'drools-core' / 'src',
@@ -310,8 +335,11 @@ def find_src_directory(repo_path):
     return None
 
 def compile_java_manually(repo_path, commit_dir):
-    # compile the entire project manually by invoking javac on all .java files, hardly works lol
-
+    """
+    Compile the entire project manually by invoking javac on all .java files
+    in 'src', then copy ALL .class files to commit_dir/compiled.
+    Often fails if the project depends on external jars (e.g., JUnit). :(
+    """
     src_dir = find_src_directory(repo_path)
     if not src_dir:
         log("Manual compilation aborted: no recognized src directory.")
@@ -349,7 +377,9 @@ def compile_java_manually(repo_path, commit_dir):
 
 if __name__ == "__main__":
     try:
+        print("[notif] Cloning repositories...")
         clone_repos()
+        print("[notif] Processing commits...")
         process_commits()
 
         # final summary

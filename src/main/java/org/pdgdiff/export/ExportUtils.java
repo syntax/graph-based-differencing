@@ -14,7 +14,8 @@ public class ExportUtils {
             for (byte b : hashBytes) {
                 hexString.append(String.format("%02x", b));
             }
-            return hexString.toString(); // todo might need to send a concatenated part of the hash, but as of rn this seems to be ok length
+            // might need to send a concatenated part of the hash, but as of rn this seems to be ok length
+            return hexString.toString();
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
             return methodName;

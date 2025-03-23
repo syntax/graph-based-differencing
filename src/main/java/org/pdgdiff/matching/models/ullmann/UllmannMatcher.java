@@ -16,8 +16,8 @@ public class UllmannMatcher {
 
     private List<PDGNode> srcNodes;
     private List<PDGNode> dstNodes;
-    private int n;
-    private int m;
+    private final int n;
+    private final int m;
     private int[][] compatMatrix; // Compatibility matrix
     private Stack<int[][]> matBacklog;
 

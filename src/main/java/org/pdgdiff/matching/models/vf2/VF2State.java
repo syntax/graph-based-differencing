@@ -76,8 +76,8 @@ class VF2State {
         // Implement feasibility checks:
         // - Syntactic feasibility: node attributes match
         // - Semantic feasibility: the mapping is consistent with the graph structure
-        // TODO there is no point in doing checkSyntacticFeasibility here, as this is already tested when generating the candidates.
-        // TODO FIX.
+        // TODO arguably there is no point in doing checkSyntacticFeasibility here,
+        //  as this is already tested when generating the candidates.
         return checkSyntacticFeasibility(pair) && checkSemanticFeasibility(pair);
     }
 
@@ -121,49 +121,6 @@ class VF2State {
     }
 
     private boolean checkSemanticFeasibility(CandidatePair pair) {
-        // TODO: investigate this sometimes hanging...
-        // Ensure that the mapping preserves the graph structure
-        // Check consistency of predecessors and successors
-
-        // For all edges (n1', n1) in pdg1
-        // NB getBackDependets typo exists in original soot code
-//        for (PDGNode n1Prime : pair.n1.getBackDependets()) {
-//            PDGNode mappedN1Prime = mapping.get(n1Prime);
-//            if (mappedN1Prime != null) {
-//                // There should be an edge (mappedN1Prime, n2) in pdg2
-//                if (!mappedN1Prime.getDependents().contains(pair.n2)) {
-//                    return false;
-//                }
-//            }
-//        }
-//
-//        // For all edges (n1, n1'') in pdg1
-//        for (PDGNode n1DoublePrime : pair.n1.getDependents()) {
-//            PDGNode mappedN1DoublePrime = mapping.get(n1DoublePrime);
-//            if (mappedN1DoublePrime != null) {
-//                // There should be an edge (n2, mappedN1DoublePrime) in pdg2
-//                if (!pair.n2.getDependents().contains(mappedN1DoublePrime)) {
-//                    return false;
-//                }
-//            }
-//        }
-//
-//        // Ensure no conflicting mappings exist
-//        for (Map.Entry<PDGNode, PDGNode> entry : mapping.entrySet()) {
-//            PDGNode mappedN1 = entry.getKey();
-//            PDGNode mappedN2 = entry.getValue();
-//
-//            // Check if there is an edge between pair.n1 and mappedN1 in pdg1
-//            boolean edgeInPDG1 = pair.n1.getDependents().contains(mappedN1) || pair.n1.getBackDependets().contains(mappedN1);
-//            boolean edgeInPDG2 = pair.n2.getDependents().contains(mappedN2) || pair.n2.getBackDependets().contains(mappedN2);
-//
-//            if (edgeInPDG1 != edgeInPDG2) {
-//                return false;
-//            }
-//        }
-//
-//        return true;
-
         // cmp successors in PDG1 vs mapped successors in PDG2
         for (PDGNode succInSrcPdg : srcPdg.getSuccsOf(pair.n1)) {
             PDGNode succMappedInDstPdg = this.getMapping().get(succInSrcPdg);

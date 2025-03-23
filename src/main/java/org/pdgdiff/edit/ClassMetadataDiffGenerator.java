@@ -71,7 +71,7 @@ public class ClassMetadataDiffGenerator {
             SourceCodeMapper srcCodeMapper,
             SourceCodeMapper dstCodeMapper,
             Set<EditOperation> editScriptSet
-    ) throws IOException {
+    ) {
         Chain<SootField> srcFields = srcClass.getFields();
         Chain<SootField> dstFields = dstClass.getFields();
 

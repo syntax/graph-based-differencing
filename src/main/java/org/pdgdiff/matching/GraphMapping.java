@@ -12,7 +12,7 @@ import java.util.Map;
  */
 public class GraphMapping {
     private Map<PDG, PDG> graphMapping;
-    private Map<PDG, NodeMapping> nodeMappings; // TODO: make heuristic algo find node mappings
+    private Map<PDG, NodeMapping> nodeMappings;
 
     public GraphMapping() {
         this.graphMapping = new HashMap<>();

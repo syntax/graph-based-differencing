@@ -36,10 +36,10 @@ public class Main {
 
 
         if (args.length < 6) {
-            System.out.println("Insufficient arguments provided.");
+            System.out.println("WARNING: Insufficient arguments provided.");
             System.out.println("Usage: java org.pdgdiff.Main <beforeSourcePath> <afterSourcePath> <beforeCompiledDir> <afterCompiledDir> <beforeClassName> <afterClassName> [<matchingStrategy>] [<recoveryStrategy>]");
             System.out.println("Using Maven: mvn clean compile && mvn exec:java -Dexec.mainClass=\"org.pdgdiff.Main\" -Dexec.args=\"<beforeSourcePath> <afterSourcePath> <beforeCompiledDir> <afterCompiledDir> <beforeClassName> <afterClassName>\"\n");
-            System.out.println("Using hardcoded information");
+            System.out.println("> Using hardcoded information due to insufficient arguments...");
 
             //  !!!! To run on datasets, use the following !!!!
 
@@ -155,42 +155,9 @@ public class Main {
                 }
             } else {
                 // multi-class version
-                // TODO: neglecting this a bit because its a uncommon case, but need to handle class insertions and deletions properly,
+                // NOTE: neglecting this a bit because its a uncommon case, but need to handle class insertions and deletions properly,
                 //  e,g, need to handle field insertions deletions. also for some reason, nested class line nums seem to be slightly mismatched. for whatever reason.
-
-                // Test with the following:
-
-                // !!! BEGIN TESTS
-
-
-                // NESTED CLASSES
-//            String commit = "918ef4a7ca8362efd45f67636bc8bd094f5a4414";
-//            String project = "signal-server";
-//            String filename = "IterablePair";
-//
-//
-//            beforeDir = "./benchmark/datasets/gh-java/before/" + project + "/" + commit + "/compiled";
-//            afterDir = "./benchmark/datasets/gh-java/after/" + project + "/" + commit + "/compiled";
-//            class1Name = "org.whispersystems.textsecuregcm.util.IterablePair";
-//            class2Name = "org.whispersystems.textsecuregcm.util.IterablePair";
-//            srcSourceFilePath = "./benchmark/datasets/gh-java/before/" + project + "/" + commit + "/" + filename +".java";
-//            dstSourceFilePath = "./benchmark/datasets/gh-java/after/" + project + "/" + commit + "/" + filename +".java";
-
-                // NEW CLASSES
-//                String commit = "bbab2ce3c162b244119bdc22a990d7b75fdef0af";
-//                String project = "google-guava";
-//                String filename = "Objects";
-//
-//
-//                beforeDir = "./benchmark/datasets/gh-java/before/" + project + "/" + commit + "/compiled";
-//                afterDir = "./benchmark/datasets/gh-java/after/" + project + "/" + commit + "/compiled";
-//                class1Name = "com.google.common.base.Objects";
-//                class2Name = "com.google.common.base.Objects";
-//                srcSourceFilePath = "./benchmark/datasets/gh-java/before/" + project + "/" + commit + "/" + filename +".java";
-//                dstSourceFilePath = "./benchmark/datasets/gh-java/after/" + project + "/" + commit + "/" + filename +".java";
-
-
-                // !!! END TESTS
+                // TODO: improvemnet: handle class comparison etc properly.
 
                 Map<String, List<PDG>> beforePdgsMap = new HashMap<>();
                 for (Map.Entry<String, SootClass> entry : beforeClasses.entrySet()) {
@@ -293,11 +260,10 @@ public class Main {
 
         List<PDG> pdgList = new ArrayList<>();
         System.out.println("Generating PDGs for class: " + sootClass.getName());
-        // Iterate over each method in the class
         for (SootMethod method : sootClass.getMethods()) {
             if (method.isConcrete()) {
                 try {
-                    // Retrieve the active body and generate the PDG
+                    // retrive the active body and generate the PDG
                     method.retrieveActiveBody();
                     System.out.println("Successfully retrieved active body for: " + method.getName() + " in " + sootClass.getName());
 

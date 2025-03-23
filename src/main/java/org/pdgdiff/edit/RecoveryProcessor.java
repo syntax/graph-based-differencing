@@ -4,7 +4,8 @@ import org.pdgdiff.edit.model.*;
 
 import java.util.*;
 
-// Notes on this implementation:
+// Notes on previous implementation of recovery strategies;
+
 // Initial idea of graph centrality heuristic: (doesn't actually make all that much sense,)
 // Per each connected component, I want to extract the most central nodes of the graph (I assume those with the
 // most edges). To be honest, I have no idea if this will generalise to many cases.
@@ -12,8 +13,6 @@ import java.util.*;
 public class RecoveryProcessor {
 
     public enum RecoveryStrategy {
-//        GLOBAL_SIMILARITY,  // not recommended
-//        CONFLICT_GRAPH,   // not recommended
         LINE_LEVEL_UNIQUENESS, // TODO: invesitage that there is a chance that this is resulting in me loosing some data, i.e when i resolve a conflict I might
                                //   lose some other data that was needed to be represented as changed, just because it doesnt directly map.
         DUPLICATE_CLEANUP,
@@ -26,10 +25,6 @@ public class RecoveryProcessor {
 
     public static List<EditOperation> recoverMappings(List<EditOperation> editScript, RecoveryStrategy strategy) {
         switch (strategy) {
-//            case GLOBAL_SIMILARITY:
-//                return recoverMappingsGlobalSimilarity(editScript);
-//            case CONFLICT_GRAPH:
-//                return recoverMappingsConflictGraphSimilarity(editScript);
             case LINE_LEVEL_UNIQUENESS:
                 return recoverMappingsUniqueLineNums(editScript);
             case DUPLICATE_CLEANUP:
@@ -196,8 +191,6 @@ public class RecoveryProcessor {
     }
 
     private static List<EditOperation> recoverMappingsCleanup(List<EditOperation> editScript) {
-//        cleanUpDuplicates(editScript);
-
         List<EditOperation> flattenedScript = new ArrayList<>(editScript); // not inplace, think this is better design choice, todo change cleanupduplciates to be same
 
         // if an update operation is described over two lines,

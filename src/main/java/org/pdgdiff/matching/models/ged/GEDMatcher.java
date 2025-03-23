@@ -19,8 +19,8 @@ import static org.pdgdiff.matching.models.heuristic.JaroWinklerSimilarity.JaroWi
  */
 public class GEDMatcher {
 
-    private PDG srcPdg;
-    private PDG dstPdg;
+    private final PDG srcPdg;
+    private final PDG dstPdg;
 
     public GEDMatcher(PDG srcPdg, PDG dstPdg) {
         this.srcPdg = srcPdg;
@@ -83,7 +83,6 @@ public class GEDMatcher {
 
 
         // checking for real vs dummy nodes
-        boolean[] usedCols = new boolean[n];
         for (int i = 0; i < n; i++) {
             // 'assignment[i] = j' means row i is matched to column j. each i, j  in [0..n)
             int j = assignment[i];
@@ -92,7 +91,6 @@ public class GEDMatcher {
             }
             double cost = squareMatrix[i][j];
             totalCost += cost;
-            usedCols[j] = true;
 
             // If i < n1 and j < n2 its within range of 'real' submat=> real node match => substitution
             if (i < n1 && j < n2) {

@@ -111,10 +111,6 @@ public class CycleDetection {
                 if (debug) System.out.println("Node of type REGION is an instance of PDGRegion");
                 PDGRegion region = (PDGRegion) node.getNode();
                 successors = getInternalSuccessors(region);
-            } else if (node.getNode() instanceof Region) {
-                if (debug) System.out.println("Node of type REGION is an instance of Region");
-                Region region = (Region) node.getNode();
-                successors = pdg.getSuccsOf(node);
             } else {
                 if (debug) System.out.println("unkown type for region: " + node.getNode().getClass().getName());
                 successors = pdg.getSuccsOf(node);

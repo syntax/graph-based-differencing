@@ -20,7 +20,7 @@ import static org.pdgdiff.export.ExportUtils.generateHash;
 
 public class EditScriptExporter {
 
-    private static final int MAX_FILENAME_LENGTH = 255; // probably max, otherwise sometimes have issues
+    private static final int MAX_FILENAME_LENGTH = 255; // probably max, otherwise sometimes have issues with OS FS
 
 
     public static void exportEditScript(List<EditOperation> editScript, String method1Signature, String method2Signature, StrategySettings strategySettings) {
