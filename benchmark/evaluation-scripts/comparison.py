@@ -157,7 +157,7 @@ def parse_gumtree_json(json_output, char_to_line_f1, char_to_line_f2):
 
 
 
-# java -jar target/soot-pdg-1.0-SNAPSHOT.jar ./src/main/java/org/pdgdiff/testclasses/TestAdder1.java ./src/main/java/org/pdgdiff/testclasses/TestAdder2.java ./target/classes ./target/classes org.pdgdiff.testclasses.TestAdder1 org.pdgdiff.testclasses.TestAdder2 GED
+# java -jar target/soot-pdg-1.0-SNAPSHOT.jar ./src/main/java/org/pdgdiff/testclasses/TestAdder1.java ./src/main/java/org/pdgdiff/testclasses/TestAdder2.java ./target/classes ./target/classes org.pdgdiff.testclasses.TestFileBefore org.pdgdiff.testclasses.TestFileAfter GED
 
 def run_pdg_textdiff(before_src_dir, after_src_dir, before_compiled_dir, after_compiled_dir, before_class_fullyqualified, after_class_fullyqualified, strategy):
     if strategy not in ["vf2", "ged","ullmann"]:
