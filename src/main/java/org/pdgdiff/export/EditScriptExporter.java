@@ -113,8 +113,8 @@ public class EditScriptExporter {
 
     public static void copyResultsToOutput(String beforeSourceDir, String afterSourceDir) {
         try {
-            Files.copy(Paths.get(beforeSourceDir), Paths.get("py-visualise/testclasses/TestAdder1.java"), StandardCopyOption.REPLACE_EXISTING);
-            Files.copy(Paths.get(afterSourceDir), Paths.get("py-visualise/testclasses/TestAdder2.java"), StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(Paths.get(beforeSourceDir), Paths.get("py-visualise/testclasses/TestFileBefore.java"), StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(Paths.get(afterSourceDir), Paths.get("py-visualise/testclasses/TestFileAfter.java"), StandardCopyOption.REPLACE_EXISTING);
             Files.copy(Paths.get("out/diff.json"), Paths.get("py-visualise/out/diff.json"), StandardCopyOption.REPLACE_EXISTING);
             System.out.println(" --> results copied to python visualiser");
         } catch (IOException e) {

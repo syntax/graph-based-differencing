@@ -62,18 +62,18 @@ public class Main {
             //./gumtree webdiff ../../soot-pdg/benchmark/datasets/gh-java/before/google-guava/bbab2ce3c162b244119bdc22a990d7b75fdef0af/Objects.java ../../soot-pdg/benchmark/datasets/gh-java/after/google-guava/bbab2ce3c162b244119bdc22a990d7b75fdef0af/Objects.java
 
             // !!!! to use on local test classes, use the following !!!!
-            class1Name = "org.pdgdiff.testclasses.TestAdder1";
-            class2Name = "org.pdgdiff.testclasses.TestAdder2";
+            class1Name = "org.pdgdiff.testclasses.TestFileBefore";
+            class2Name = "org.pdgdiff.testclasses.TestFileAfter";
 
-            srcSourceFilePath = "src/main/java/org/pdgdiff/testclasses/TestAdder1.java";
-            dstSourceFilePath = "src/main/java/org/pdgdiff/testclasses/TestAdder2.java";
+            srcSourceFilePath = "src/main/java/org/pdgdiff/testclasses/TestFileBefore.java";
+            dstSourceFilePath = "src/main/java/org/pdgdiff/testclasses/TestFileAfter.java";
 
             beforeDir = System.getProperty("user.dir") + "/target/classes";
             afterDir = System.getProperty("user.dir") + "/target/classes";
 
         } else {
             // as an example;
-            //  mvn exec:java -Dexec.mainClass="org.pdgdiff.Main" -Dexec.args="./src/main/java/org/pdgdiff/testclasses/TestAdder1.java ./src/main/java/org/pdgdiff/testclasses/TestAdder2.java ./target/classes ./target/classes org.pdgdiff.testclasses.TestAdder1 org.pdgdiff.testclasses.TestAdder2"
+            //  mvn exec:java -Dexec.mainClass="org.pdgdiff.Main" -Dexec.args="./src/main/java/org/pdgdiff/testclasses/TestFileBefore.java ./src/main/java/org/pdgdiff/testclasses/TestFileAfter.java ./target/classes ./target/classes org.pdgdiff.testclasses.TestFileBefore org.pdgdiff.testclasses.TestFileAfter"
             srcSourceFilePath = args[0];
             dstSourceFilePath = args[1];
             beforeDir = args[2];
