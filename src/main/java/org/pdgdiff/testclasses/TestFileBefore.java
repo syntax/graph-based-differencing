@@ -1,13 +1,13 @@
 package org.pdgdiff.testclasses;
 
-public class TestAdder1 {
+public class TestFileBefore {
 
-    private int cheese;
+    private int onefield;
 
-    public String swag;
+    public String anotherfield;
 
     public static void main(String[] args) {
-        TestAdder1 test = new TestAdder1();
+        TestFileBefore test = new TestFileBefore();
         int result = test.addNumbers(5, 10);
         System.out.println("Result: " + result);
         int res = test.minus(10, 5);

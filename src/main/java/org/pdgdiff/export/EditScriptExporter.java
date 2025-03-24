@@ -20,7 +20,7 @@ import static org.pdgdiff.export.ExportUtils.generateHash;
 
 public class EditScriptExporter {
 
-    private static final int MAX_FILENAME_LENGTH = 255; // probably max, otherwise sometimes have issues
+    private static final int MAX_FILENAME_LENGTH = 255; // probably max, otherwise sometimes have issues with OS FS
 
 
     public static void exportEditScript(List<EditOperation> editScript, String method1Signature, String method2Signature, StrategySettings strategySettings) {
@@ -113,8 +113,8 @@ public class EditScriptExporter {
 
     public static void copyResultsToOutput(String beforeSourceDir, String afterSourceDir) {
         try {
-            Files.copy(Paths.get(beforeSourceDir), Paths.get("py-visualise/testclasses/TestAdder1.java"), StandardCopyOption.REPLACE_EXISTING);
-            Files.copy(Paths.get(afterSourceDir), Paths.get("py-visualise/testclasses/TestAdder2.java"), StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(Paths.get(beforeSourceDir), Paths.get("py-visualise/testclasses/TestFileBefore.java"), StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(Paths.get(afterSourceDir), Paths.get("py-visualise/testclasses/TestFileAfter.java"), StandardCopyOption.REPLACE_EXISTING);
             Files.copy(Paths.get("out/diff.json"), Paths.get("py-visualise/out/diff.json"), StandardCopyOption.REPLACE_EXISTING);
             System.out.println(" --> results copied to python visualiser");
         } catch (IOException e) {

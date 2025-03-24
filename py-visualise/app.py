@@ -65,8 +65,8 @@ def highlight_word_differences_with_colors(old_line, new_line, color_pair):
 
 @app.route('/')
 def diff_view():
-    class1_content = read_file(os.path.join(TEST_CLASSES_PATH, 'TestAdder1.java')).splitlines()
-    class2_content = read_file(os.path.join(TEST_CLASSES_PATH, 'TestAdder2.java')).splitlines()
+    class1_content = read_file(os.path.join(TEST_CLASSES_PATH, 'TestFileBefore.java')).splitlines()
+    class2_content = read_file(os.path.join(TEST_CLASSES_PATH, 'TestFileAfter.java')).splitlines()
 
     with open(os.path.join(OUT_PATH, 'diff.json'), 'r') as diff_file:
         diff_data = json.load(diff_file)

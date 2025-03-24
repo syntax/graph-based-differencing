@@ -50,11 +50,6 @@ public class SignatureDiffGenerator {
             thrownExceptions.add(exception.getName());
         }
 
-//        List<String> paramList = new ArrayList<>();
-//        for (soot.Type t : method.getParameterTypes()) {
-//            paramList.add(t.toString());
-//        }
-
         // to be populated later, no soot native way to get all the info required
         List<Integer> paramLines = new ArrayList<>();
         List<String> paramTokens = CodeAnalysisUtils.getParamTokensAndLines(method, mapper, paramLines);

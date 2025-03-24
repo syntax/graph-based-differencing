@@ -6,8 +6,11 @@ import soot.toolkits.graph.pdg.PDGNode;
 
 import java.util.List;
 
-// TODO: this class will be my own version of the HashMutuablePDG that Soot presents, hopefully made slightly more accurate to
-// TODO: the original literature.
+/**
+ * Program Dependency Graph (PDG) class that extends the Soot HashMutableEdgeLabelledDirectedGraph. this is
+ * similar to the soot HashMutablePDG, but removes some abstractions that remove the granularity of the PDG and allows
+ * for specific edge types to be added to the graph.
+ */
 public class PDG extends HashMutableEdgeLabelledDirectedGraph<PDGNode, GraphGenerator.DependencyTypes> {
     private UnitGraph cfg = null;
     protected PDGNode startNode = null;
@@ -39,8 +42,4 @@ public class PDG extends HashMutableEdgeLabelledDirectedGraph<PDGNode, GraphGene
     public List<GraphGenerator.DependencyTypes> getEdgeLabels(PDGNode src, PDGNode tgt) {
         return this.getLabelsForEdges(src, tgt);
     }
-
-//    public List<PDGNode> getNodes() {
-//        return super.getNodes();
-//    }
 }

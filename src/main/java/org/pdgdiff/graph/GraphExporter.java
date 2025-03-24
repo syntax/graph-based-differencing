@@ -52,14 +52,6 @@ public class GraphExporter {
             Set<PDGNode> connectedNodes = new HashSet<>();
 
 
-            // print all pdg nodes
-//            for (PDGNode node : pdg) {
-//                // todo; as of right now this will print every nodes type which is a CFGNode, this is same for all so usless info
-//                String nodeId = getNodeId(node);
-//                String label = escapeSpecialCharacters(node.toString());
-//                writer.printf("  %s [label=\"%s\"];\n", nodeId, label);
-//            }
-
            // for each node, print out edges to its successors
             for (PDGNode src : pdg) {
                 List<PDGNode> successors = pdg.getSuccsOf(src);

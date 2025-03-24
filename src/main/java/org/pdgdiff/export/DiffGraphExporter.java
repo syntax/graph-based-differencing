@@ -65,15 +65,8 @@ public class DiffGraphExporter {
                 .filter(pdg -> !matchedPairs.containsValue(pdg))
                 .collect(Collectors.toList());
 
-        // todo handle this, maybe just print entire graph in red or green lol
-        for (PDG pdg : unmatchedInSrc) {
-            // handle delete PDG (e.g., entire method removed)
-            // ...
-        }
-        for (PDG pdg : unmatchedInDst) {
-            // handle add PDG (e.g., entire method added)
-            // ...
-        }
+        // !!!!
+        // NB: if no match, i.e. a graph is inserted or deleted, we can't show a diff and no delta will be made.
     }
 
     /**
@@ -102,7 +95,7 @@ public class DiffGraphExporter {
             Set<PDGNode> dstNodes = new HashSet<>();
             dstPDG.iterator().forEachRemaining(dstNodes::add);
 
-            // map to store node details (label and color) keyed by their dot id.
+            // map to store node details (label and color) keyed by their dot id
             Map<String, NodeData> nodeDataMap = new HashMap<>();
 
             // Process nodes from source PDG (matched or deleted nodes)
@@ -117,7 +110,6 @@ public class DiffGraphExporter {
                     nodeDataMap.put(nodeId, new NodeData(createNodeLabel(label, srcNode), color));
                 } else {
                     // matched (possible unchanged, moved, or updated)
-//                    boolean changed = nodeContentChanged(srcNode, dstNode);
                     String label, color;
                     // label shows both sides
                     if (Objects.equals(removePrefix(srcNode.toString()), removePrefix(dstNode.toString()))) {
@@ -147,7 +139,7 @@ public class DiffGraphExporter {
             Map<EdgeKey, Set<String>> edgeMap = new HashMap<>();
             Set<String> connectedNodeIds = new HashSet<>();
 
-            // process edges from the source PDG
+            // process edges from the src PDG
             for (PDGNode srcNode : srcNodes) {
                 for (PDGNode succ : srcPDG.getSuccsOf(srcNode)) {
                     String srcId = getMergedNodeId(srcNode, true, srcToDst);
@@ -237,15 +229,12 @@ public class DiffGraphExporter {
         StringBuilder sb = new StringBuilder();
         sb.append("<");
         sb.append("<b>").append(safeLabel).append("</b>");
-        System.out.println("lineNum: " + lineNum + " lineNum2: " + lineNum2);
         if (lineNum != -1 && lineNum2 == -1) {
-            System.out.println("hit");
             sb.append("<br/>")
                     .append("<font point-size=\"10\" color=\"gray\">")
                     .append("Line: ").append(lineNum)
                     .append("</font>");
         } else if(lineNum != -1) {
-            System.out.println("hit2");
             sb.append("<br/>")
                     .append("<font point-size=\"10\" color=\"gray\">")
                     .append("Line: ").append(lineNum)

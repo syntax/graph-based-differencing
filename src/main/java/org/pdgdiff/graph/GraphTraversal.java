@@ -1,13 +1,11 @@
 package org.pdgdiff.graph;
 
-import soot.toolkits.graph.pdg.HashMutablePDG;
 import soot.toolkits.graph.pdg.PDGNode;
 
 import java.util.*;
 
 /**
- * GraphTraversal class to perform graph traversal on a PDG. This class contains methods to traverse the PDG
- * using both breadth-first search (BFS) and depth-first search (DFS) algorithms.
+ * this class is used to traverse the graph using bfs and collect all nodes.
  */
 public class GraphTraversal {
 
@@ -17,7 +15,6 @@ public class GraphTraversal {
         debug = enable;
     }
 
-    // Method to traverse the graph using a breadth-first search and collect all nodes
     public static List<PDGNode> collectNodesBFS(PDG pdg) {
         if (debug) System.out.println("[BFS] Traversing graph");
 
@@ -56,52 +53,8 @@ public class GraphTraversal {
         return nodeList;
     }
 
-    // Method to traverse the graph using a depth-first search and collect all nodes
-    public static List<PDGNode> collectNodesDFS(PDG pdg) {
-        if (debug) System.out.println("[DFS] Traversing graph");
-
-        PDGNode start_node = pdg.getStartNode();
-        List<PDGNode> nodeList = new ArrayList<>();
-
-        if (start_node == null) {
-            if (debug) System.out.println("[DFS] No start node found in the PDG.");
-            return nodeList;
-        }
-
-        Stack<PDGNode> stack = new Stack<>();
-        Set<PDGNode> visited = new HashSet<>();
-
-        stack.push(start_node);
-        visited.add(start_node);
-        nodeList.add(start_node);
-
-        // Begin DFS
-        while (!stack.isEmpty()) {
-            PDGNode current_node = stack.pop();
-            if (debug) System.out.println("[DFS] Visiting node: " + current_node.toShortString());
-
-            // Add dependents to the stack
-            List<PDGNode> dependents = current_node.getDependents();
-            for (PDGNode dependent : dependents) {
-                if (!visited.contains(dependent)) {
-                    stack.push(dependent);
-                    visited.add(dependent);
-                    nodeList.add(dependent);
-                }
-            }
-        }
-
-        if (debug) System.out.println("[DFS] DFS Graph traversal complete.");
-        return nodeList;
-    }
-
     public static int getNodeCount(PDG pdg) {
         List<PDGNode> nodeList = collectNodesBFS(pdg);
-        return nodeList.size();
-    }
-
-    // Optionally, if you have already collected nodes and want to avoid traversal:
-    public static int getNodeCount(List<PDGNode> nodeList) {
         return nodeList.size();
     }
 

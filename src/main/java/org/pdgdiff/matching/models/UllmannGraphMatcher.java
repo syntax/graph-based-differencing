@@ -17,8 +17,8 @@ public class UllmannGraphMatcher extends GraphMatcher {
 
     @Override
     public GraphMapping matchPDGLists() {
-        List<PDG> unmappedPDGs1 = new ArrayList<>(pdgList1);
-        List<PDG> unmappedPDGs2 = new ArrayList<>(pdgList2);
+        List<PDG> unmappedPDGs1 = new ArrayList<>(srcPdgs);
+        List<PDG> unmappedPDGs2 = new ArrayList<>(dstPdgs);
 
         while (!unmappedPDGs1.isEmpty() && !unmappedPDGs2.isEmpty()) {
             double maxScore = Double.NEGATIVE_INFINITY;

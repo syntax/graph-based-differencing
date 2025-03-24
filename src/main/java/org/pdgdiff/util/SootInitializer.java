@@ -11,20 +11,19 @@ import java.util.Collections;
  */
 public class SootInitializer {
 
-    // Method to initialize Soot configuration
     public static void initializeSoot(String dir) {
         resetSoot();
-        // Set Soot options
+
+        // setting soot options
         Options.v().set_prepend_classpath(true);
         Options.v().set_allow_phantom_refs(true);
         Options.v().set_output_format(Options.output_format_jimple);
         Options.v().set_verbose(true); // Debug output
 
-        // TODO: Maintain code as close to original as possible when compiled
-        // TODO: configure compiler and investigate this
+        // The following phase options are configured to preserve the original code structure, as well as poss.
         // read https://www.sable.mcgill.ca/soot/tutorial/phase/phase.html
         Options.v().set_keep_line_number(true);
-//        Options.v().set_no_bodies_for_excluded(true);
+
         Options.v().setPhaseOption("jb", "use-original-names:true");
         Options.v().setPhaseOption("jb", "use-original-bytecode:true");
         Options.v().setPhaseOption("jj", "simplify-off:true");
@@ -51,13 +50,8 @@ public class SootInitializer {
         Options.v().set_process_dir(Collections.singletonList(dir));
 
         // Whole program analysis
-        Options.v().set_whole_program(true); // Investigating if this stops DCE
+        Options.v().set_whole_program(true);
         Options.v().set_no_bodies_for_excluded(true);
-
-//        Options.v().set_coffi(true); -> dont use, renames variables to stacknums instead of preserving original
-//        Options.v().set_keep_bytecode_offset(true);
-
-//        System.out.println("Active phases: " + PhaseDumper.v().getPhaseStack());
 
 
         // Load necessary classes

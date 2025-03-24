@@ -19,21 +19,21 @@ import static org.pdgdiff.matching.models.heuristic.JaroWinklerSimilarity.JaroWi
  */
 public class GEDMatcher {
 
-    private PDG pdg1;
-    private PDG pdg2;
+    private final PDG srcPdg;
+    private final PDG dstPdg;
 
-    public GEDMatcher(PDG pdg1, PDG pdg2) {
-        this.pdg1 = pdg1;
-        this.pdg2 = pdg2;
+    public GEDMatcher(PDG srcPdg, PDG dstPdg) {
+        this.srcPdg = srcPdg;
+        this.dstPdg = dstPdg;
     }
 
     // find edit distance and return node mappings
     public GEDResult match() {
-        List<PDGNode> nodes1 = new ArrayList<>(GraphTraversal.collectNodesBFS(pdg1));
-        List<PDGNode> nodes2 = new ArrayList<>(GraphTraversal.collectNodesBFS(pdg2));
+        List<PDGNode> srcNodes = new ArrayList<>(GraphTraversal.collectNodesBFS(srcPdg));
+        List<PDGNode> dstNodes = new ArrayList<>(GraphTraversal.collectNodesBFS(dstPdg));
 
-        int n1 = nodes1.size();
-        int n2 = nodes2.size();
+        int n1 = srcNodes.size();
+        int n2 = dstNodes.size();
 
         // create square cost mat of n x n size, must be square for Hungarian algo
         // NOTE because its square there is going to be some dummy nodes (where its padded, pdg prob doesnt produce square mat)
@@ -47,8 +47,7 @@ public class GEDMatcher {
         // fill the "real" submatrix of the cost matrix (where i < n1 and j < n2) with substitution costs for each node pair
         for (int i = 0; i < n1; i++) {
             for (int j = 0; j < n2; j++) {
-                // todo: subs cost needs tweaks to better this algo
-                squareMatrix[i][j] = substitutionCost(nodes1.get(i), nodes2.get(j));
+                squareMatrix[i][j] = substitutionCost(srcNodes.get(i), dstNodes.get(j));
             }
         }
 
@@ -84,7 +83,6 @@ public class GEDMatcher {
 
 
         // checking for real vs dummy nodes
-        boolean[] usedCols = new boolean[n];
         for (int i = 0; i < n; i++) {
             // 'assignment[i] = j' means row i is matched to column j. each i, j  in [0..n)
             int j = assignment[i];
@@ -93,21 +91,20 @@ public class GEDMatcher {
             }
             double cost = squareMatrix[i][j];
             totalCost += cost;
-            usedCols[j] = true;
 
             // If i < n1 and j < n2 its within range of 'real' submat=> real node match => substitution
             if (i < n1 && j < n2) {
-                nodeMapping.addMapping(nodes1.get(i), nodes2.get(j));
+                nodeMapping.addMapping(srcNodes.get(i), dstNodes.get(j));
             }
-            // todo: not really sure how to handle this lol, but should complete. current nodemapping doesnt
-            // unmatched nodes in Nodemapping will be handled as insertions/ deletions where approriate.
+            // todo: I believe inserts and deletes shouldn't be added to node mapping,
+            //  and that their absence will be handled as insertions/deletions in the final mapping
+            // unmatched nodes in Nodemapping will be handled as insertions/ deletions
             // if i < n1 && j >= n2 => deletion (old node i matched to dummy)
             // if i >= n1 && j < n2 => insertion (new node j matched to dummy)
             // if both dummy => ignore
         }
 
-        // now we have a raw "nodeMapping" for the real-> real pairs.
-        // todo optionally penalize mismatch in edges, could get rid of this but its more strict to graph
+        // penalise matched nodes that have considerable semantic differences by inspecting edges
         double edgePenalty = computeEdgeMismatchPenalty(nodeMapping);
         totalCost += edgePenalty;
 
@@ -115,8 +112,8 @@ public class GEDMatcher {
     }
 
     /**
-     * returns substitution cost between two nodes. tbc and changd:
-     * e.g. compare text, type, adjacency structure, etc.
+     * returns substitution cost between two nodes.
+     * considers node label similarity and node category similarity.
      */
     private double substitutionCost(PDGNode n1, PDGNode n2) {
         // base cost if categories differ
@@ -169,7 +166,7 @@ public class GEDMatcher {
             }
         }
         // todo possibly add checks for edges that are in new pdg, but not in old pdg (vice versa)
-        // can use mappings.getReverseNodeMapping()
+        //  can use mappings.getReverseNodeMapping()
 
         return mismatchCost;
     }

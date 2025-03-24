@@ -6,11 +6,9 @@ import org.pdgdiff.matching.GraphMapping;
 import org.pdgdiff.matching.NodeMapping;
 import org.pdgdiff.util.CodeAnalysisUtils;
 import org.pdgdiff.util.SourceCodeMapper;
-import soot.Modifier;
 import soot.SootMethod;
 import soot.Unit;
 import soot.tagkit.LineNumberTag;
-import soot.toolkits.graph.pdg.IRegion;
 import soot.toolkits.graph.pdg.PDGNode;
 
 import java.io.IOException;
@@ -19,8 +17,6 @@ import java.util.stream.Collectors;
 
 import org.pdgdiff.edit.SignatureDiffGenerator.ParsedSignature;
 
-import static java.util.Collections.max;
-import static java.util.Collections.min;
 import static org.pdgdiff.edit.SignatureDiffGenerator.compareSignatures;
 import static org.pdgdiff.edit.SignatureDiffGenerator.parseMethodSignature;
 import static org.pdgdiff.graph.GraphTraversal.collectNodesBFS;
@@ -335,13 +331,6 @@ public class EditScriptGenerator {
     }
 
     private static int getLineNumber(Unit unit) {
-        if (unit == null) {
-            return -1;
-        }
-        LineNumberTag tag = (LineNumberTag) unit.getTag("LineNumberTag");
-        if (tag != null) {
-            return tag.getLineNumber();
-        }
-        return -1;
+        return CodeAnalysisUtils.getLineNumber(unit);
     }
 }

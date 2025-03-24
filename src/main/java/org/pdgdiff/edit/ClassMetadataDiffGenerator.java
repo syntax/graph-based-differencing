@@ -71,14 +71,13 @@ public class ClassMetadataDiffGenerator {
             SourceCodeMapper srcCodeMapper,
             SourceCodeMapper dstCodeMapper,
             Set<EditOperation> editScriptSet
-    ) throws IOException {
+    ) {
         Chain<SootField> srcFields = srcClass.getFields();
         Chain<SootField> dstFields = dstClass.getFields();
 
         Map<String, SootField> srcFieldMap = new HashMap<>();
         Map<String, SootField> dstFieldMap = new HashMap<>();
 
-        // TODO: look into using soots own 'Chain' for this
         for (SootField field : srcFields) {
             srcFieldMap.put(field.getName(), field);
         }

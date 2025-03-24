@@ -45,7 +45,7 @@ public class DiffEngine {
         // TODO: clean up debug print stmts
         System.out.println("--> Graph matching complete using strategy: " + strategySettings.matchingStrategy);
 
-        // Handle unmatched graphs, i.e. additions or deletions of methods to the versions
+        // handle unmatched graphs, i.e. additions or deletions of methods to the versions
         List<PDG> unmatchedInList1 = pdgList1.stream()
                 .filter(pdg -> !graphMapping.getGraphMapping().containsKey(pdg))
                 .collect(Collectors.toList());
@@ -81,10 +81,6 @@ public class DiffEngine {
                 nodeMapping.printMappings();
 
                 try {
-
-                    // collecting of 'metadata' of the code, i.e. function signatures and fields, will occur here. it should not have
-                    // any impact on the actual matching process, to ensure that this is as semantic and language-agnostic as possible.
-
                     SootMethod srcObj = srcPDG.getCFG().getBody().getMethod();
                     SootMethod destObj = dstPDG.getCFG().getBody().getMethod();
 

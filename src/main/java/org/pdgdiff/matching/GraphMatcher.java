@@ -12,13 +12,13 @@ import java.util.List;
  */
 public abstract class GraphMatcher {
     protected final HashSet<PDG> matchedPDGs;
-    protected List<PDG> pdgList1;
-    protected List<PDG> pdgList2;
-    protected GraphMapping graphMapping; // To store graph-level and node-level mappings
+    protected List<PDG> srcPdgs;
+    protected List<PDG> dstPdgs;
+    protected GraphMapping graphMapping; // to store graph-level and node-level mappings
 
-    public GraphMatcher(List<PDG> list1, List<PDG> list2) {
-        this.pdgList1 = list1;
-        this.pdgList2 = list2;
+    public GraphMatcher(List<PDG> srcPdgs, List<PDG> dstPdgs) {
+        this.srcPdgs = srcPdgs;
+        this.dstPdgs = dstPdgs;
         this.graphMapping = new GraphMapping();
         this.matchedPDGs = new HashSet<>();
     }

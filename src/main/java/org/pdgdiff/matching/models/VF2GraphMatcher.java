@@ -11,59 +11,58 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class VF2GraphMatcher extends GraphMatcher {
-    public VF2GraphMatcher(List<PDG> list1, List<PDG> list2) {
-        super(list1, list2);
+    public VF2GraphMatcher(List<PDG> srcPdgs, List<PDG> dstPdgs) {
+        super(srcPdgs, dstPdgs);
     }
 
     @Override
     public GraphMapping matchPDGLists() {
-        // TODO: rename these legacy names 'pdglist1' to be more informative i.e. src and dest
-        List<PDG> unmappedPDGs1 = new ArrayList<>(pdgList1);
-        List<PDG> unmappedPDGs2 = new ArrayList<>(pdgList2);
+        List<PDG> unmappedSrcPdgs = new ArrayList<>(srcPdgs);
+        List<PDG> unmappedDstPdgs = new ArrayList<>(dstPdgs);
 
-        while (!unmappedPDGs1.isEmpty() && !unmappedPDGs2.isEmpty()) {
+        while (!unmappedSrcPdgs.isEmpty() && !unmappedDstPdgs.isEmpty()) {
             double maxScore = Double.NEGATIVE_INFINITY;
-            PDG bestPdg1 = null;
-            PDG bestPdg2 = null;
+            PDG bestSrcPdg = null;
+            PDG bestDstPdg = null;
             NodeMapping bestNodeMapping = null;
 
             // for each pair of unmapped PDGs, compute similarity score
-            for (PDG pdg1 : unmappedPDGs1) {
-                for (PDG pdg2 : unmappedPDGs2) {
-                    VF2Matcher vf2Matcher = new VF2Matcher(pdg1, pdg2);
+            for (PDG srcPdg : unmappedSrcPdgs) {
+                for (PDG dstPdg : unmappedDstPdgs) {
+                    VF2Matcher vf2Matcher = new VF2Matcher(srcPdg, dstPdg);
                     NodeMapping nodeMapping = vf2Matcher.match();
 
                     if (nodeMapping != null && !nodeMapping.isEmpty()) {
                         int mappedNodes = nodeMapping.size();
-                        int unmappedNodes1 = GraphTraversal.getNodeCount(pdg1) - mappedNodes;
-                        int unmappedNodes2 = GraphTraversal.getNodeCount(pdg2) - mappedNodes;
+                        int unmappedSrcNodes = GraphTraversal.getNodeCount(srcPdg) - mappedNodes;
+                        int unmappedDstNodes = GraphTraversal.getNodeCount(dstPdg) - mappedNodes;
 
                         // calculate the score that minimizes unmapped nodes, this is my 'similarity' metric as of rn lol
                         // this might be to be improved. TODO look into other metrics/ measures.
                         // TODO might want to add a threshold. possibly not all graphs should be mapped to all graphs!
-                        double score = (double) mappedNodes / (mappedNodes + unmappedNodes1 + unmappedNodes2);
+                        double score = (double) mappedNodes / (mappedNodes + unmappedSrcNodes + unmappedDstNodes);
 
                         if (score > maxScore) {
                             maxScore = score;
-                            bestPdg1 = pdg1;
-                            bestPdg2 = pdg2;
+                            bestSrcPdg = srcPdg;
+                            bestDstPdg = dstPdg;
                             bestNodeMapping = nodeMapping;
                         }
                     }
                 }
             }
 
-            if (bestPdg1 != null && bestPdg2 != null) {
-                unmappedPDGs1.remove(bestPdg1);
-                unmappedPDGs2.remove(bestPdg2);
-                graphMapping.addGraphMapping(bestPdg1, bestPdg2, bestNodeMapping);
+            if (bestSrcPdg != null && bestDstPdg != null) {
+                unmappedSrcPdgs.remove(bestSrcPdg);
+                unmappedDstPdgs.remove(bestDstPdg);
+                graphMapping.addGraphMapping(bestSrcPdg, bestDstPdg, bestNodeMapping);
             } else {
                 break;
             }
         }
 
         // handling PDGs in src that were not matched
-        for (PDG pdg1 : unmappedPDGs1) {
+        for (PDG pdg1 : unmappedSrcPdgs) {
             System.out.println("No matching PDG found for: " + pdg1.getCFG().getBody().getMethod().getSignature());
         }
 

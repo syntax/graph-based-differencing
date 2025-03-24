@@ -9,22 +9,21 @@ import java.util.Map;
 /**
  * VF2Matcher class to perform graph matching using the VF2 algorithm. This class contains methods to match two PDGs
  * using the VF2 algorithm and return the node mappings between the two PDGs.
- * TODO: Check I have done this correctly, quite tired at time of implementation (its 11pm :( )
  */
 public class VF2Matcher {
-    private PDG pdg1;
-    private PDG pdg2;
-    private NodeMapping nodeMapping;
+    private final PDG srcPdg;
+    private final PDG dstPdg;
+    private final NodeMapping nodeMapping;
 
-    public VF2Matcher(PDG pdg1, PDG pdg2) {
-        this.pdg1 = pdg1;
-        this.pdg2 = pdg2;
+    public VF2Matcher(PDG srcPdg, PDG dstPdg) {
+        this.srcPdg = srcPdg;
+        this.dstPdg = dstPdg;
         this.nodeMapping = new NodeMapping();
     }
 
     public NodeMapping match() {
         // Initialize state
-        VF2State state = new VF2State(pdg1, pdg2);
+        VF2State state = new VF2State(srcPdg, dstPdg);
         // Start recursive matching
         if (matchRecursive(state)) {
             return nodeMapping;

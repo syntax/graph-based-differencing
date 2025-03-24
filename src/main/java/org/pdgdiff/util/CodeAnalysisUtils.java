@@ -3,21 +3,17 @@ package org.pdgdiff.util;
 import soot.*;
 import soot.tagkit.LineNumberTag;
 
-import java.io.Console;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 public class CodeAnalysisUtils {
 
     // TODO: a lot of these 'parser' methods that parse the file using regex to lookup are O(n)
 
-    public static int getClassLineNumber(SootClass sootClass, SourceCodeMapper codeMapper) throws IOException {
+    public static int getClassLineNumber(SootClass sootClass, SourceCodeMapper codeMapper) {
         int lineNumber = sootClass.getJavaSourceStartLineNumber();
         if (lineNumber > 0) {
             return lineNumber;
@@ -48,7 +44,7 @@ public class CodeAnalysisUtils {
         return ""; // not found
     }
 
-    public static int getFieldLineNumber(SootField field, SourceCodeMapper codeMapper) throws IOException {
+    public static int getFieldLineNumber(SootField field, SourceCodeMapper codeMapper) {
         int lineNumber = field.getJavaSourceStartLineNumber();
         if (lineNumber > 0) {
             return lineNumber;
@@ -57,7 +53,7 @@ public class CodeAnalysisUtils {
         String fieldName = field.getName();
         String fieldType = field.getType().toString();
 
-        // parse simple type name (i.e. without full package declaration) String instead of java.lang.String
+        // parse simple type name (i.e. without full package declaration e.g. String instead of java.lang.String)
         String simpleFieldType = fieldType.substring(fieldType.lastIndexOf('.') + 1);
         // regex pattern, possibility of missed case here
         String fieldPattern = String.format(
@@ -80,7 +76,7 @@ public class CodeAnalysisUtils {
     }
 
 
-    public static String getFieldDeclaration(SootField field, SourceCodeMapper codeMapper) throws IOException {
+    public static String getFieldDeclaration(SootField field, SourceCodeMapper codeMapper) {
         int lineNumber = getFieldLineNumber(field, codeMapper);
         if (lineNumber > 0) {
             return codeMapper.getCodeLine(lineNumber).trim();
@@ -89,7 +85,7 @@ public class CodeAnalysisUtils {
     }
 
 
-    public static int[] getMethodLineRange(SootMethod method, SourceCodeMapper srcCodeMapper) throws IOException {
+    public static int[] getMethodLineRange(SootMethod method, SourceCodeMapper srcCodeMapper) {
         int initialLine = method.getJavaSourceStartLineNumber();
         if (initialLine <= 0) {
             return new int[]{-1, -1};
@@ -129,26 +125,11 @@ public class CodeAnalysisUtils {
         return new int[]{startLine, endLine};
     }
 
-    public static List<Integer> getParameterLineNumbers(SootMethod method, SourceCodeMapper codeMapper) throws IOException {
-        List<Integer> paramLines = new ArrayList<>();
-        int[] methodRange = getMethodLineRange(method, codeMapper);
-
-        if (methodRange[0] > 0 && methodRange[1] >= methodRange[0]) {
-            for (int i = methodRange[0]; i <= methodRange[1]; i++) {
-                String line = codeMapper.getCodeLine(i).trim();
-                if (line.contains("(") || line.contains(",")) {
-                    paramLines.add(i);
-                }
-            }
-        }
-        return paramLines;
-    }
-
     public static List<String> getParamTokensAndLines(
             SootMethod method,
             SourceCodeMapper mapper,
             List<Integer> paramLinesOut
-    ) throws IOException {
+    ) {
         paramLinesOut.clear();
         List<String> paramTokens = new ArrayList<>();
         int[] range = getMethodLineRange(method, mapper);
@@ -209,7 +190,7 @@ public class CodeAnalysisUtils {
             SootMethod method,
             SourceCodeMapper codeMapper,
             List<Integer> annoLinesOut
-    ) throws IOException {
+    ) {
         annoLinesOut.clear();
         List<String> annoTokens = new ArrayList<>();
         int[] range = getMethodLineRange(method, codeMapper);
@@ -241,7 +222,7 @@ public class CodeAnalysisUtils {
         return annoTokens;
     }
 
-    public static List<Integer> getAnnotationsLineNumbers(SootMethod method, SourceCodeMapper codeMapper) throws IOException {
+    public static List<Integer> getAnnotationsLineNumbers(SootMethod method, SourceCodeMapper codeMapper) {
         List<Integer> annotationLines = new ArrayList<>();
         int[] range = getMethodLineRange(method, codeMapper);
         if (range[0] <= 0) {

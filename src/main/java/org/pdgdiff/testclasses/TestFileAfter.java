@@ -1,11 +1,11 @@
 package org.pdgdiff.testclasses;
 
-public class TestAdder2 {
+public class TestFileAfter {
 
-    private int another;
+    private int thefield;
 
     public static void main(String[] args) {
-        TestAdder2 test = new TestAdder2();
+        TestFileAfter test = new TestFileAfter();
         int number1 = 5;
         int number2 = 4;
         int result = test.addNumbers(number1, number2);
@@ -16,9 +16,9 @@ public class TestAdder2 {
 
 
         int complexResult = test.complexCalculation(number1, number2);
-        int meep = test.identical(3,10);
+        int identical_out = test.identical(3,10);
         System.out.println("Complex Calculation Result: " + complexResult);
-        System.out.println("identical Result: " + meep);
+        System.out.println("identical Result: " + identical_out);
     }
 
     public int addNumbers(int number, int number2) {

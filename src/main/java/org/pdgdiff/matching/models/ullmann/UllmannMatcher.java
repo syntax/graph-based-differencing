@@ -3,7 +3,6 @@ package org.pdgdiff.matching.models.ullmann;
 import org.pdgdiff.graph.GraphTraversal;
 import org.pdgdiff.graph.PDG;
 import org.pdgdiff.matching.NodeMapping;
-import soot.toolkits.graph.pdg.HashMutablePDG;
 import soot.toolkits.graph.pdg.PDGNode;
 
 import java.util.*;
@@ -13,28 +12,24 @@ import java.util.*;
  * This class contains methods to match two PDGs and return the node mappings between them.
  */
 public class UllmannMatcher {
-    private PDG pdg1;
-    private PDG pdg2;
     private NodeMapping nodeMapping;
 
-    private List<PDGNode> nodes1;
-    private List<PDGNode> nodes2;
-    private int n;
-    private int m;
-    private int[][] M; // Compatibility matrix
-    private Stack<int[][]> MStack;
+    private List<PDGNode> srcNodes;
+    private List<PDGNode> dstNodes;
+    private final int n;
+    private final int m;
+    private int[][] compatMatrix; // Compatibility matrix
+    private Stack<int[][]> matBacklog;
 
-    public UllmannMatcher(PDG pdg1, PDG pdg2) {
-        this.pdg1 = pdg1;
-        this.pdg2 = pdg2;
+    public UllmannMatcher(PDG srcPdg, PDG dstPdg) {
         this.nodeMapping = new NodeMapping();
 
-        this.nodes1 = new ArrayList<>(GraphTraversal.collectNodesBFS(pdg1));
-        this.nodes2 = new ArrayList<>(GraphTraversal.collectNodesBFS(pdg2));
-        this.n = nodes1.size();
-        this.m = nodes2.size();
-        this.M = new int[n][m];
-        this.MStack = new Stack<>();
+        this.srcNodes = new ArrayList<>(GraphTraversal.collectNodesBFS(srcPdg));
+        this.dstNodes = new ArrayList<>(GraphTraversal.collectNodesBFS(dstPdg));
+        this.n = srcNodes.size();
+        this.m = dstNodes.size();
+        this.compatMatrix = new int[n][m];
+        this.matBacklog = new Stack<>();
     }
 
     public NodeMapping match() {
@@ -56,10 +51,10 @@ public class UllmannMatcher {
 
     private void initializeM() {
         for (int i = 0; i < n; i++) {
-            PDGNode node1 = nodes1.get(i);
+            PDGNode node1 = srcNodes.get(i);
             for (int j = 0; j < m; j++) {
-                PDGNode node2 = nodes2.get(j);
-                M[i][j] = nodesAreCompatible(node1, node2) ? 1 : 0;
+                PDGNode node2 = dstNodes.get(j);
+                compatMatrix[i][j] = nodesAreCompatible(node1, node2) ? 1 : 0;
             }
         }
     }
@@ -72,25 +67,25 @@ public class UllmannMatcher {
         }
 
         for (int j = 0; j < m; j++) {
-            if (M[depth][j] == 1) {
+            if (compatMatrix[depth][j] == 1) {
                 if (isFeasible(depth, j)) {
-                    int[][] MBackup = copyMatrix(M);
+                    int[][] MBackup = copyMatrix(compatMatrix);
                     // Remove conflicting mappings
                     for (int k = depth + 1; k < n; k++) {
-                        M[k][j] = 0;
+                        compatMatrix[k][j] = 0;
                     }
                     for (int l = 0; l < m; l++) {
                         if (l != j) {
-                            M[depth][l] = 0;
+                            compatMatrix[depth][l] = 0;
                         }
                     }
-                    M[depth][j] = -1; // Mark as selected
+                    compatMatrix[depth][j] = -1; // Mark as selected
 
-                    MStack.push(MBackup);
+                    matBacklog.push(MBackup);
                     if (matchRecursive(depth + 1)) {
                         return true;
                     }
-                    M = MStack.pop();
+                    compatMatrix = matBacklog.pop();
                 }
             }
         }
@@ -98,28 +93,27 @@ public class UllmannMatcher {
     }
 
     private boolean isFeasible(int i, int j) {
-        // TODO: build more domain specific into thsi
         // Check adjacency compatibility
-        PDGNode node1 = nodes1.get(i);
-        PDGNode node2 = nodes2.get(j);
+        PDGNode srcNode = srcNodes.get(i);
+        PDGNode dstNode = dstNodes.get(j);
 
         // For all previously mapped nodes
         for (int k = 0; k < i; k++) {
             int mappedIndex = -1;
             // Find the node in PDG2 that nodes1.get(k) is mapped to
             for (int l = 0; l < m; l++) {
-                if (M[k][l] == -1) {
+                if (compatMatrix[k][l] == -1) {
                     mappedIndex = l;
                     break;
                 }
             }
             if (mappedIndex != -1) {
-                PDGNode mappedNode1 = nodes1.get(k);
-                PDGNode mappedNode2 = nodes2.get(mappedIndex);
+                PDGNode mappedSrcNode = srcNodes.get(k);
+                PDGNode mappedDstNode = this.dstNodes.get(mappedIndex);
 
                 // check if adjacency is preserved
-                boolean adjInPDG1 = areAdjacent(node1, mappedNode1);
-                boolean adjInPDG2 = areAdjacent(node2, mappedNode2);
+                boolean adjInPDG1 = areAdjacent(srcNode, mappedSrcNode);
+                boolean adjInPDG2 = areAdjacent(dstNode, mappedDstNode);
 
                 if (adjInPDG1 != adjInPDG2) {
                     return false;
@@ -138,8 +132,8 @@ public class UllmannMatcher {
     private void buildNodeMapping() {
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < m; j++) {
-                if (M[i][j] == -1) {
-                    nodeMapping.addMapping(nodes1.get(i), nodes2.get(j));
+                if (compatMatrix[i][j] == -1) {
+                    nodeMapping.addMapping(srcNodes.get(i), dstNodes.get(j));
                     break;
                 }
             }

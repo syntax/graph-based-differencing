@@ -14,8 +14,6 @@ import java.util.Objects;
 public class SyntaxDifference {
     private Unit oldUnit;
     private Unit newUnit;
-    private PDGNode oldNode;
-    private PDGNode newNode;
     private String message;
 
     private int oldLineNumber;
@@ -38,36 +36,10 @@ public class SyntaxDifference {
         this.newJimpleCode = newUnit != null ? newUnit.toString() : null;
     }
 
-    public SyntaxDifference(PDGNode oldNode, PDGNode newNode,
-                            SourceCodeMapper oldSourceMapper, SourceCodeMapper newSourceMapper) {
-        this.oldNode = oldNode;
-        this.newNode = newNode;
-        this.oldLineNumber = getNodeLineNumber(oldNode);
-        this.newLineNumber = getNodeLineNumber(newNode);
-        this.oldCodeSnippet = getNodeCodeSnippet(oldNode, oldSourceMapper);
-        this.newCodeSnippet = getNodeCodeSnippet(newNode, newSourceMapper);
-    }
 
     // Constructor for general messages
     public SyntaxDifference(String message) {
         this.message = message;
-    }
-
-    // Getters
-    public Unit getOldUnit() {
-        return oldUnit;
-    }
-
-    public Unit getNewUnit() {
-        return newUnit;
-    }
-
-    public PDGNode getOldNode() {
-        return oldNode;
-    }
-
-    public PDGNode getNewNode() {
-        return newNode;
     }
 
     public String getMessage() {
@@ -110,12 +82,6 @@ public class SyntaxDifference {
                     newCodeSnippet == null ? "null" : newCodeSnippet.trim(),
                     oldJimpleCode == null ? "null" : oldJimpleCode.trim(),
                     newJimpleCode == null ? "null" : newJimpleCode.trim());
-        } else if (oldNode != null || newNode != null) {
-            return String.format(
-                    "Node Difference at lines %d -> %d:\nOld Code: '%s'\nNew Code: '%s'",
-                    oldLineNumber, newLineNumber,
-                    oldCodeSnippet == null ? "null" : oldCodeSnippet.trim(),
-                    newCodeSnippet == null ? "null" : newCodeSnippet.trim());
         } else {
             return "Unknown Difference";
         }
