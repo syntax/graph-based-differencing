@@ -4,7 +4,7 @@ import shutil
 from pathlib import Path
 from typing import Optional
 
-# change to "verbose" for detailed logs, or "stats" for minimal logs
+# Change to "verbose" for detailed logs, or "stats" for minimal logs
 OUTPUT_MODE = "stats"
 
 GH_JAVA_PROJECTS = {
@@ -64,6 +64,7 @@ def run_cmd(cmd, cwd=None, capture_output=False):
         return subprocess.run(cmd, cwd=cwd, check=True)
 
 def clone_repos():
+    """Clone repositories into the projects directory."""
     PROJECTS_DIR.mkdir(exist_ok=True)
     for project_name, repo_url in GH_JAVA_PROJECTS.items():
         project_path = PROJECTS_DIR / project_name
@@ -72,8 +73,10 @@ def clone_repos():
             run_cmd(['git', 'clone', repo_url, str(project_path)], cwd=BASE_DIR)
 
 def checkout_commit(repo_path, commit_hash):
+
     #     force checkout a specific commit, discarding any local changes,
     #     and clean untracked files to ensure a fresh state.
+
     try:
         run_cmd(['git', 'checkout', '-f', commit_hash], cwd=repo_path)
         run_cmd(['git', 'clean', '-xfd'], cwd=repo_path)
@@ -253,6 +256,10 @@ def compile_project(repo_path, commit_dir) -> bool:
         return False
 
 def copy_all_gradle_compiled_files(repo_path: Path, commit_dir: Path):
+    """
+    After a Gradle build, .class files may be in submodules under build/classes.
+    recursively find those and copy them to commit_dir/compiled.
+    """
     compiled_output_dir = commit_dir / 'compiled'
     if compiled_output_dir.exists():
         shutil.rmtree(compiled_output_dir)
@@ -265,6 +272,10 @@ def copy_all_gradle_compiled_files(repo_path: Path, commit_dir: Path):
                 copy_directory_contents(classes_dir, compiled_output_dir)
 
 def copy_all_maven_compiled_files(repo_path: Path, commit_dir: Path):
+    """
+    After a Maven build (install), .class files may be in submodules under target/classes.
+    recursively find those and copy them to commit_dir/compiled.
+    """
     compiled_output_dir = commit_dir / 'compiled'
     if compiled_output_dir.exists():
         shutil.rmtree(compiled_output_dir)
@@ -277,12 +288,18 @@ def copy_all_maven_compiled_files(repo_path: Path, commit_dir: Path):
                 copy_directory_contents(classes_dir, compiled_output_dir)
 
 def copy_all_ant_compiled_files(repo_path: Path, commit_dir: Path):
+    """
+    After an Ant build, the default location for compiled classes
+    is often build/classes (but can vary and this can cause problemos)
+    """
     compiled_output_dir = commit_dir / 'compiled'
     if compiled_output_dir.exists():
         shutil.rmtree(compiled_output_dir)
     compiled_output_dir.mkdir(parents=True, exist_ok=True)
 
+
     # the default for many Ant scripts is "build/classes" i have found
+
     ant_build_classes = repo_path / 'build' / 'classes'
     if ant_build_classes.exists():
         copy_directory_contents(ant_build_classes, compiled_output_dir)

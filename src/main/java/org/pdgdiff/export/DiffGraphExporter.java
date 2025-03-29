@@ -65,6 +65,7 @@ public class DiffGraphExporter {
                 .filter(pdg -> !matchedPairs.containsValue(pdg))
                 .collect(Collectors.toList());
 
+
         // NB: if no match, i.e. a graph is inserted or deleted, we can't show a diff and no delta will be made.
     }
 
