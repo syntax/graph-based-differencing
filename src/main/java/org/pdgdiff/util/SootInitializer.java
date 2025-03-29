@@ -7,7 +7,8 @@ import soot.options.Options;
 import java.util.Collections;
 
 /**
- * SootInitializer class to initialize Soot with the necessary configurations for PDG generation.
+ * SootInitializer class to initialize Soot, the static analysis framework of this specific implementation of the
+ * approach with the necessary configurations for PDG generation.
  */
 public class SootInitializer {
 
@@ -22,6 +23,8 @@ public class SootInitializer {
 
         // The following phase options are configured to preserve the original code structure, as well as poss.
         // read https://www.sable.mcgill.ca/soot/tutorial/phase/phase.html
+        // in some cases however this is not possible because of how soot constructs Jimple, this is a limitation of
+        // the implementation of this approach
         Options.v().set_keep_line_number(true);
 
         Options.v().setPhaseOption("jb", "use-original-names:true");
@@ -33,45 +36,28 @@ public class SootInitializer {
         Options.v().setPhaseOption("jb.uce", "enabled:false");  // Disable unreachable code elimination
         Options.v().setPhaseOption("jb.cp", "enabled:false");  // Disable const propagation
         Options.v().setPhaseOption("jb.ule", "enabled:false");  // Disable unused local elimination
-        Options.v().setPhaseOption("jop", "enabled:false");     // Disable optimizations like constant folding
+        Options.v().setPhaseOption("jop", "enabled:false");     // Disable optimizations like const folding
         Options.v().setPhaseOption("wjop", "enabled:false");    // Disable whole-program optimizations
 
-        Options.v().setPhaseOption("jb.tr", "enabled:false");   // Disable transformation (use original control flow)
+        Options.v().setPhaseOption("jb.tr", "enabled:false");   // Disable transformation on control flow
         Options.v().setPhaseOption("bb", "enabled:false");      // Disable basic block merging or splitting
         Options.v().setPhaseOption("jap", "enabled:false");     // Disable aggregation
         Options.v().setPhaseOption("jtp.ls", "enabled:false");  // Disable loop simplification
         Options.v().setPhaseOption("jop.uce", "enabled:false"); // Disable unreachable code elimination
         Options.v().setPhaseOption("jop.cpf", "enabled:false");
 
-        disableOptimizations();
 
-        // Set the class path to your program's compiled classes
         Options.v().set_soot_classpath(dir);
         Options.v().set_process_dir(Collections.singletonList(dir));
 
-        // Whole program analysis
         Options.v().set_whole_program(true);
         Options.v().set_no_bodies_for_excluded(true);
 
 
-        // Load necessary classes
+        // finally loading necessary classes into the soot scene
         Scene.v().loadNecessaryClasses();
     }
 
-
-    // TODO: refactor above to use this, just holding off for comments/documentation
-    private static void disableOptimizations() {
-        // Disable all known optimization phases
-        String[] phasesToDisable = {
-                "jb.dae", "jb.dce", "jb.cp", "jb.uce", "jb.ne", "jb.tr",
-                "jb.ule", "jb.lp", "jb.cp-ule", "jop", "wjop", "bb",
-                "jap", "jtp.ls", "jop.uce", "jop.cpf", "wjtp", "wjap", "cg"
-        };
-
-        for (String phase : phasesToDisable) {
-            Options.v().setPhaseOption(phase, "enabled:false");
-        }
-    }
 
     // Method to reset Soot (clean up)
     public static void resetSoot() {

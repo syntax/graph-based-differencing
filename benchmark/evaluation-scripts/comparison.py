@@ -78,7 +78,7 @@ def map_char_range_to_lines(char_range, char_to_line):
     return None
 
 def extract_char_range(tree_info):
-    # Extract character range from tree information string eg: "identifier: print [19,24]" -> (19, 24)
+    # extracing character range from tree information string (gumtree style) eg: "identifier: print [19,24]" -> (19, 24)
     try:
         start_idx = tree_info.index("[")
         end_idx = tree_info.index("]")
@@ -89,7 +89,6 @@ def extract_char_range(tree_info):
         return None
 
 def parse_gumtree_json(json_output, char_to_line_f1, char_to_line_f2):
-    #parse the GumTree JSON output and extract changed lines.
 
     data = json.loads(json_output)
     changed_lines = {
@@ -129,7 +128,7 @@ def parse_gumtree_json(json_output, char_to_line_f1, char_to_line_f2):
             line_range = map_char_range_to_lines(char_range, char_to_line_f2)
             changed_lines["inserted_dst"].append(line_range)
         elif action_type.startswith("update"):
-            # Get source lines
+            # get src lines
             src_line_range = map_char_range_to_lines(char_range, char_to_line_f1)
             changed_lines["updated_src"].append(src_line_range)
             
@@ -242,17 +241,16 @@ def sort_key(item):
 
 
 def handle_changed_lines(changed_lines):
-    # Function to expand tuples into lists of line numbers
+    # function to expand tuples into lists of line numbers
     def expand_and_sort(lines):
         expanded = []
         for line in lines:
             if isinstance(line, tuple):
-                expanded.extend(range(line[0], line[1] + 1))  # Expand tuple to range
+                expanded.extend(range(line[0], line[1] + 1))  # expand tuple to range
             else:
                 expanded.append(line)
-        return sorted(set(expanded))  # Sort and remove duplicates
+        return sorted(set(expanded))  # remove dupes
 
-    # Expand and process each type of change
     changed_lines["deleted_src"] = expand_and_sort(changed_lines["deleted_src"])
     changed_lines["inserted_dst"] = expand_and_sort(changed_lines["inserted_dst"])
     changed_lines["updated_src"] = expand_and_sort(changed_lines["updated_src"])
@@ -276,10 +274,6 @@ def expand_and_filter_soot_compatible(changed_lines, src_file, dst_file):
         dst_lines = []
 
     def expand_line_nums(item):
-        """
-        If item is an int, return [item].
-        If item is a tuple (start, end), return [start, start+1, ..., end].
-        """
         if isinstance(item, tuple):
             return list(range(item[0], item[1] + 1))
         else:
@@ -387,14 +381,11 @@ def crawl_datasets():
 
 
     for project in projects:
-        # print(f">>> Project: {project}")
-
         project_before_path = os.path.join(before_path, project)
         project_after_path = os.path.join(after_path, project)
 
         for commit_id in os.listdir(project_before_path):
             commit_good = True
-            # print(f"> Processing commit: {commit_id}")
 
             # compiled paths, to be returned
             before_compiled_path = os.path.join(project_before_path, commit_id, "compiled")
@@ -405,7 +396,6 @@ def crawl_datasets():
 
             for changed_file in os.listdir(before_commit_path):
                 if changed_file == "compiled" or not changed_file.endswith(".java"): continue
-                # print(f"Processing file: {changed_file}")
 
                 # to be returned
                 before_file = os.path.join(before_commit_path, changed_file)
@@ -441,7 +431,7 @@ def crawl_datasets():
     return dataset_info, good_commits
 
 def report_changed_lines_brief(changed_lines, approach_name, file_name, total_excluding_moves_and_comments, total_excluding_non_soot):
-    # Compute total changed lines excluding moves
+    # cmp total changed lines excluding moves
     total_changes = total_number_changes_lines(changed_lines)
     total_excluding_moves = total_number_changes_lines_excluding_mv(changed_lines)
 
@@ -509,12 +499,12 @@ def is_comment_or_blank(line: str) -> bool:
     stripped = line.strip()
     if not stripped:
         return True  # blank line
-    # Single-line comment //...
+    # single-line comment //...
     if stripped.startswith("//"):
         return True
     if stripped.startswith("import"):
         return True
-    # Block comment lines /**, /*, or * ...
+    # block comment lines /**, /*, or * ...
     if stripped.startswith("/*") or stripped.startswith("*") or stripped.startswith("/**"):
         return True
     return False
@@ -564,14 +554,11 @@ def count_changed_lines_excluding_comments(changed_lines, src_file_path, dst_fil
     total_non_comment_changed_count = 0
     
     def count_non_comment(file_lines, line_nums):
-        """Count how many lines in `file_lines` (1-based) among `line_nums` are not pure comment/blank."""
         count = 0
         for ln in line_nums:
             if 1 <= ln <= len(file_lines):
                 if not is_comment_or_blank(file_lines[ln - 1]):
                     count += 1
-                # else:
-                #     print(f"{bcolors.WARNING}[warning]{bcolors.ENDC} line {ln} is a comment, an import or blank.\n{file_lines[ln - 1]}")
         return count
 
     # Changes in source file

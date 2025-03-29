@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.util.HashMap;
 
 /**
- * Maps line numbers to source code snippets.
+ * Maps line numbers to source code snippets for naive parsing when Soot struggles to define a line number for a unit.
  */
 public class SourceCodeMapper {
     private HashMap<Integer, String> lineNumberToCodeMap;

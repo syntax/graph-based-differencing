@@ -5,7 +5,8 @@ import soot.toolkits.graph.pdg.PDGNode;
 import java.util.*;
 
 /**
- * this class is used to traverse the graph using bfs and collect all nodes.
+ * this class is used to traverse the graph using bfs and collect all nodes. This acts as a helper function for other
+ * methods, especially when order of nodes in the graph is an important consideration.
  */
 public class GraphTraversal {
 
@@ -33,12 +34,12 @@ public class GraphTraversal {
         visited.add(start_node);
         nodeList.add(start_node);
 
-        // Begin BFS
+        // begin BFS
         while (!queue.isEmpty()) {
             PDGNode current_node = queue.poll();
             if (debug) System.out.println("[BFS] Visiting node: " + current_node.toShortString());
 
-            // Add dependents to the queue
+            // add dependents to the queue
             List<PDGNode> dependents = current_node.getDependents();
             for (PDGNode dependent : dependents) {
                 if (!visited.contains(dependent)) {

@@ -3,10 +3,8 @@ package org.pdgdiff.graph;
 import soot.Unit;
 import soot.tagkit.LineNumberTag;
 import soot.tagkit.Tag;
-import soot.toolkits.graph.Block;
 import soot.toolkits.graph.pdg.PDGNode;
 import soot.toolkits.graph.pdg.PDGRegion;
-import soot.toolkits.graph.pdg.Region;
 
 import java.util.*;
 

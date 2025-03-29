@@ -8,7 +8,6 @@ import org.pdgdiff.util.CodeAnalysisUtils;
 import org.pdgdiff.util.SourceCodeMapper;
 import soot.SootMethod;
 import soot.Unit;
-import soot.tagkit.LineNumberTag;
 import soot.toolkits.graph.pdg.PDGNode;
 
 import java.io.IOException;
@@ -35,7 +34,7 @@ public class EditScriptGenerator {
             SootMethod srcMethod,
             SootMethod destMethod
     ) throws IOException {
-        // Using a set to prevent duplicates (order does not matter for now).
+        // using a set to prevent duplicates (order does not matter for now).
         Set<EditOperation> editScriptSet = new HashSet<>();
 
         SourceCodeMapper srcCodeMapper = new SourceCodeMapper(srcSourceFilePath);
@@ -57,7 +56,6 @@ public class EditScriptGenerator {
                 ComparisonResult compResult = nodesAreEqual(srcNode, dstNode, visitedNodes, srcCodeMapper, dstCodeMapper, nodeMapping);
 
                 if (!compResult.isEqual) {
-                    // think this move detetion doesnt work lowk...
                     if (compResult.isMove) {
                         int oldLineNumber = getNodeLineNumber(srcNode);
                         int newLineNumber = getNodeLineNumber(dstNode);
@@ -259,9 +257,6 @@ public class EditScriptGenerator {
 
     private static ComparisonResult compareCFGNodes(PDGNode n1, PDGNode n2,
                                                     SourceCodeMapper srcCodeMapper, SourceCodeMapper dstCodeMapper) {
-//        Block block1 = (Block) n1.getNode();
-//        Block block2 = (Block) n2.getNode();
-
         Unit unit1 = (Unit) n1.getNode();
         Unit unit2 = (Unit) n2.getNode();
 
@@ -271,7 +266,6 @@ public class EditScriptGenerator {
         Set<SyntaxDifference> differences = compareUnitLists(units1, units2, srcCodeMapper, dstCodeMapper);
 
         if (!differences.isEmpty()) {
-            // TODO: this as of right now looks for jimple differences. might be useful to make sure differences are not just jimple differences
             return new ComparisonResult(false, false, differences);
         } else {
             // check for move operations based on line numbers
@@ -305,14 +299,14 @@ public class EditScriptGenerator {
             }
         }
 
-        // Handle remaining units in units1 (deletions)
+        // handle remaining units in units1 (deletions)
         while (i < units1.size()) {
             SyntaxDifference diff = new SyntaxDifference(units1.get(i), null, srcCodeMapper, dstCodeMapper);
             differences.add(diff);
             i++;
         }
 
-        // Handle remaining units in units2 (insertions)
+        // handle remaining units in units2 (insertions)
         while (j < units2.size()) {
             SyntaxDifference diff = new SyntaxDifference(null, units2.get(j), srcCodeMapper, dstCodeMapper);
             differences.add(diff);

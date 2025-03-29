@@ -30,6 +30,7 @@ public class GraphExporter {
 
         exportPDGToDot(pdg, dotFileName);
 
+        assert method != null;
         exportPDGToFile(pdg, txtFileName, method.getName());
     }
 
@@ -56,7 +57,7 @@ public class GraphExporter {
             for (PDGNode src : pdg) {
                 List<PDGNode> successors = pdg.getSuccsOf(src);
                 for (PDGNode tgt : successors) {
-                    // todo getLabelsForEdges(...) returns a List<DependencyTypes> which can contain multiple edge labels
+                    // getLabelsForEdges(...) returns a List<DependencyTypes> which can contain multiple edge labels
                     List<GraphGenerator.DependencyTypes> labels = pdg.getLabelsForEdges(src, tgt);
                     for (GraphGenerator.DependencyTypes depType : labels) {
                         String colour = "black";

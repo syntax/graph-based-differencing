@@ -4,11 +4,11 @@ import soot.toolkits.graph.pdg.PDGNode;
 
 public class NodeFeasibility {
     public static boolean isSameNodeCategory(PDGNode n1, PDGNode n2) {
-        // get unit
+        // get unit for each node
         Object node1 = n1.getNode();
         Object node2 = n2.getNode();
 
-        // check for specific categories
+        // check for abstract syntax categories
         return (isStatement(node1) && isStatement(node2)) ||
                 (isDeclaration(node1) && isDeclaration(node2)) ||
                 (isControlFlowNode(node1) && isControlFlowNode(node2)) ||
