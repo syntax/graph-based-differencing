@@ -33,9 +33,8 @@ Alternatively, the delta can be visualised with a more traditional side-by-side 
 
 Insertions and Deletions are marked with a green and red background respectively. Update operations are marked with a variety of colours, so that changes across the source and destination methods and the node pairings of the algorithm can be easily identified. A list of all the edit operations required to describe the delta is listed below the visualisation.
 
-### Preliminary list of dependencies
- - Java 8
- - Springboot 2.5.x
+### List of dependencies
+ - Java 8 (an older version of Java is required to use Soot)
  - Maven 3.6.x
  - Soot 4.3.0
  - Python 3.8.x or later
