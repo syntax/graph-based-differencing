@@ -46,10 +46,7 @@ def stats_log_project(project_name):
 def run_cmd(cmd, cwd=None, capture_output=False):
     """
     Helper function that runs a command with optional suppression of stdout/stderr
-    for 'stats' mode. If 'capture_output' is True, returns the CompletedProcess object
-    so we can read stdout/stderr if needed.
-
-    Raises CalledProcessError on non-zero exit code.
+    for 'stats' mode.
     """
     if OUTPUT_MODE == "stats" and not capture_output:
         # hide stdout/stderr in 'stats' mode by default
@@ -76,10 +73,10 @@ def clone_repos():
             run_cmd(['git', 'clone', repo_url, str(project_path)], cwd=BASE_DIR)
 
 def checkout_commit(repo_path, commit_hash):
-    """
-    force checkout a specific commit, discarding any local changes,
-    and clean untracked files to ensure a fresh state.
-    """
+
+    #     force checkout a specific commit, discarding any local changes,
+    #     and clean untracked files to ensure a fresh state.
+
     try:
         run_cmd(['git', 'checkout', '-f', commit_hash], cwd=repo_path)
         run_cmd(['git', 'clean', '-xfd'], cwd=repo_path)
@@ -159,9 +156,6 @@ def process_commits():
 
 
 def find_build_xml(repo_path: Path) -> Optional[Path]:
-    """
-    return a Path object for build.xml if found in either top-level or in the 'build' subdirectory, or None
-    """
     possible_paths = [
         repo_path / 'build.xml',
         repo_path / 'build' / 'build.xml',
@@ -287,7 +281,7 @@ def copy_all_maven_compiled_files(repo_path: Path, commit_dir: Path):
         shutil.rmtree(compiled_output_dir)
     compiled_output_dir.mkdir(parents=True, exist_ok=True)
 
-    # for multi-module: search all submodules
+    # for multi-module search all submodules
     for target_dir in repo_path.rglob('target'):
         for classes_dir in target_dir.rglob('classes'):
             if classes_dir.is_dir():
@@ -303,7 +297,9 @@ def copy_all_ant_compiled_files(repo_path: Path, commit_dir: Path):
         shutil.rmtree(compiled_output_dir)
     compiled_output_dir.mkdir(parents=True, exist_ok=True)
 
-    # The default for many Ant scripts is "build/classes" i have found
+
+    # the default for many Ant scripts is "build/classes" i have found
+
     ant_build_classes = repo_path / 'build' / 'classes'
     if ant_build_classes.exists():
         copy_directory_contents(ant_build_classes, compiled_output_dir)
@@ -311,9 +307,6 @@ def copy_all_ant_compiled_files(repo_path: Path, commit_dir: Path):
         log(f"No 'build/classes' directory found; the Ant script may store classes elsewhere.")
 
 def copy_directory_contents(src_dir: Path, dest_dir: Path):
-    """
-    Recursively copy all files from src_dir into dest_dir, preserving relative paths.
-    """
     for item in src_dir.rglob('*'):
         if item.is_file():
             relative = item.relative_to(src_dir)

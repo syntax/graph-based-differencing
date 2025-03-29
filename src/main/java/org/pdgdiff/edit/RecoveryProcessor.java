@@ -4,11 +4,6 @@ import org.pdgdiff.edit.model.*;
 
 import java.util.*;
 
-// Notes on previous implementation of recovery strategies;
-
-// Initial idea of graph centrality heuristic: (doesn't actually make all that much sense,)
-// Per each connected component, I want to extract the most central nodes of the graph (I assume those with the
-// most edges). To be honest, I have no idea if this will generalise to many cases.
 
 public class RecoveryProcessor {
 

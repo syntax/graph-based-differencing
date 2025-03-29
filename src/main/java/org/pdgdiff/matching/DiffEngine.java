@@ -11,7 +11,6 @@ import org.pdgdiff.graph.GraphTraversal;
 import org.pdgdiff.graph.PDG;
 import soot.SootClass;
 
-
 import soot.SootMethod;
 
 import java.io.*;
@@ -24,14 +23,14 @@ import static org.pdgdiff.export.EditScriptExporter.*;
 public class DiffEngine {
 
     private static final List<EditOperation> aggregatedEditScripts = new ArrayList<>();
-    private static final boolean debug = false;
+    private static final boolean debug = false; // setting for development
 
 
     public static void difference(List<PDG> pdgList1, List<PDG> pdgList2,
                                   StrategySettings strategySettings, String srcSourceFilePath, String dstSourceFilePath) throws IOException {
 
         GraphMatcher matcher = GraphMatcherFactory.createMatcher(strategySettings.matchingStrategy, pdgList1, pdgList2);
-        // for each graph print the size of its nodes and if it has a cycle
+        // for each graph print the size of its nodes and if it has a cycle (debug mode)
         if (debug) pdgList1.forEach(pdg -> {
             System.out.println("------");
             System.out.println(pdg.getCFG().getBody().getMethod().getSignature());
@@ -54,7 +53,7 @@ public class DiffEngine {
                 .filter(pdg -> !graphMapping.getGraphMapping().containsValue(pdg))
                 .collect(Collectors.toList());
 
-        // Generate edit scripts for unmatched methods
+        // generate edit scripts for unmatched methods discovered in above statements
         generateEditScriptsForUnmatched(unmatchedInList1, unmatchedInList2, srcSourceFilePath, dstSourceFilePath, strategySettings);
         exportGraphMappings(graphMapping, pdgList1, pdgList2, "out/");
 
@@ -112,7 +111,9 @@ public class DiffEngine {
             SootClass srcClass = pdgList1.get(0).getCFG().getBody().getMethod().getDeclaringClass();
             SootClass dstClass = pdgList2.get(0).getCFG().getBody().getMethod().getDeclaringClass();
 
-            // todo, if one of these is empty, i need to mark it as an insertion or deletion of the entire class. so need to do a INSERT all or DELET all for clsas metadata
+            // TODO: if one of these is empty, i need to mark it as an insertion or deletion of the entire class.
+            //  so need to do a INSERT all or DELETE all for class metadata, this is currently not handled and only
+            //  approximate
             List<EditOperation> metadataScript = ClassMetadataDiffGenerator.generateClassMetadataDiff(srcClass, dstClass, srcSourceFilePath, dstSourceFilePath);
             aggregatedEditScripts.addAll(metadataScript);
             exportEditScript(metadataScript, "metadata", "metadata", null);

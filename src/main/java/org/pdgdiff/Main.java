@@ -88,7 +88,6 @@ public class Main {
                     matchingStrategy = GraphMatcherFactory.MatchingStrategy.valueOf(args[6].toUpperCase());
                 } catch (IllegalArgumentException e) {
                     System.out.println("Invalid matching strategy provided, using default: VF2");
-                    matchingStrategy = GraphMatcherFactory.MatchingStrategy.VF2;
                 }
             }
             if (args.length >= 8) {
@@ -96,7 +95,6 @@ public class Main {
                     recoveryStrategy = org.pdgdiff.edit.RecoveryProcessor.RecoveryStrategy.valueOf(args[7].toUpperCase());
                 } catch (IllegalArgumentException e) {
                     System.out.println("Invalid recovery strategy provided, using default: CLEANUP_AND_FLATTEN");
-                    recoveryStrategy = org.pdgdiff.edit.RecoveryProcessor.RecoveryStrategy.CLEANUP_AND_FLATTEN;
                 }
             }
 
@@ -267,7 +265,7 @@ public class Main {
                     method.retrieveActiveBody();
                     System.out.println("Successfully retrieved active body for: " + method.getName() + " in " + sootClass.getName());
 
-                    PDG pdg = GraphGenerator.constructPdg(sootClass, method);
+                    PDG pdg = GraphGenerator.constructPdg(method);
                     pdgList.add(pdg);
                     System.out.println("PDG generated for method: " + method.getName());
 

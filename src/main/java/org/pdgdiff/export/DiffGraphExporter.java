@@ -65,7 +65,7 @@ public class DiffGraphExporter {
                 .filter(pdg -> !matchedPairs.containsValue(pdg))
                 .collect(Collectors.toList());
 
-        // !!!!
+
         // NB: if no match, i.e. a graph is inserted or deleted, we can't show a diff and no delta will be made.
     }
 
@@ -98,7 +98,7 @@ public class DiffGraphExporter {
             // map to store node details (label and color) keyed by their dot id
             Map<String, NodeData> nodeDataMap = new HashMap<>();
 
-            // Process nodes from source PDG (matched or deleted nodes)
+            // process nodes from source PDG (matched or deleted nodes)
             for (PDGNode srcNode : srcNodes) {
                 PDGNode dstNode = srcToDst.get(srcNode);
                 String nodeId = getNodeId(srcNode, true);
@@ -212,7 +212,7 @@ public class DiffGraphExporter {
         }
     }
 
-    // this is overloaded, depending on udpate or single-line number operation
+    // this is overloaded, depending on update or single-line number operation
     private static String createNodeLabel(String originalLabel, PDGNode node) {
         return createNodeLabel(originalLabel, node, null);
     }

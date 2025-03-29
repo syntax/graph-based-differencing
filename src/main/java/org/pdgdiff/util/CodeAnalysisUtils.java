@@ -3,15 +3,18 @@ package org.pdgdiff.util;
 import soot.*;
 import soot.tagkit.LineNumberTag;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class CodeAnalysisUtils {
 
-    // TODO: a lot of these 'parser' methods that parse the file using regex to lookup are O(n)
+/**
+ * This class aims to assist with parsing with Soot struggles.
+ * A lot of these functions are to supplement Soot when it struggles to parse, and have a O(n) complexity. As further
+ * work this could probably be optimised further.
+ */
+public class CodeAnalysisUtils {
 
     public static int getClassLineNumber(SootClass sootClass, SourceCodeMapper codeMapper) {
         int lineNumber = sootClass.getJavaSourceStartLineNumber();
@@ -36,7 +39,7 @@ public class CodeAnalysisUtils {
         return -1;
     }
 
-    public static String getClassDeclaration(SootClass sootClass, SourceCodeMapper codeMapper) throws IOException {
+    public static String getClassDeclaration(SootClass sootClass, SourceCodeMapper codeMapper) {
         int lineNumber = getClassLineNumber(sootClass, codeMapper);
         if (lineNumber > 0) {
             return codeMapper.getCodeLine(lineNumber).trim();
@@ -53,7 +56,7 @@ public class CodeAnalysisUtils {
         String fieldName = field.getName();
         String fieldType = field.getType().toString();
 
-        // parse simple type name (i.e. without full package declaration e.g. String instead of java.lang.String)
+        // parse simple type name without full package declaration (e.g. String instead of java.lang.String)
         String simpleFieldType = fieldType.substring(fieldType.lastIndexOf('.') + 1);
         // regex pattern, possibility of missed case here
         String fieldPattern = String.format(
@@ -199,12 +202,12 @@ public class CodeAnalysisUtils {
         }
 
         int startLine = range[0];
-        // climb upward until we find lines not starting with '@'
+        // climb upward until we find lines not starting with '@' i.e. non annotations
         int lineNum = startLine - 1;
         while (lineNum > 0) {
             String line = codeMapper.getCodeLine(lineNum).trim();
             if (line.startsWith("@")) {
-                // If mult annotations exist on one line, split them:
+                // If multiple annotations exist on one line, split them:
                 String[] rawAnnos = line.split("\\s+@");
                 for (int i = 0; i < rawAnnos.length; i++) {
                     String annoRaw = (i == 0) ? rawAnnos[i] : "@" + rawAnnos[i];
@@ -230,7 +233,7 @@ public class CodeAnalysisUtils {
         }
         int startLine = range[0];
 
-        // crawl upwards until reaching an empty line or a line that doesnt start with an @
+        // crawl upwards until reaching an empty line or a line that does not start with an @ i.e. non annotations
         int lineNum = startLine - 1;
         while (lineNum > 0) {
             String code = codeMapper.getCodeLine(lineNum).trim();

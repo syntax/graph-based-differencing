@@ -28,7 +28,7 @@ public class GraphGenerator {
     }
 
 
-    public static PDG constructPdg(SootClass sootClass, SootMethod method) {
+    public static PDG constructPdg(SootMethod method) {
         Body body = method.retrieveActiveBody();
         System.out.println("Generating PDG for method: " + method.getName());
         UnitGraph eug = new ExceptionalUnitGraph(body);

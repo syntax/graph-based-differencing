@@ -39,7 +39,7 @@ public class ClassMetadataDiffGenerator {
             SourceCodeMapper srcCodeMapper,
             SourceCodeMapper dstCodeMapper,
             Set<EditOperation> editScriptSet
-    ) throws IOException {
+    ) {
         // compare class modifiers
         if (srcClass.getModifiers() != dstClass.getModifiers()) {
             int srcClassLineNumber = CodeAnalysisUtils.getClassLineNumber(srcClass, srcCodeMapper);

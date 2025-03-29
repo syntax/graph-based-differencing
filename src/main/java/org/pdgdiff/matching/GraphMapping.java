@@ -24,17 +24,17 @@ public class GraphMapping {
         nodeMappings.put(srcPDG, nodeMapping);
     }
 
-    // Retrieves the node mapping for a given PDG pair
+    // retrieves the node mapping for a given PDG pair
     public NodeMapping getNodeMapping(PDG srcPDG) {
         return nodeMappings.get(srcPDG);
     }
 
-    // Exposes the entire graph mapping
+    // exposes the entire graph mapping
     public Map<PDG, PDG> getGraphMapping() {
         return graphMapping;
     }
 
-    // Pretty print all graph mappings for debugging
+    // pretty print all graph mappings for debugging (redundant otherwise)
     public void printGraphMappings() {
         for (Map.Entry<PDG, PDG> entry : graphMapping.entrySet()) {
             System.out.println("Source PDG: " + entry.getKey() + " --> Mapped to: " + entry.getValue());

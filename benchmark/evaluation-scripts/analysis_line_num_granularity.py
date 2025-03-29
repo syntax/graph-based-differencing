@@ -49,7 +49,6 @@ for (file, commit), group in df.groupby(["Changed File", "Commit ID"]):
         continue
     baseline_row = baseline.iloc[0]
 
-    # Union of lines for baseline approach
     baseline_lines = set(baseline_row["Aggregated_Src_SootOk"]) | set(baseline_row["Aggregated_Dest_SootOk"])
     baseline_src = set(baseline_row["Aggregated_Src_SootOk"])
     baseline_dest = set(baseline_row["Aggregated_Dest_SootOk"])
@@ -115,7 +114,7 @@ print(summary)
 print("\nOverall Misses/Hallucinations describe():")
 print(diff_df[["Misses", "Hallucinations"]].describe())
 
-# Just a sanity check (should be empty unless there's weird negative values)
+# sanity check only
 print("\nRows with negative Misses or Hallucinations (should be empty):")
 print(diff_df[(diff_df["Misses"] < 0) | (diff_df["Hallucinations"] < 0)])
 
@@ -157,19 +156,19 @@ for approach in diff_df["Approach"].unique():
 
 approaches = sorted(diff_df["Approach"].unique())
 
-# Prepare data for boxplots/violin plots.
+# prep data for boxplots/violin plots
 data_misses = [diff_df[diff_df["Approach"] == app]["Misses"] for app in approaches]
 data_halluc = [diff_df[diff_df["Approach"] == app]["Hallucinations"] for app in approaches]
 
 plt.figure(figsize=(12, 6))
 
-# Violin plot for Misses
+# violin plot for Misses
 plt.subplot(1, 2, 1)
 sns.violinplot(data=diff_df, x="Approach", y="Misses", inner="quartile", hue="Approach", palette="coolwarm", cut=0)
 plt.title("Misses Distribution by Approach")
 plt.xticks(rotation=45)
 
-# Violin plot for Hallucinations
+# violin plot for Hallucinations
 plt.subplot(1, 2, 2)
 sns.violinplot(data=diff_df, x="Approach", y="Hallucinations", inner="quartile", hue="Approach", palette="coolwarm", cut=0)
 plt.title("Hallucinations Distribution by Approach")
@@ -261,11 +260,10 @@ plt.savefig("plots/avg_hallucinations.png", dpi=600, bbox_inches='tight')
 all_op_cols = [src_del, dest_ins, src_upd, dest_upd, src_move, dest_move]
 all_op_labels = ["Deleted (Src)", "Inserted (Dst)", "Updated (Src)", "Updated (Dst)", "Moved (Src)", "Moved (Dst)"]
 
-# For GED and VF2, we exclude move columns. So define these lists:
+# for pdg-based, exclude moves
 non_move_op_cols = [src_del, dest_ins, src_upd, dest_upd]
 non_move_op_labels = ["Deleted (Src)", "Inserted (Dst)", "Updated (Src)", "Updated (Dst)"]
 
-# Helper: count total lines in a column (assuming each cell is a list)
 def count_lines(series):
     return series.apply(lambda x: len(x) if isinstance(x, list) else 0).sum()
 
@@ -323,7 +321,7 @@ operation_labels = ["Deleted (Src)", "Inserted (Dst)", "Updated (Src)", "Updated
 def count_lines(series):
     return series.apply(lambda x: len(x) if isinstance(x, list) else 0).sum()
 
-# Calculate the total count of each operation type per approach
+# calc the total count of each operation type per approach
 op_summary = df.groupby("Approach").apply(
     lambda group: pd.Series({
         label: count_lines(group[col])
