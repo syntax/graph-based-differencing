@@ -69,15 +69,12 @@ def clone_repos():
             run_cmd(['git', 'clone', repo_url, str(project_path)], cwd=BASE_DIR)
 
 def checkout_commit(repo_path, commit_hash):
-
-    #     force checkout a specific commit, discarding any local changes,
-    #     and clean untracked files to ensure a fresh state.
-
     try:
         run_cmd(['git', 'checkout', '-f', commit_hash], cwd=repo_path)
         run_cmd(['git', 'clean', '-xfd'], cwd=repo_path)
     except subprocess.CalledProcessError as e:
         log(f"Error during checkout of commit {commit_hash}: {e}")
+        raise
 
 
 def get_previous_commit(repo_path, commit_hash):
