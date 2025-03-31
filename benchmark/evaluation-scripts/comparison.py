@@ -7,10 +7,6 @@ from datetime import datetime
 os.system("")
 
 
-
-
-# CONSTANTS, DEFINE
-
 GUMTREE_PATH = "../../../gumtree-4.0.0-beta2 2/bin"
 PDG_OUT_PATH = "out/diff.json"
 CSV_LOG_FILE = "diff_results_gumtree_indiv_line_nums.csv"
@@ -38,7 +34,6 @@ class bcolors:
 
 def run_gumtree_textdiff(file1, file2):
     try:
-        # now gumtree
         print(f"{bcolors.OKBLUE}[notif]{bcolors.ENDC} running GumTree.")
         result = subprocess.run(
             [f"./{GUMTREE_PATH}/gumtree", "textdiff", file1, file2, "-f", "JSON"],
@@ -46,15 +41,13 @@ def run_gumtree_textdiff(file1, file2):
             text=True,
         )
         result.check_returncode()
-        # print(result.stdout)
         return result.stdout
     except subprocess.CalledProcessError as e:
         print(f"{bcolors.FAIL}[error]{bcolors.ENDC} err running GumTree: {e.stderr}")
         return None
 
 def map_char_to_line(file_path):
-    #create a mapping from character positions to line numbers.
-    
+    # gumtree produces everything at character granularity, so its useful to have a usable mapping here
     char_to_line = {}
     with open(file_path, "r") as f:
         current_pos = 0
@@ -216,14 +209,10 @@ def parse_pdgdiff_output(output):
             if old_line is not None:
                 changed_lines["updated_src"].append(old_line)
                 changed_lines["updated_dst"].append(new_line)
-            # if new_line is not None and new_line != old_line:
-            #     changed_lines["updated"].append(new_line)
         elif action_type == "Move":
             if old_line is not None:
                 changed_lines["moved_src"].append(old_line)
                 changed_lines["moved_dst"].append(new_line)
-            # if new_line is not None and new_line != old_line:
-            #     changed_lines["moved_src"].append(new_line)
 
     return changed_lines
 
@@ -246,7 +235,7 @@ def handle_changed_lines(changed_lines):
         expanded = []
         for line in lines:
             if isinstance(line, tuple):
-                expanded.extend(range(line[0], line[1] + 1))  # expand tuple to range
+                expanded.extend(range(line[0], line[1] + 1))
             else:
                 expanded.append(line)
         return sorted(set(expanded))  # remove dupes
@@ -329,7 +318,7 @@ def report_changed_lines(changed_lines, approach_name):
     print(f"---- Changed Lines report for {approach_name}:")
     for change_type, lines in changed_lines.items():
         print(f"{change_type.capitalize()}: {lines}") 
-    # for PDGDiff, dont include moves, but for Gumtree include moves   
+    # NB including moves for pdg approaches but not for gumtree due to varying definitions, this is explained in paper
     if approach_name == "PDGdiff":
         print(f" !!! !! > Total number of changed lines in source: {len(set(changed_lines['deleted_src'] + changed_lines['updated_src']))}")
         print(f" !!! !! > Total number of changed lines in destination (not incl moves): {len(set(changed_lines['inserted_dst'] + changed_lines['updated_dst']))}")
@@ -346,25 +335,14 @@ def report_changed_lines(changed_lines, approach_name):
 # !!!!!! Functions for comparing the two approaches
 
 def find_compiled_class(compiled_dir, source_file):
-    """
-    steps
-      1. get the base name of the source file (e.g. 'StringUtils' from 'StringUtils.java').
-      2. recursively walk the compiled_dir to find a file with the name 'StringUtils.class'.
-      3. if found, compute its relative path with respect to compiled_dir, replace path separators
-         with dots, and return the fully qualified name.
-    
-    not found? , returns None.
-    """
     base_name = os.path.splitext(os.path.basename(source_file))[0]
     for root, _, files in os.walk(compiled_dir):
         for f in files:
             if f == base_name + ".class":
-                # get the relative directory path from the compiled root
                 rel_dir = os.path.relpath(root, compiled_dir)
                 if rel_dir == ".":
                     return base_name
                 else:
-                    # convert directory structure to dot notation.
                     fqcn = rel_dir.replace(os.sep, ".") + "." + base_name
                     return fqcn
     return None
@@ -417,9 +395,6 @@ def crawl_datasets():
                     "after_class_fullyqualified": after_class_fqcn,
                 }
 
-
-                # some files just do not manage to compile, for whatever reason, this is rare on the subset of projects
-                # but im going to 
                 if before_class_fqcn and after_class_fqcn:
                     dataset_info.append(file_info)
                 else:
@@ -431,7 +406,6 @@ def crawl_datasets():
     return dataset_info, good_commits
 
 def report_changed_lines_brief(changed_lines, approach_name, file_name, total_excluding_moves_and_comments, total_excluding_non_soot):
-    # cmp total changed lines excluding moves
     total_changes = total_number_changes_lines(changed_lines)
     total_excluding_moves = total_number_changes_lines_excluding_mv(changed_lines)
 
@@ -561,15 +535,11 @@ def count_changed_lines_excluding_comments(changed_lines, src_file_path, dst_fil
                     count += 1
         return count
 
-    # Changes in source file
     total_non_comment_changed_count += count_non_comment(src_lines, changed_lines["deleted_src"])
     total_non_comment_changed_count += count_non_comment(src_lines, changed_lines["updated_src"])
-    # total_non_comment_changed_count += count_non_comment(src_lines, changed_lines["moved_src"])
 
-    # Changes in destination file
     total_non_comment_changed_count += count_non_comment(dst_lines, changed_lines["inserted_dst"])
     total_non_comment_changed_count += count_non_comment(dst_lines, changed_lines["updated_dst"])
-    # total_non_comment_changed_count += count_non_comment(dst_lines, changed_lines["moved_dst"])
 
     return total_non_comment_changed_count
 
@@ -602,12 +572,9 @@ def count_changed_lines_excluding_nonsoot(changed_lines, src_file_path, dst_file
 
     total_non_comment_changed_count += count_non_soot("src",src_lines, changed_lines["deleted_src"])
     total_non_comment_changed_count += count_non_soot("src",src_lines, changed_lines["updated_src"])
-    # total_non_comment_changed_count += count_non_comment(src_lines, changed_lines["moved_src"])
 
-    # Changes in destination file
     total_non_comment_changed_count += count_non_soot("dst",dst_lines, changed_lines["inserted_dst"])
     total_non_comment_changed_count += count_non_soot("dst",dst_lines, changed_lines["updated_dst"])
-    # total_non_comment_changed_count += count_non_comment(dst_lines, changed_lines["moved_dst"])
 
     return total_non_comment_changed_count
 
@@ -642,10 +609,6 @@ def main():
             gt_non_comment_count = count_changed_lines_excluding_comments(gt_changes, file1, file2)
             gt_non_soot_count = count_changed_lines_excluding_nonsoot(gt_changes, file1, file2)
 
-
-            
-            # report_changed_lines(gt_changes, "GumTree")
-            #  TODO
             # pdgdiff
             strategy = "vf2"
             run_pdg_textdiff(file_info["before_file_dir"],
@@ -660,7 +623,6 @@ def main():
 
             pdg_vf2_non_comment_count = count_changed_lines_excluding_comments(pdg_vf2_changes, file1, file2)
             pdg_vf2_non_soot_count = count_changed_lines_excluding_nonsoot(pdg_vf2_changes, file1, file2)
-            #   (pdg_changes, "PDGdiff") 
 
 
 
@@ -713,34 +675,6 @@ def main():
             print(f"{bcolors.FAIL}[error]{bcolors.ENDC} error processing file: {file_info['changed_file']}, {e}")
             log_results_to_csv(file_info, "Error", {}, e)
             continue
-
-
-    #  # set appropriately, todo eventually iterature through files by file
-    # file1 = GUMTREE_PATH + "/TestAdder1.java"
-    # file2 = GUMTREE_PATH + "/TestAdder2.java"
-    
-    # # gumtree
-    # json_output = run_gumtree_textdiff(file1, file2)
-    # if not json_output:
-    #     print("Failed to generate GumTree diff.")
-    #     return
-
-    # char_to_line_f1 = map_char_to_line(file1)
-    # char_to_line_f2 = map_char_to_line(file2)
-
-    # gt_changes = parse_gumtree_json(json_output, char_to_line_f1, char_to_line_f2)
-    # gt_changes = handle_changed_lines(gt_changes)
-    
-    # report_changed_lines(gt_changes, "GumTree")
-
-    # # pdgdiff
-    # pdg_changes = parse_pdgdiff_output(open(PDG_OUT_PATH).read())
-    # pdg_changes = handle_changed_lines(pdg_changes)
-
-
-    # report_changed_lines(pdg_changes, "PDGdiff")
-
-
 
 if __name__ == "__main__":
     main()
