@@ -37,7 +37,7 @@ public class SignatureDiffGenerator {
         int mods = method.getModifiers();
         String modsString = Modifier.toString(mods); // e.g. "public static final"
         if (!modsString.isEmpty()) {
-            // split on whitespace to get individual tokens
+            // split on whitespace to get indiv tokens
             modifierSet.addAll(Arrays.asList(modsString.split("\\s+")));
         }
 
@@ -50,11 +50,11 @@ public class SignatureDiffGenerator {
             thrownExceptions.add(exception.getName());
         }
 
-        // to be populated later, no soot native way to get all the info required
+        // to be populated later, no soot native way to get all the info required afaik
         List<Integer> paramLines = new ArrayList<>();
         List<String> paramTokens = CodeAnalysisUtils.getParamTokensAndLines(method, mapper, paramLines);
 
-        // Annotation tokens (e.g. "@Override") + lines
+        // Annotation tokens (e.g. "@Override") + line nums for reporting
         List<Integer> annoLines = new ArrayList<>();
         List<String> annotations = CodeAnalysisUtils.getMethodAnnotationsWithLines(method, mapper, annoLines);
 
@@ -66,7 +66,7 @@ public class SignatureDiffGenerator {
             ParsedSignature oldSig, ParsedSignature newSig,
             SootMethod oldMethod, SootMethod newMethod,
             SourceCodeMapper oldMapper, SourceCodeMapper newMapper
-    ) throws IOException {
+    ) {
         List<EditOperation> ops = new ArrayList<>();
 
         // these are approx'd and could actually return slightly off numbers if hard to parse.
@@ -192,6 +192,9 @@ public class SignatureDiffGenerator {
         List<String> oldExceptions = oldSig.thrownExceptions;
         List<String> newExceptions = newSig.thrownExceptions;
 
+        // following are being classified as deletes in order to remain more consitent with gumtree, but perhaps
+        // they should be updates (esp based on how other bits of this impl are treating these sorta changes)
+
         Set<String> removedExceptions = new HashSet<>(oldExceptions);
         removedExceptions.removeAll(newExceptions);
         // todo: again should this be deletes or updates...
@@ -210,13 +213,15 @@ public class SignatureDiffGenerator {
     }
 
     // left to right dynamic programming approach to try and match up parameters (or annos), basically a edit distance optimiation
-    // nb soot gives us parameter types, not names
+    // nb soot gives parameter types, not names
 
+
+    // generic DP function used for params and for annotations
     private static List<EditOperation> compareStringListsDP(
-            List<String> oldEntries,  // old parameter types OR old annotation lines
-            List<String> newEntries,  // new parameter types OR new annotation lines
-            List<Integer> oldEntriesLines,  // old parameter line numbers OR old annotation line numbers
-            List<Integer> newEntriesLines,   // new parameter line numbers OR new annotation line numbers
+            List<String> oldEntries,  // old parameter types or old annotation lines
+            List<String> newEntries,  // new parameter types or new annotation lines
+            List<Integer> oldEntriesLines,  // old parameter line numbers or old annotation line numbers
+            List<Integer> newEntriesLines,   // new parameter line numbers or new annotation line numbers
             String label
     ) {
         List<EditOperation> ops = new ArrayList<>();

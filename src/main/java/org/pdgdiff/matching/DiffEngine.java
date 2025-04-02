@@ -30,7 +30,7 @@ public class DiffEngine {
                                   StrategySettings strategySettings, String srcSourceFilePath, String dstSourceFilePath) throws IOException {
 
         GraphMatcher matcher = GraphMatcherFactory.createMatcher(strategySettings.matchingStrategy, pdgList1, pdgList2);
-        // for each graph print the size of its nodes and if it has a cycle (debug mode)
+        // for each graph print the size and if it has a cycle (debug mode)
         if (debug) pdgList1.forEach(pdg -> {
             System.out.println("------");
             System.out.println(pdg.getCFG().getBody().getMethod().getSignature());
@@ -113,7 +113,7 @@ public class DiffEngine {
 
             // TODO: if one of these is empty, i need to mark it as an insertion or deletion of the entire class.
             //  so need to do a INSERT all or DELETE all for class metadata, this is currently not handled and only
-            //  approximate
+            //  approximate.
             List<EditOperation> metadataScript = ClassMetadataDiffGenerator.generateClassMetadataDiff(srcClass, dstClass, srcSourceFilePath, dstSourceFilePath);
             aggregatedEditScripts.addAll(metadataScript);
             exportEditScript(metadataScript, "metadata", "metadata", null);

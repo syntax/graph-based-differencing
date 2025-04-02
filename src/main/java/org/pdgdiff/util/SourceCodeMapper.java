@@ -7,6 +7,7 @@ import java.util.HashMap;
 
 /**
  * Maps line numbers to source code snippets for naive parsing when Soot struggles to define a line number for a unit.
+ * Used for later hositing of elements when constructing the Edit Script at the source level.
  */
 public class SourceCodeMapper {
     private HashMap<Integer, String> lineNumberToCodeMap;

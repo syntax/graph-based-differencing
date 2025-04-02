@@ -3,9 +3,6 @@ package org.pdgdiff.io;
 import org.pdgdiff.edit.model.*;
 import org.pdgdiff.matching.StrategySettings;
 
-/**
- * Interface defining methods to format edit operations.
- */
 public interface OperationFormatter {
 
     void writeInfo(StrategySettings settings) throws Exception;

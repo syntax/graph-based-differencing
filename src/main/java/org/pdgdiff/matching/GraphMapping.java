@@ -41,7 +41,7 @@ public class GraphMapping {
             NodeMapping nodeMapping = nodeMappings.get(entry.getKey());
             if (nodeMapping != null) {
                 System.out.println("Node Mappings for this PDG:");
-                nodeMapping.printMappings(); // Print node-level mappings for this PDG pair
+                nodeMapping.printMappings();
             }
         }
     }

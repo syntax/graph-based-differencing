@@ -17,7 +17,7 @@ public class ExportUtils {
             return hexString.toString();
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
-            return methodName;
+            return methodName + ": failed to generate hash for method name!";
         }
     }
 

@@ -51,7 +51,7 @@ public class UllmannGraphMatcher extends GraphMatcher {
             }
 
             if (bestPdg1 != null && bestPdg2 != null) {
-                // map the best pdf pair found
+                // map the best pdg pair found
                 unmappedPDGs1.remove(bestPdg1);
                 unmappedPDGs2.remove(bestPdg2);
                 graphMapping.addGraphMapping(bestPdg1, bestPdg2, bestNodeMapping);

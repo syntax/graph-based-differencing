@@ -52,10 +52,10 @@ public class GEDGraphMatcher extends GraphMatcher {
                 unmappedSrcPdgs.remove(bestSrcPdg);
                 unmappedDstPdgs.remove(bestDstPdg);
 
-                // the chosen mapping in the global GraphMapping
+                // the chosen mapping added in the global GraphMapping
                 graphMapping.addGraphMapping(bestSrcPdg, bestDstPdg, bestNodeMapping);
             } else {
-                // No good matches remain
+                // no good matches remain
                 break;
             }
         }

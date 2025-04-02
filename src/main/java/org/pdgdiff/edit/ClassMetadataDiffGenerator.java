@@ -86,7 +86,7 @@ public class ClassMetadataDiffGenerator {
             dstFieldMap.put(field.getName(), field);
         }
 
-        // Matching fields by name, type, and modifiers to try and report update instructions where sensible
+        // matching fields by name, type, and modifiers to try and report update instructions where sensible
         Set<String> matchedFields = new HashSet<>();
 
         // firstly attempting to match by name

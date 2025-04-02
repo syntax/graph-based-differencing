@@ -18,13 +18,8 @@ import java.util.stream.Collectors;
 public class DiffGraphExporter {
 
     /**
-     * This generated a 'delta' dot file, i.e. a way of representing the changes that have happeend on one graph and
-     * taken it to another
-     *
-     * @param graphMapping the PDG-to-PDG matching (this incldues node mappings)
-     * @param pdgListSrc   all PDGs from the 'before' version
-     * @param pdgListDst   all PDGs from the 'after' version
-        * @param outputDir    the directory to write the dot files to
+     * This generates a singular 'delta' dot file, i.e. a way of representing the changes that have happeend on one graph and
+     * taken it to another graph
      */
     public static void exportDiffPDGs(
             GraphMapping graphMapping,
@@ -71,7 +66,6 @@ public class DiffGraphExporter {
 
     /**
      * exprts a single .dot file showing the diff between one src PDG and one dst PDG
-     * (uses the node mapping to color-code matched/added/deleted edges & nodes).
      *
      * This aims to follow similar logic to Editscriptgeneration
      */
@@ -104,17 +98,16 @@ public class DiffGraphExporter {
                 String nodeId = getNodeId(srcNode, true);
 
                 if (dstNode == null) {
-                    // node was deleted in dst
+                    // node deleted in dst
                     String label = removePrefix(srcNode.toString());
                     String color = "#FFCCCC"; // red for deletion
                     nodeDataMap.put(nodeId, new NodeData(createNodeLabel(label, srcNode), color));
                 } else {
-                    // matched (possible unchanged, moved, or updated)
+                    // matched (poss either unchanged, moved, or updated)
                     String label, color;
-                    // label shows both sides
                     if (Objects.equals(removePrefix(srcNode.toString()), removePrefix(dstNode.toString()))) {
                         label = removePrefix(srcNode.toString());
-                        color = "lightgrey"; // grey for unchanged
+                        color = "lightgrey"; // unchanged
                     } else {
                         label = String.format("%s!NEWLINE!----!NEWLINE!%s",
                                 removePrefix(srcNode.toString()),
@@ -130,7 +123,7 @@ public class DiffGraphExporter {
                 if (!dstToSrc.containsKey(dstNode)) {
                     String nodeId = getNodeId(dstNode, false);
                     String label = removePrefix(dstNode.toString());
-                    String color = "#CCFFCC"; // green-ish for addition
+                    String color = "#CCFFCC"; // green for added
                     nodeDataMap.put(nodeId, new NodeData(createNodeLabel(label, dstNode), color));
                 }
             }
@@ -158,7 +151,7 @@ public class DiffGraphExporter {
                 }
             }
 
-            // process edges from the destination PDG.
+            // process edges from the dest PDG
             for (PDGNode dstNode : dstNodes) {
                 for (PDGNode succ : dstPDG.getSuccsOf(dstNode)) {
                     String srcId = getMergedNodeId(dstNode, false, dstToSrc);
@@ -184,7 +177,7 @@ public class DiffGraphExporter {
                 }
             }
 
-            // write edges with colour and a combined label
+            // write edges with colour and label
             for (Map.Entry<EdgeKey, Set<String>> entry : edgeMap.entrySet()) {
                 EdgeKey key = entry.getKey();
                 Set<String> sources = entry.getValue();
@@ -326,6 +319,7 @@ public class DiffGraphExporter {
             this.tgtId = tgtId;
         }
 
+        // for comp
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;

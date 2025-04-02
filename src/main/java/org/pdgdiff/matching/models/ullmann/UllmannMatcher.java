@@ -34,14 +34,12 @@ public class UllmannMatcher {
 
     public NodeMapping match() {
         if (n > m) {
-            // PDG1 cannot be a subgraph of PDG2
             return null;
         }
 
-        // Initialize compatibility matrix
         initializeM();
 
-        // Start recursive search
+        // start recursive search
         if (matchRecursive(0)) {
             return nodeMapping;
         } else {
@@ -61,7 +59,7 @@ public class UllmannMatcher {
 
     private boolean matchRecursive(int depth) {
         if (depth == n) {
-            // All nodes have been matched
+            // all nodes have been matched
             buildNodeMapping();
             return true;
         }
@@ -70,7 +68,7 @@ public class UllmannMatcher {
             if (compatMatrix[depth][j] == 1) {
                 if (isFeasible(depth, j)) {
                     int[][] MBackup = copyMatrix(compatMatrix);
-                    // Remove conflicting mappings
+                    // remove conflicting mappings
                     for (int k = depth + 1; k < n; k++) {
                         compatMatrix[k][j] = 0;
                     }
@@ -79,7 +77,7 @@ public class UllmannMatcher {
                             compatMatrix[depth][l] = 0;
                         }
                     }
-                    compatMatrix[depth][j] = -1; // Mark as selected
+                    compatMatrix[depth][j] = -1; // selected
 
                     matBacklog.push(MBackup);
                     if (matchRecursive(depth + 1)) {
@@ -93,14 +91,14 @@ public class UllmannMatcher {
     }
 
     private boolean isFeasible(int i, int j) {
-        // Check adjacency compatibility
+        // check adjacency compatibility
         PDGNode srcNode = srcNodes.get(i);
         PDGNode dstNode = dstNodes.get(j);
 
-        // For all previously mapped nodes
+        // for all prev mapped nodes
         for (int k = 0; k < i; k++) {
             int mappedIndex = -1;
-            // Find the node in PDG2 that nodes1.get(k) is mapped to
+            // find the node in PDG2 that k in pdg1 is mapped to
             for (int l = 0; l < m; l++) {
                 if (compatMatrix[k][l] == -1) {
                     mappedIndex = l;
@@ -124,7 +122,7 @@ public class UllmannMatcher {
     }
 
     private boolean areAdjacent(PDGNode n1, PDGNode n2) {
-        // Check if n1 and n2 are adjacent in the PDG
+        // chck if n1 and n2 are adjacent in the PDG
         return n1.getDependents().contains(n2) || n1.getBackDependets().contains(n2)
                 || n2.getDependents().contains(n1) || n2.getBackDependets().contains(n1);
     }
