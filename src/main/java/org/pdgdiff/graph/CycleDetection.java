@@ -4,7 +4,6 @@ import soot.Unit;
 import soot.tagkit.LineNumberTag;
 import soot.tagkit.Tag;
 import soot.toolkits.graph.pdg.PDGNode;
-import soot.toolkits.graph.pdg.PDGRegion;
 
 import java.util.*;
 
