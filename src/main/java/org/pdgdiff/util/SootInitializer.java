@@ -59,7 +59,7 @@ public class SootInitializer {
     }
 
 
-    // Method to reset Soot (clean up)
+    // reset Soot (clean up)
     public static void resetSoot() {
         G.reset();
     }

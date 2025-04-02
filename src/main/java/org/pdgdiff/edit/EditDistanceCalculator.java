@@ -7,7 +7,6 @@ import java.util.List;
 public class EditDistanceCalculator {
 
     public static int calculateEditDistance(List<EditOperation> editScript) {
-        // assuming an equal cost to all edit operations
         int distance = 0;
         for (EditOperation op : editScript) {
             switch (op.getName()) {

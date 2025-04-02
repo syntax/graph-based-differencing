@@ -27,7 +27,7 @@ for col in [src_del, src_upd, src_move, dest_ins, dest_upd, dest_move]:
     df[col] = df[col].apply(parse_list)
 
 def aggregate_sootok(row):
-    # for gumtree, we need to consider moved lines as well, for pdg we dont.
+    # for gumtree, consider moved lines as well, for pdg we dont.
     if row["Approach"] == "GumTree":
         src = row[src_del] + row[src_upd] + row[src_move]
         dest = row[dest_ins] + row[dest_upd] + row[dest_move]
@@ -150,10 +150,6 @@ for approach in diff_df["Approach"].unique():
     print("")
 
 
-# --------------------------------------------------
-# plots 
-# --------------------------------------------------
-
 approaches = sorted(diff_df["Approach"].unique())
 
 # prep data for boxplots/violin plots
@@ -162,13 +158,11 @@ data_halluc = [diff_df[diff_df["Approach"] == app]["Hallucinations"] for app in 
 
 plt.figure(figsize=(12, 6))
 
-# violin plot for Misses
 plt.subplot(1, 2, 1)
 sns.violinplot(data=diff_df, x="Approach", y="Misses", inner="quartile", hue="Approach", palette="coolwarm", cut=0)
 plt.title("Misses Distribution by Approach")
 plt.xticks(rotation=45)
 
-# violin plot for Hallucinations
 plt.subplot(1, 2, 2)
 sns.violinplot(data=diff_df, x="Approach", y="Hallucinations", inner="quartile", hue="Approach", palette="coolwarm", cut=0)
 plt.title("Hallucinations Distribution by Approach")
@@ -178,7 +172,6 @@ plt.tight_layout()
 plt.savefig("plots/violin.png", dpi=600, bbox_inches='tight')
 # plt.show()
 
-# --- PERCENTILES ---
 percentiles = np.arange(0, 101)
 tick_step = 5
 
@@ -212,7 +205,6 @@ ax.set_yticks(np.arange(0, y_max + tick_step, tick_step))
 plt.grid(True)
 plt.savefig("plots/hallucinations.png", dpi=600, bbox_inches='tight')
 
-# --- INVESTIGATING GRANULARITY - source vs dest misses ---
 summary_src_dest = diff_df.groupby("Approach").agg({
     "Misses_Src": "mean",
     "Misses_Dest": "mean",
@@ -250,12 +242,6 @@ ax.set_xticklabels(approaches)
 ax.legend()
 plt.tight_layout()
 plt.savefig("plots/avg_hallucinations.png", dpi=600, bbox_inches='tight')
-
-# --------------------------------------------------
-# ANALYSIS OF OPERATION TYPES AS A PERCENTAGE OF TOTAL CHANGED LINES
-# (Using the SootOK columns, and excluding move operations for GED and VF2)
-# --------------------------------------------------
-
 
 all_op_cols = [src_del, dest_ins, src_upd, dest_upd, src_move, dest_move]
 all_op_labels = ["Deleted (Src)", "Inserted (Dst)", "Updated (Src)", "Updated (Dst)", "Moved (Src)", "Moved (Dst)"]
@@ -329,11 +315,9 @@ op_summary = df.groupby("Approach").apply(
     })
 )
 
-# cmp percentages for each operation type per approach
 op_totals = op_summary.sum(axis=1)
 op_percentages = op_summary.div(op_totals, axis=0) * 100
 
-# plot a stacked bar chart for the operation type percentages (excluding moves)
 fig, ax = plt.subplots(figsize=(10, 6))
 approaches = op_percentages.index.tolist()
 x = np.arange(len(approaches))

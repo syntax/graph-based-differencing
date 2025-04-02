@@ -102,7 +102,7 @@ public class EditScriptGenerator {
         ParsedSignature oldSig = parseMethodSignature(srcMethod, srcCodeMapper);
         ParsedSignature newSig = parseMethodSignature(destMethod, dstCodeMapper);
 
-        // misleading, should probably rename to something including annotations
+        // misleading naming here , should probably rename to something including annotations
         List<EditOperation> signatureDiffs =
                 compareSignatures(oldSig, newSig, srcMethod, destMethod, srcCodeMapper, dstCodeMapper);
 

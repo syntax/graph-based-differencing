@@ -7,7 +7,7 @@ import java.util.List;
 
 /**
  * GraphMatcher abstract class to compare two lists of PDGs and find similarities, aiming to create a 1:1 mapping between
- * PDGs from the two lists. These PDGs represent methods, with each list representing a different class (or file)
+ * PDGs from the two lists. A PDGs represents a methods, with each list representing a different class
  */
 public abstract class GraphMatcher {
     protected final HashSet<PDG> matchedPDGs;

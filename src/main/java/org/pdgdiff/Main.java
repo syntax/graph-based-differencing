@@ -72,8 +72,9 @@ public class Main {
             afterDir = System.getProperty("user.dir") + "/target/classes";
 
         } else {
+            // parsing the arguments from the cli
             // as an example;
-            //  mvn exec:java -Dexec.mainClass="org.pdgdiff.Main" -Dexec.args="./src/main/java/org/pdgdiff/testclasses/TestFileBefore.java ./src/main/java/org/pdgdiff/testclasses/TestFileAfter.java ./target/classes ./target/classes org.pdgdiff.testclasses.TestFileBefore org.pdgdiff.testclasses.TestFileAfter"
+            // mvn exec:java -Dexec.mainClass="org.pdgdiff.Main" -Dexec.args="./src/main/java/org/pdgdiff/testclasses/TestFileBefore.java ./src/main/java/org/pdgdiff/testclasses/TestFileAfter.java ./target/classes ./target/classes org.pdgdiff.testclasses.TestFileBefore org.pdgdiff.testclasses.TestFileAfter"
             srcSourceFilePath = args[0];
             dstSourceFilePath = args[1];
             beforeDir = args[2];
@@ -102,18 +103,14 @@ public class Main {
 
 
 
-        // clear out folder
         GraphExporter.clearOutputFolder("out");
-
-
-        // init Soot
         SootInitializer.initializeSoot(beforeDir);
 
         // Load all classes in the program
         Scene.v().loadNecessaryClasses();
 
         try {
-            // Retrieve the classes from the Soot Scene
+            // retrieve the classes from the Soot Scene
             SootInitializer.initializeSoot(beforeDir);
             Scene.v().loadNecessaryClasses();
             Map<String, SootClass> beforeClasses = collectNestedClassesByFqn(class1Name);
@@ -124,14 +121,13 @@ public class Main {
 
 
             if (beforeClasses.size() == 1 && afterClasses.size() == 1) {
-                // standard, only one class in each
+                // standard case, where only one class in each
 
                 System.out.println("\nDetected exactly ONE class in BEFORE and AFTER => using single-class logic.");
 
                 SootClass beforeFile = beforeClasses.values().iterator().next();
                 SootClass afterFile  = afterClasses.values().iterator().next();
 
-                // Generate PDGs
                 List<PDG> pdgsClass1 = generatePDGsForClass(beforeFile, FILE_VERSION.SOURCE);
                 List<PDG> pdgsClass2 = generatePDGsForClass(afterFile,  FILE_VERSION.DEST);
 
@@ -194,7 +190,7 @@ public class Main {
                 System.out.println("All classes: " + allFqns);
 
                 for (String fqn : allFqns) {
-                    // nb: this obviously assumes classes have the same name.
+                    // nb: this obviously assumes classes have the same name when making this comparison
                     System.out.println("\n=== Comparing class: " + fqn + " ===");
 
                     List<PDG> beforePdgs = beforePdgsMap.getOrDefault(fqn, Collections.emptyList());
@@ -204,17 +200,17 @@ public class Main {
                     System.out.println("Before PDGs: " + beforePdgs);
                     System.out.println("After PDGs: " + afterPdgs);
                     if (beforePdgs.isEmpty() && !afterPdgs.isEmpty()) {
-                        // this class is ADDED
+                        // this class is added
                         System.out.println("Class " + fqn + " was ADDED in 'after'.");
                         DiffEngine.difference(Collections.emptyList(), afterPdgs, strategySettings,
                                 srcSourceFilePath, dstSourceFilePath);
                     } else if (!beforePdgs.isEmpty() && afterPdgs.isEmpty()) {
-                        // the class is DELETED
+                        // the class is deleted
                         System.out.println("Class " + fqn + " was DELETED in 'after'.");
                         DiffEngine.difference(beforePdgs, Collections.emptyList(), strategySettings,
                                 srcSourceFilePath, dstSourceFilePath);
                     } else {
-                        // class existed in both => do normal method-level PDG diff
+                        // class existed in both, so normal method-level PDG diff
                         System.out.println("Class " + fqn + " exists in both. Diffing method-level PDGs...");
                         DiffEngine.difference(beforePdgs, afterPdgs, strategySettings, srcSourceFilePath, dstSourceFilePath);
                     }
@@ -234,7 +230,6 @@ public class Main {
 
     private static Map<String, SootClass> collectNestedClassesByFqn(String fqn) {
         Map<String, SootClass> result = new HashMap<>();
-        // todo: consider that there might be some unecessary time cost here, for large projects
         for (SootClass sc : Scene.v().getApplicationClasses()) {
             String fullName = sc.getName(); // e.g. "org.whispersystems.textsecuregcm.util.IterablePair$ParallelIterator" aka fqn
             if (fullName.equals(fqn) || fullName.startsWith(fqn + "$")) {
@@ -248,10 +243,12 @@ public class Main {
         return result;
     }
 
-    // method to generate PDGs for all methods in a given class and store them in a list
+    /**
+     * method to generate PDGs for all methods in a given class and store them in a list
+     */
     private static List<PDG> generatePDGsForClass(SootClass sootClass, FILE_VERSION version) {
         if (sootClass.getName().matches(".*\\$\\d+")) {
-            // this causes problems, for now, we are ignoring differencing of anon or synthetic classes
+            // for now, ignoring differencing of anon or synthetic classes as often marked as 'DANGLING' by soot
             System.out.println("Skipping anonymous/synthetic class: " + sootClass.getName());
             return Collections.emptyList();
         }
@@ -261,7 +258,7 @@ public class Main {
         for (SootMethod method : sootClass.getMethods()) {
             if (method.isConcrete()) {
                 try {
-                    // retrive the active body and generate the PDG
+                    // retrieve the active body and generate the PDG
                     method.retrieveActiveBody();
                     System.out.println("Successfully retrieved active body for: " + method.getName() + " in " + sootClass.getName());
 
@@ -269,7 +266,7 @@ public class Main {
                     pdgList.add(pdg);
                     System.out.println("PDG generated for method: " + method.getName());
 
-                    // likely pdg functions will clash across src/dest of the same file name, so need to specify these.
+                    // likely pdg function names will clash across src/dest of the same file name, so need to specify version
                     String baseFileName;
                     if (version == FILE_VERSION.SOURCE) {
                         baseFileName = "out/src_pdg" + sootClass.getName() + "_" + method.getName();

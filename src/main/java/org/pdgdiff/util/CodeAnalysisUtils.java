@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
 
 
 /**
- * This class aims to assist with parsing with Soot struggles.
+ * This class aims to assist with parsing when Soot struggles.
  * A lot of these functions are to supplement Soot when it struggles to parse, and have a O(n) complexity. As further
  * work this could probably be optimised further.
  */
@@ -44,7 +44,7 @@ public class CodeAnalysisUtils {
         if (lineNumber > 0) {
             return codeMapper.getCodeLine(lineNumber).trim();
         }
-        return ""; // not found
+        return "";
     }
 
     public static int getFieldLineNumber(SootField field, SourceCodeMapper codeMapper) {
@@ -202,12 +202,11 @@ public class CodeAnalysisUtils {
         }
 
         int startLine = range[0];
-        // climb upward until we find lines not starting with '@' i.e. non annotations
+        // climb upward until finding lines not starting with '@' i.e. non annotations
         int lineNum = startLine - 1;
         while (lineNum > 0) {
             String line = codeMapper.getCodeLine(lineNum).trim();
             if (line.startsWith("@")) {
-                // If multiple annotations exist on one line, split them:
                 String[] rawAnnos = line.split("\\s+@");
                 for (int i = 0; i < rawAnnos.length; i++) {
                     String annoRaw = (i == 0) ? rawAnnos[i] : "@" + rawAnnos[i];

@@ -13,7 +13,7 @@ public class CycleDetection {
 
     private static boolean debug = true;
     private static int index = 0;
-    // usin IdentityHashMap because PDGNode doesn't implement equals and hashCode
+    // usin IdentityHashMap because PDGNode doesnt implement equals and hashCode
     private static Map<PDGNode, Integer> indices = new IdentityHashMap<>();
     private static Map<PDGNode, Integer> lowLinks = new IdentityHashMap<>();
     private static Deque<PDGNode> stack = new ArrayDeque<>();
@@ -34,7 +34,7 @@ public class CycleDetection {
 
         List<PDGNode> allNodes = GraphTraversal.collectNodesBFS(pdg);
 
-        // Tarjan's algorithm starting from each node
+        // tarjan's algorithm starting from each node
         for (PDGNode node : allNodes) {
             if (!indices.containsKey(node)) {
                 strongConnect(node, pdg);
@@ -102,21 +102,7 @@ public class CycleDetection {
         index++;
         stack.push(node);
 
-        List<PDGNode> successors;
-
-        if (node.getType() == PDGNode.Type.REGION) {
-            if (node.getNode() instanceof PDGRegion) {
-                if (debug) System.out.println("Node of type REGION is an instance of PDGRegion");
-                PDGRegion region = (PDGRegion) node.getNode();
-                successors = getInternalSuccessors(region);
-            } else {
-                if (debug) System.out.println("unkown type for region: " + node.getNode().getClass().getName());
-                successors = pdg.getSuccsOf(node);
-            }
-        } else {
-            // non region e.g. cfg nodes
-            successors = pdg.getSuccsOf(node);
-        }
+        List<PDGNode> successors = pdg.getSuccsOf(node);
 
         for (PDGNode dependent : successors) {
             if (!indices.containsKey(dependent)) {
@@ -139,20 +125,6 @@ public class CycleDetection {
         }
     }
 
-    // expanding PDGREGION nodes into individual Units
-    private static List<PDGNode> getInternalSuccessors(PDGRegion region) {
-        List<PDGNode> expandedSuccessors = new ArrayList<>();
-
-        // add each Unit in the Region as a PDGNode in the expanded graph
-        for (Unit unit : region.getUnits()) {
-            PDGNode unitNode = region.unit2PDGNode(unit);
-            if (unitNode != null) {
-                expandedSuccessors.add(unitNode);
-            }
-        }
-        return expandedSuccessors;
-    }
-
     private static boolean hasSelfLoop(Set<PDGNode> scc, PDG pdg) {
         for (PDGNode node : scc) {
             for (PDGNode succ : pdg.getSuccsOf(node)) {
@@ -164,7 +136,6 @@ public class CycleDetection {
         return false;
     }
 
-    // method  to extract the line number from a PDGNode
     private static int getLineNumberFromPDGNode(PDGNode node) {
         if (node.getType() == PDGNode.Type.CFGNODE) {
             Unit headUnit = (Unit) node.getNode();
