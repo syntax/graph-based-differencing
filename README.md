@@ -12,6 +12,8 @@ In some specific use cases, such as analysis efficiencies or trying to determine
 
 If you find this interesting, please feel free to read the thesis (link wip) I wrote in conjunction with this tool!
 
+This approach has been evaluated against a subset of data from [Gumtree's](https://github.com/GumTreeDiff/gumtree) evaluation [dataset](https://github.com/GumTreeDiff/datasets). This modified dataset can be found in the following [repository](https://github.com/syntax/datasets).
+
 ### How does this work?
 
 ![Overview](images/overview.png)
